@@ -73,7 +73,7 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 
 export default {
   name: 'CommitteeMemberInput',
@@ -91,7 +91,15 @@ export default {
     // 初期データの設定
     onMounted(() => {
       members.value = [...props.initialMembers];
+      console.log('CommitteeMemberInput initial members:', props.initialMembers);
+      console.log('CommitteeMemberInput members after init:', members.value);
     });
+
+    // initialMembersプロパティの変更を監視
+    watch(() => props.initialMembers, (newMembers) => {
+      members.value = [...newMembers];
+      console.log('CommitteeMemberInput members updated via watch:', newMembers);
+    }, { immediate: true });
 
     // 新しいメンバーを追加
     const addMember = () => {

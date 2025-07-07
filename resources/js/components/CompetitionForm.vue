@@ -171,6 +171,7 @@ export default {
         };
         
         initialCommitteeMembers.value = props.competition.committee_members || [];
+        console.log('Initial committee members:', initialCommitteeMembers.value);
       }
     });
 

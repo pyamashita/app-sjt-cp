@@ -35,6 +35,9 @@ class CompetitionController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        // デバッグ用：リクエストデータの確認
+        \Log::info('Competition creation request:', $request->all());
+        
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'start_date' => 'required|date',
@@ -44,6 +47,8 @@ class CompetitionController extends Controller
             'committee_members' => 'nullable|array',
             'committee_members.*' => 'string|max:255',
         ]);
+
+        \Log::info('Validated data:', $validated);
 
         Competition::create($validated);
 
@@ -74,6 +79,9 @@ class CompetitionController extends Controller
      */
     public function update(Request $request, Competition $competition): RedirectResponse
     {
+        // デバッグ用：リクエストデータの確認
+        \Log::info('Competition update request:', $request->all());
+        
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'start_date' => 'required|date',
@@ -83,6 +91,8 @@ class CompetitionController extends Controller
             'committee_members' => 'nullable|array',
             'committee_members.*' => 'string|max:255',
         ]);
+
+        \Log::info('Validated data:', $validated);
 
         $competition->update($validated);
 

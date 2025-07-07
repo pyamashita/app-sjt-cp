@@ -73,7 +73,7 @@
                 </div>
                 <h2 class="text-3xl font-bold text-gray-900 mb-2">管理画面ホーム</h2>
                 <p class="text-lg text-gray-600 mb-6">SkillJapan Tools 競技大会管理システムへようこそ</p>
-                
+
                 <!-- ステータス表示 -->
                 <div class="inline-flex items-center px-4 py-2 bg-green-100 text-green-800 text-sm font-medium rounded-full">
                     <svg class="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -105,9 +105,9 @@
                         </div>
                         <div class="mt-4">
                             <div class="flex items-center justify-between">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                {{-- <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                                     準備中
-                                </span>
+                                </span> --}}
                                 <a href="{{ route('admin.competitions.index') }}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
                                     開く →
                                 </a>

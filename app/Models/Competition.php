@@ -31,6 +31,24 @@ class Competition extends Model
     }
 
     /**
+     * 大会選手割り当てとのリレーション
+     */
+    public function competitionPlayers(): HasMany
+    {
+        return $this->hasMany(CompetitionPlayer::class);
+    }
+
+    /**
+     * 参加選手とのリレーション（多対多）
+     */
+    public function players()
+    {
+        return $this->belongsToMany(Player::class, 'competition_players')
+            ->withPivot('player_number')
+            ->withTimestamps();
+    }
+
+    /**
      * 競技委員を配列から文字列に変換
      */
     public function getCommitteeMembersStringAttribute(): string

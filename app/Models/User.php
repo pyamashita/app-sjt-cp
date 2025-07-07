@@ -21,6 +21,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
     ];
 
     /**
@@ -44,5 +45,33 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * ユーザーロールの定数
+     */
+    const ROLE_ADMIN = 'admin';
+    const ROLE_COMPETITION_COMMITTEE = 'competition_committee';
+    const ROLE_ASSISTANT = 'assistant';
+
+    /**
+     * ユーザーが指定されたロールかどうかを確認
+     *
+     * @param string $role
+     * @return bool
+     */
+    public function hasRole(string $role): bool
+    {
+        return $this->role === $role;
+    }
+
+    /**
+     * ユーザーが管理者かどうかを確認
+     *
+     * @return bool
+     */
+    public function isAdmin(): bool
+    {
+        return $this->hasRole(self::ROLE_ADMIN);
     }
 }

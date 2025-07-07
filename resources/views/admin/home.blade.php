@@ -86,7 +86,7 @@
 
         <!-- 機能カード -->
         <div class="px-4 sm:px-0">
-            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 <!-- スケジュール管理 -->
                 <div class="bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-shadow duration-300">
                     <div class="p-6">
@@ -134,12 +134,38 @@
                         </div>
                         <div class="mt-4">
                             <div class="flex items-center justify-between">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                {{-- <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                                     準備中
-                                </span>
-                                <button class="text-green-600 hover:text-green-800 text-sm font-medium disabled:opacity-50" disabled>
+                                </span> --}}
+                                <a href="{{ route('admin.players.index') }}" class="text-green-600 hover:text-green-800 text-sm font-medium">
                                     開く →
-                                </button>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 大会選手管理 -->
+                <div class="bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-shadow duration-300">
+                    <div class="p-6">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <div class="h-12 w-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                                    <svg class="h-6 w-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-lg font-semibold text-gray-900">大会選手管理</h3>
+                                <p class="text-sm text-gray-600">大会への選手割り当てを管理</p>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <div class="flex items-center justify-between">
+                                <a href="{{ route('admin.competition-players.index') }}" class="text-orange-600 hover:text-orange-800 text-sm font-medium">
+                                    開く →
+                                </a>
                             </div>
                         </div>
                     </div>

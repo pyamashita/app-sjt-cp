@@ -3,6 +3,9 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Admin\HomeController;
+use App\Http\Controllers\Admin\CompetitionController;
+use App\Http\Controllers\Admin\CompetitionDayController;
+use App\Http\Controllers\Admin\CompetitionScheduleController;
 
 // 認証系ルート
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -10,7 +13,31 @@ Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 // 管理画面ルート（認証必須）
-Route::middleware('auth')->group(function () {
-    Route::get('/', [HomeController::class, 'index'])->name('admin.home');
-    Route::get('/admin', [HomeController::class, 'index'])->name('admin.dashboard');
+Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
+    // ダッシュボード
+    Route::get('/', [HomeController::class, 'index'])->name('home');
+    Route::get('/dashboard', [HomeController::class, 'index'])->name('dashboard');
+
+    // 大会管理
+    Route::resource('competitions', CompetitionController::class);
+    
+    // 競技日程管理（ネストしたリソース）
+    Route::resource('competitions.competition-days', CompetitionDayController::class);
+    
+    // 競技スケジュール管理
+    Route::resource('competition-days.competition-schedules', CompetitionScheduleController::class)
+        ->except(['index', 'show'])
+        ->parameters([
+            'competition-days' => 'competitionDay',
+            'competition-schedules' => 'competitionSchedule'
+        ]);
+    
+    // スケジュール順序更新
+    Route::patch('competition-days/{competitionDay}/schedules/order', [CompetitionScheduleController::class, 'updateOrder'])
+        ->name('competition-schedules.update-order');
+});
+
+// ルートアクセス時のリダイレクト
+Route::get('/', function () {
+    return redirect()->route('admin.home');
 });

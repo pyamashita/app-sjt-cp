@@ -108,9 +108,9 @@
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                                     準備中
                                 </span>
-                                <button class="text-blue-600 hover:text-blue-800 text-sm font-medium disabled:opacity-50" disabled>
+                                <a href="{{ route('admin.competitions.index') }}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
                                     開く →
-                                </button>
+                                </a>
                             </div>
                         </div>
                     </div>

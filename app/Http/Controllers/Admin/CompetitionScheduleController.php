@@ -7,6 +7,7 @@ use App\Models\CompetitionDay;
 use App\Models\CompetitionSchedule;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
 
 class CompetitionScheduleController extends Controller
@@ -22,7 +23,7 @@ class CompetitionScheduleController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request, CompetitionDay $competitionDay): RedirectResponse
+    public function store(Request $request, CompetitionDay $competitionDay): RedirectResponse|JsonResponse
     {
         $validated = $request->validate([
             'start_time' => 'required|date_format:H:i',
@@ -36,7 +37,23 @@ class CompetitionScheduleController extends Controller
         $maxSortOrder = $competitionDay->competitionSchedules()->max('sort_order') ?? 0;
         $validated['sort_order'] = $maxSortOrder + 1;
 
-        $competitionDay->competitionSchedules()->create($validated);
+        $schedule = $competitionDay->competitionSchedules()->create($validated);
+
+        // JSON APIリクエストの場合
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'スケジュールを作成しました。',
+                'schedule' => [
+                    'id' => $schedule->id,
+                    'start_time' => $schedule->start_time->format('H:i'),
+                    'content' => $schedule->content,
+                    'notes' => $schedule->notes,
+                    'count_up' => $schedule->count_up,
+                    'auto_advance' => $schedule->auto_advance,
+                    'order' => $schedule->sort_order
+                ]
+            ]);
+        }
 
         return redirect()->route('admin.competitions.competition-days.show', [
             'competition' => $competitionDay->competition_id,
@@ -55,7 +72,7 @@ class CompetitionScheduleController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, CompetitionDay $competitionDay, CompetitionSchedule $competitionSchedule): RedirectResponse
+    public function update(Request $request, CompetitionDay $competitionDay, CompetitionSchedule $competitionSchedule): RedirectResponse|JsonResponse
     {
         $validated = $request->validate([
             'start_time' => 'required|date_format:H:i',
@@ -67,6 +84,13 @@ class CompetitionScheduleController extends Controller
 
         $competitionSchedule->update($validated);
 
+        // JSON APIリクエストの場合
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'スケジュールを更新しました。'
+            ]);
+        }
+
         return redirect()->route('admin.competitions.competition-days.show', [
             'competition' => $competitionDay->competition_id,
             'competition_day' => $competitionDay->id
@@ -76,9 +100,16 @@ class CompetitionScheduleController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(CompetitionDay $competitionDay, CompetitionSchedule $competitionSchedule): RedirectResponse
+    public function destroy(CompetitionDay $competitionDay, CompetitionSchedule $competitionSchedule): RedirectResponse|JsonResponse
     {
         $competitionSchedule->delete();
+
+        // JSON APIリクエストの場合
+        if (request()->expectsJson()) {
+            return response()->json([
+                'message' => 'スケジュールを削除しました。'
+            ]);
+        }
 
         return redirect()->route('admin.competitions.competition-days.show', [
             'competition' => $competitionDay->competition_id,

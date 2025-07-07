@@ -53,13 +53,6 @@
                         </div>
                     </div>
                     <div class="flex space-x-3">
-                        <a href="{{ route('admin.competition-days.competition-schedules.create', $competitionDay) }}" 
-                           class="inline-flex items-center px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition duration-200">
-                            <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                            </svg>
-                            スケジュール追加
-                        </a>
                         <a href="{{ route('admin.competitions.competition-days.edit', [$competition, $competitionDay]) }}" 
                            class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition duration-200">
                             <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -78,69 +71,23 @@
                 </div>
             @endif
 
-            <!-- スケジュール一覧 -->
-            <div class="bg-white shadow-lg rounded-xl overflow-hidden">
-                @if($competitionDay->competitionSchedules->count() > 0)
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">時刻</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">内容</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">備考</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">表示エフェクト</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                @foreach($competitionDay->competitionSchedules as $schedule)
-                                    <tr class="hover:bg-gray-50">
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm font-mono font-medium text-gray-900">{{ $schedule->formatted_start_time }}</div>
-                                        </td>
-                                        <td class="px-6 py-4">
-                                            <div class="text-sm font-medium text-gray-900">{{ $schedule->content }}</div>
-                                        </td>
-                                        <td class="px-6 py-4">
-                                            <div class="text-sm text-gray-600">{{ $schedule->notes ?? '-' }}</div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm text-gray-900">{{ $schedule->effects_string }}</div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                                            <a href="{{ route('admin.competition-days.competition-schedules.edit', [$competitionDay, $schedule]) }}" 
-                                               class="text-indigo-600 hover:text-indigo-900">編集</a>
-                                            <form action="{{ route('admin.competition-days.competition-schedules.destroy', [$competitionDay, $schedule]) }}" 
-                                                  method="POST" class="inline" 
-                                                  onsubmit="return confirm('このスケジュールを削除しますか？')">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="text-red-600 hover:text-red-900">削除</button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                @else
-                    <div class="text-center py-12">
-                        <div class="mx-auto h-16 w-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                            <svg class="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                        </div>
-                        <h3 class="text-lg font-medium text-gray-900 mb-2">スケジュールが登録されていません</h3>
-                        <p class="text-gray-600 mb-6">この日程のスケジュールを追加してください。</p>
-                        <a href="{{ route('admin.competition-days.competition-schedules.create', $competitionDay) }}" 
-                           class="inline-flex items-center px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition duration-200">
-                            <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                            </svg>
-                            スケジュール追加
-                        </a>
-                    </div>
-                @endif
+            <!-- スケジュール管理 -->
+            <div id="app">
+                <schedule-manager
+                    :competition-day-id="{{ $competitionDay->id }}"
+                    :initial-schedules="{{ json_encode($competitionDay->competitionSchedules->map(function($schedule) {
+                        return [
+                            'id' => $schedule->id,
+                            'start_time' => $schedule->start_time->format('H:i'),
+                            'content' => $schedule->content,
+                            'notes' => $schedule->notes,
+                            'count_up' => $schedule->count_up,
+                            'auto_advance' => $schedule->auto_advance,
+                            'order' => $schedule->sort_order
+                        ];
+                    })->sortBy('order')->values()) }}"
+                    csrf-token="{{ csrf_token() }}"
+                ></schedule-manager>
             </div>
         </div>
     </main>

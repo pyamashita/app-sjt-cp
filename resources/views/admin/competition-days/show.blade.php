@@ -53,7 +53,7 @@
                         </div>
                     </div>
                     <div class="flex space-x-3">
-                        <a href="{{ route('admin.competition-schedules.create', $competitionDay) }}" 
+                        <a href="{{ route('admin.competition-days.competition-schedules.create', $competitionDay) }}" 
                            class="inline-flex items-center px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition duration-200">
                             <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -108,9 +108,9 @@
                                             <div class="text-sm text-gray-900">{{ $schedule->effects_string }}</div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                                            <a href="{{ route('admin.competition-schedules.edit', [$competitionDay, $schedule]) }}" 
+                                            <a href="{{ route('admin.competition-days.competition-schedules.edit', [$competitionDay, $schedule]) }}" 
                                                class="text-indigo-600 hover:text-indigo-900">編集</a>
-                                            <form action="{{ route('admin.competition-schedules.destroy', [$competitionDay, $schedule]) }}" 
+                                            <form action="{{ route('admin.competition-days.competition-schedules.destroy', [$competitionDay, $schedule]) }}" 
                                                   method="POST" class="inline" 
                                                   onsubmit="return confirm('このスケジュールを削除しますか？')">
                                                 @csrf
@@ -132,7 +132,7 @@
                         </div>
                         <h3 class="text-lg font-medium text-gray-900 mb-2">スケジュールが登録されていません</h3>
                         <p class="text-gray-600 mb-6">この日程のスケジュールを追加してください。</p>
-                        <a href="{{ route('admin.competition-schedules.create', $competitionDay) }}" 
+                        <a href="{{ route('admin.competition-days.competition-schedules.create', $competitionDay) }}" 
                            class="inline-flex items-center px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition duration-200">
                             <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>

@@ -48,7 +48,7 @@
             <!-- フォーム -->
             <div class="bg-white shadow-xl rounded-xl overflow-hidden">
                 <div class="px-6 py-8">
-                    <form action="{{ route('admin.competition-schedules.update', [$competitionDay, $competitionSchedule]) }}" method="POST" class="space-y-6">
+                    <form action="{{ route('admin.competition-days.competition-schedules.update', [$competitionDay, $competitionSchedule]) }}" method="POST" class="space-y-6">
                         @csrf
                         @method('PUT')
 

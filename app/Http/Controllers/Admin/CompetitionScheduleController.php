@@ -184,18 +184,31 @@ class CompetitionScheduleController extends Controller
         // BOMを追加（Excel での文字化け防止）
         $csv = "\xEF\xBB\xBF" . $csv;
 
+        // 日本語対応のファイル名生成
+        $competitionName = $competitionDay->competition->name;
+        $dayName = $competitionDay->day_name;
+        
+        // 安全なファイル名を生成（日本語を適切に処理）
+        $safeCompetitionName = mb_convert_encoding($competitionName, 'UTF-8', 'UTF-8');
+        $safeDayName = mb_convert_encoding($dayName, 'UTF-8', 'UTF-8');
+        
+        // ファイル名に使用できない文字を置換（Windows/Mac/Linux対応）
+        $invalidChars = ['/', '\\', ':', '*', '?', '"', '<', '>', '|'];
+        $safeCompetitionName = str_replace($invalidChars, '_', $safeCompetitionName);
+        $safeDayName = str_replace($invalidChars, '_', $safeDayName);
+        
         $filename = sprintf(
-            'schedule_%s_%s.csv',
-            $competitionDay->competition->name,
-            $competitionDay->day_name
+            '%s_%s_スケジュール.csv',
+            $safeCompetitionName,
+            $safeDayName
         );
 
-        // 特殊文字をアンダースコアに置換
-        $filename = preg_replace('/[^a-zA-Z0-9._-]/', '_', $filename);
-
+        // ブラウザ互換性のためのファイル名エンコーディング
+        $encodedFilename = rawurlencode($filename);
+        
         return response($csv)
             ->header('Content-Type', 'text/csv; charset=UTF-8')
-            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"; filename*=UTF-8\'\'' . $encodedFilename);
     }
 
     /**

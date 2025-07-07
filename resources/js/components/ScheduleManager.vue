@@ -1,17 +1,44 @@
 <template>
   <div class="bg-white shadow-lg rounded-xl overflow-hidden">
     <div class="px-6 py-4 border-b border-gray-200">
-      <div class="flex justify-between items-center">
+      <div class="flex justify-between items-start">
         <h3 class="text-lg font-semibold text-gray-900">スケジュール管理</h3>
-        <button 
-          @click="addNewSchedule"
-          class="inline-flex items-center px-3 py-1 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition duration-200"
-        >
-          <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m-6 0h6m0 0h6"></path>
-          </svg>
-          スケジュール追加
-        </button>
+        
+        <div class="flex flex-col sm:flex-row gap-2">
+          <!-- CSV機能 -->
+          <div class="flex gap-2">
+            <button 
+              @click="exportCSV"
+              class="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition duration-200"
+            >
+              <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+              </svg>
+              CSV出力
+            </button>
+            
+            <button 
+              @click="showImportModal = true"
+              class="inline-flex items-center px-3 py-1 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition duration-200"
+            >
+              <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
+              </svg>
+              CSV取込
+            </button>
+          </div>
+          
+          <!-- スケジュール追加 -->
+          <button 
+            @click="addNewSchedule"
+            class="inline-flex items-center px-3 py-1 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition duration-200"
+          >
+            <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m-6 0h6m0 0h6"></path>
+            </svg>
+            スケジュール追加
+          </button>
+        </div>
       </div>
     </div>
 
@@ -170,6 +197,84 @@
         スケジュール追加
       </button>
     </div>
+
+    <!-- CSVインポートモーダル -->
+    <div v-if="showImportModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="closeImportModal">
+      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white" @click.stop>
+        <div class="mt-3">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-medium text-gray-900">CSVファイル取込</h3>
+            <button @click="closeImportModal" class="text-gray-400 hover:text-gray-600">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+          
+          <form @submit.prevent="importCSV">
+            <!-- ファイル選択 -->
+            <div class="mb-4">
+              <label for="csv_file" class="block text-sm font-medium text-gray-700 mb-2">
+                CSVファイル <span class="text-red-500">*</span>
+              </label>
+              <input 
+                type="file" 
+                id="csv_file"
+                ref="csvFileInput"
+                accept=".csv,.txt"
+                required
+                class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              >
+            </div>
+
+            <!-- インポートモード -->
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-700 mb-2">インポートモード</label>
+              <div class="space-y-2">
+                <label class="flex items-center">
+                  <input v-model="importMode" type="radio" value="replace" class="mr-2">
+                  <span class="text-sm">置換（既存のスケジュールを削除して追加）</span>
+                </label>
+                <label class="flex items-center">
+                  <input v-model="importMode" type="radio" value="append" class="mr-2">
+                  <span class="text-sm">追加（既存のスケジュールに追加）</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- CSVフォーマット説明 -->
+            <div class="mb-4 p-3 bg-gray-50 rounded-lg">
+              <h4 class="text-sm font-medium text-gray-700 mb-2">CSVフォーマット</h4>
+              <div class="text-xs text-gray-600 space-y-1">
+                <p>1列目: 開始時刻 (HH:MM形式)</p>
+                <p>2列目: 内容</p>
+                <p>3列目: 備考（省略可）</p>
+                <p>4列目: カウントアップ (0または1)</p>
+                <p>5列目: 自動送り (0または1)</p>
+              </div>
+            </div>
+
+            <!-- ボタン -->
+            <div class="flex justify-end space-x-3">
+              <button 
+                type="button"
+                @click="closeImportModal"
+                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300"
+              >
+                キャンセル
+              </button>
+              <button 
+                type="submit"
+                :disabled="importing"
+                class="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 disabled:opacity-50"
+              >
+                {{ importing ? '取込中...' : 'インポート' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -198,6 +303,12 @@ export default {
     const successMessage = ref('');
     const errorMessage = ref('');
     const originalSchedules = ref({});
+    
+    // CSV機能用の状態
+    const showImportModal = ref(false);
+    const importing = ref(false);
+    const importMode = ref('replace');
+    const csvFileInput = ref(null);
 
     // 初期データ設定
     onMounted(() => {
@@ -384,11 +495,76 @@ export default {
       }
     };
 
+    // CSVエクスポート
+    const exportCSV = () => {
+      window.location.href = `/admin/competition-days/${props.competitionDayId}/schedules/export`;
+    };
+
+    // CSVインポートモーダルを閉じる
+    const closeImportModal = () => {
+      showImportModal.value = false;
+      importMode.value = 'replace';
+      if (csvFileInput.value) {
+        csvFileInput.value.value = '';
+      }
+    };
+
+    // CSVインポート
+    const importCSV = async () => {
+      const fileInput = csvFileInput.value;
+      if (!fileInput.files || !fileInput.files[0]) {
+        errorMessage.value = 'ファイルを選択してください。';
+        setTimeout(clearMessages, 3000);
+        return;
+      }
+
+      importing.value = true;
+      clearMessages();
+
+      try {
+        const formData = new FormData();
+        formData.append('csv_file', fileInput.files[0]);
+        formData.append('import_mode', importMode.value);
+
+        const response = await fetch(`/admin/competition-days/${props.competitionDayId}/schedules/import`, {
+          method: 'POST',
+          headers: {
+            'X-CSRF-TOKEN': props.csrfToken,
+            'Accept': 'application/json'
+          },
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          successMessage.value = data.message;
+          setTimeout(clearMessages, 5000);
+          
+          // 成功時はページをリロードしてデータを更新
+          window.location.reload();
+        } else {
+          errorMessage.value = data.message || 'インポートに失敗しました。';
+          setTimeout(clearMessages, 5000);
+        }
+      } catch (error) {
+        errorMessage.value = 'ネットワークエラーが発生しました。';
+        setTimeout(clearMessages, 3000);
+      } finally {
+        importing.value = false;
+        closeImportModal();
+      }
+    };
+
     return {
       schedules,
       newSchedules,
       successMessage,
       errorMessage,
+      showImportModal,
+      importing,
+      importMode,
+      csvFileInput,
       formatTime,
       getEffectsString,
       addNewSchedule,
@@ -397,7 +573,10 @@ export default {
       cancelEdit,
       saveNewSchedule,
       saveSchedule,
-      deleteSchedule
+      deleteSchedule,
+      exportCSV,
+      closeImportModal,
+      importCSV
     };
   }
 };

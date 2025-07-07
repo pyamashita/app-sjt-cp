@@ -35,6 +35,12 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     // スケジュール順序更新
     Route::patch('competition-days/{competitionDay}/schedules/order', [CompetitionScheduleController::class, 'updateOrder'])
         ->name('competition-schedules.update-order');
+    
+    // CSVエクスポート・インポート
+    Route::get('competition-days/{competitionDay}/schedules/export', [CompetitionScheduleController::class, 'export'])
+        ->name('competition-schedules.export');
+    Route::post('competition-days/{competitionDay}/schedules/import', [CompetitionScheduleController::class, 'import'])
+        ->name('competition-schedules.import');
 });
 
 // ルートアクセス時のリダイレクト

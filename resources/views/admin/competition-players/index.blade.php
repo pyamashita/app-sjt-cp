@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>大会選手管理 - SkillJapan Tools</title>
+    <title>大会選手管理 - SJT-CP</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -18,10 +18,10 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
                             </svg>
                         </div>
-                        <h1 class="text-xl font-bold text-gray-900">SkillJapan Tools</h1>
+                        <h1 class="text-xl font-bold text-gray-900">SJT-CP</h1>
                     </a>
                     <span class="ml-4 text-gray-400">|</span>
-                    <span class="ml-4 text-gray-600 font-medium">大会選手管理</span>
+                    <span class="ml-4 text-gray-600 font-medium">選手情報管理 / 大会選手割当</span>
                 </div>
                 <div class="flex items-center space-x-4">
                     <span class="text-sm text-gray-700">{{ auth()->user()->name }}</span>
@@ -40,9 +40,23 @@
             <!-- ヘッダー -->
             <div class="flex justify-between items-center mb-6">
                 <div>
-                    <h2 class="text-2xl font-bold text-gray-900">大会選手管理</h2>
-                    <p class="text-gray-600 mt-1">大会への選手割り当てを管理します</p>
+                    <h2 class="text-2xl font-bold text-gray-900">選手情報管理</h2>
+                    <p class="text-gray-600 mt-1">競技選手の情報と大会への割り当てを管理します</p>
                 </div>
+            </div>
+
+            <!-- サブメニュー -->
+            <div class="bg-white shadow-lg rounded-xl p-4 mb-6">
+                <nav class="flex space-x-8">
+                    <a href="{{ route('admin.players.index') }}"
+                       class="px-3 py-2 text-sm font-medium text-gray-600 hover:text-blue-600 hover:border-b-2 hover:border-blue-600 transition-colors">
+                        選手一覧
+                    </a>
+                    <a href="{{ route('admin.competition-players.index') }}"
+                       class="px-3 py-2 text-sm font-medium text-blue-600 border-b-2 border-blue-600">
+                        大会選手割当
+                    </a>
+                </nav>
             </div>
 
             <!-- 成功メッセージ -->
@@ -65,8 +79,8 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div class="md:col-span-2">
                             <label for="competition_id" class="block text-sm font-medium text-gray-700 mb-2">大会を選択</label>
-                            <select id="competition_id" 
-                                    name="competition_id" 
+                            <select id="competition_id"
+                                    name="competition_id"
                                     onchange="this.form.submit()"
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 <option value="">大会を選択してください</option>
@@ -79,7 +93,7 @@
                         </div>
                         @if($selectedCompetition)
                             <div class="flex items-end">
-                                <a href="{{ route('admin.competition-players.create', ['competition_id' => $selectedCompetition->id]) }}" 
+                                <a href="{{ route('admin.competition-players.create', ['competition_id' => $selectedCompetition->id]) }}"
                                    class="w-full px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-200 text-center">
                                     選手を追加
                                 </a>
@@ -97,12 +111,12 @@
                             <form method="GET" action="{{ route('admin.competition-players.index') }}">
                                 <input type="hidden" name="competition_id" value="{{ $selectedCompetition->id }}">
                                 <div class="flex">
-                                    <input type="text" 
-                                           name="search" 
+                                    <input type="text"
+                                           name="search"
                                            value="{{ request('search') }}"
                                            placeholder="選手名、都道府県、所属、選手番号で検索"
                                            class="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                    <button type="submit" 
+                                    <button type="submit"
                                             class="px-4 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700 transition duration-200">
                                         検索
                                     </button>
@@ -110,15 +124,15 @@
                             </form>
                         </div>
                         <div class="flex space-x-2">
-                            <button onclick="openGenerateModal()" 
+                            <button onclick="openGenerateModal()"
                                     class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition duration-200">
                                 選手番号生成
                             </button>
-                            <button onclick="openImportModal()" 
+                            <button onclick="openImportModal()"
                                     class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition duration-200">
                                 CSVインポート
                             </button>
-                            <a href="{{ route('admin.competition-players.export', array_merge(request()->all(), ['competition_id' => $selectedCompetition->id])) }}" 
+                            <a href="{{ route('admin.competition-players.export', array_merge(request()->all(), ['competition_id' => $selectedCompetition->id])) }}"
                                class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition duration-200">
                                 CSVエクスポート
                             </a>
@@ -134,7 +148,7 @@
                             <span class="text-sm text-gray-500 ml-2">({{ $competitionPlayers->total() }}人)</span>
                         </h3>
                     </div>
-                    
+
                     @if($competitionPlayers->count() > 0)
                         <div class="overflow-x-auto">
                             <table class="min-w-full divide-y divide-gray-200">
@@ -169,12 +183,12 @@
                                                 <div class="text-sm text-gray-900">{{ $competitionPlayer->player->gender_label }}</div>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                                                <a href="{{ route('admin.competition-players.show', $competitionPlayer) }}" 
+                                                <a href="{{ route('admin.competition-players.show', $competitionPlayer) }}"
                                                    class="text-blue-600 hover:text-blue-900">詳細</a>
-                                                <a href="{{ route('admin.competition-players.edit', $competitionPlayer) }}" 
+                                                <a href="{{ route('admin.competition-players.edit', $competitionPlayer) }}"
                                                    class="text-indigo-600 hover:text-indigo-900">編集</a>
-                                                <form action="{{ route('admin.competition-players.destroy', $competitionPlayer) }}" 
-                                                      method="POST" class="inline" 
+                                                <form action="{{ route('admin.competition-players.destroy', $competitionPlayer) }}"
+                                                      method="POST" class="inline"
                                                       onsubmit="return confirm('この選手の割り当てを解除しますか？')">
                                                     @csrf
                                                     @method('DELETE')
@@ -200,7 +214,7 @@
                             </div>
                             <h3 class="text-lg font-medium text-gray-900 mb-2">参加選手がいません</h3>
                             <p class="text-gray-600 mb-6">この大会にはまだ選手が割り当てられていません。</p>
-                            <a href="{{ route('admin.competition-players.create', ['competition_id' => $selectedCompetition->id]) }}" 
+                            <a href="{{ route('admin.competition-players.create', ['competition_id' => $selectedCompetition->id]) }}"
                                class="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-200">
                                 <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -232,18 +246,18 @@
                         <input type="hidden" name="competition_id" value="{{ $selectedCompetition->id }}">
                         <div class="mb-4">
                             <label for="csv_file" class="block text-sm font-medium text-gray-700 mb-2">CSVファイル</label>
-                            <input type="file" 
-                                   id="csv_file" 
-                                   name="csv_file" 
-                                   accept=".csv,.txt" 
+                            <input type="file"
+                                   id="csv_file"
+                                   name="csv_file"
+                                   accept=".csv,.txt"
                                    required
                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                             <p class="text-xs text-gray-500 mt-1">形式: 選手番号,選手名,都道府県,所属,性別</p>
                         </div>
                         <div class="mb-4">
                             <label for="import_mode" class="block text-sm font-medium text-gray-700 mb-2">インポートモード</label>
-                            <select id="import_mode" 
-                                    name="import_mode" 
+                            <select id="import_mode"
+                                    name="import_mode"
                                     required
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 <option value="append">追加（既存データを保持）</option>
@@ -251,12 +265,12 @@
                             </select>
                         </div>
                         <div class="flex space-x-3">
-                            <button type="submit" 
+                            <button type="submit"
                                     class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200">
                                 インポート
                             </button>
-                            <button type="button" 
-                                    onclick="closeImportModal()" 
+                            <button type="button"
+                                    onclick="closeImportModal()"
                                     class="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition duration-200">
                                 キャンセル
                             </button>
@@ -283,9 +297,9 @@
                         <input type="hidden" name="competition_id" value="{{ $selectedCompetition->id }}">
                         <div class="mb-4">
                             <label for="start_number" class="block text-sm font-medium text-gray-700 mb-2">開始番号</label>
-                            <input type="number" 
-                                   id="start_number" 
-                                   name="start_number" 
+                            <input type="number"
+                                   id="start_number"
+                                   name="start_number"
                                    value="1"
                                    min="1"
                                    required
@@ -293,8 +307,8 @@
                         </div>
                         <div class="mb-4">
                             <label for="format" class="block text-sm font-medium text-gray-700 mb-2">番号形式</label>
-                            <select id="format" 
-                                    name="format" 
+                            <select id="format"
+                                    name="format"
                                     required
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 <option value="number">数字のみ (1, 2, 3...)</option>
@@ -302,12 +316,12 @@
                             </select>
                         </div>
                         <div class="flex space-x-3">
-                            <button type="submit" 
+                            <button type="submit"
                                     class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200">
                                 生成
                             </button>
-                            <button type="button" 
-                                    onclick="closeGenerateModal()" 
+                            <button type="button"
+                                    onclick="closeGenerateModal()"
                                     class="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition duration-200">
                                 キャンセル
                             </button>

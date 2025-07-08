@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $competition->name }} - 大会詳細 - SkillJapan Tools</title>
+    <title>{{ $competition->name }} - 大会詳細 - SJT-CP</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -18,7 +18,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
                             </svg>
                         </div>
-                        <h1 class="text-xl font-bold text-gray-900">SkillJapan Tools</h1>
+                        <h1 class="text-xl font-bold text-gray-900">SJT-CP</h1>
                     </a>
                     <span class="ml-4 text-gray-400">|</span>
                     <a href="{{ route('admin.competitions.index') }}" class="ml-4 text-gray-600 hover:text-gray-900">大会実施管理</a>
@@ -46,21 +46,21 @@
                         <h2 class="text-2xl font-bold text-gray-900">{{ $competition->name }}</h2>
                         <p class="text-gray-600 mt-1">{{ $competition->period }}</p>
                         <div class="mt-2 flex items-center space-x-4">
-                            <a href="{{ route('admin.competitions.index') }}" 
+                            <a href="{{ route('admin.competitions.index') }}"
                                class="text-blue-600 hover:text-blue-800 text-sm font-medium">
                                 ← 大会実施管理に戻る
                             </a>
                         </div>
                     </div>
                     <div class="flex space-x-3">
-                        <a href="{{ route('admin.competitions.competition-days.index', $competition) }}" 
+                        <a href="{{ route('admin.competitions.competition-days.index', $competition) }}"
                            class="inline-flex items-center px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition duration-200">
                             <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                             </svg>
                             競技日管理
                         </a>
-                        <a href="{{ route('admin.competitions.edit', $competition) }}" 
+                        <a href="{{ route('admin.competitions.edit', $competition) }}"
                            class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition duration-200">
                             <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
@@ -126,7 +126,7 @@
                 <div class="px-6 py-4 border-b border-gray-200">
                     <div class="flex justify-between items-center">
                         <h3 class="text-lg font-semibold text-gray-900">競技日程一覧</h3>
-                        <a href="{{ route('admin.competitions.competition-days.create', $competition) }}" 
+                        <a href="{{ route('admin.competitions.competition-days.create', $competition) }}"
                            class="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition duration-200">
                             <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m-6 0h6m0 0h6"></path>
@@ -160,9 +160,9 @@
                                             <div class="text-sm text-gray-900">{{ $day->competitionSchedules->count() }}件</div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                                            <a href="{{ route('admin.competitions.competition-days.show', [$competition, $day]) }}" 
+                                            <a href="{{ route('admin.competitions.competition-days.show', [$competition, $day]) }}"
                                                class="text-blue-600 hover:text-blue-900">詳細</a>
-                                            <a href="{{ route('admin.competitions.competition-days.edit', [$competition, $day]) }}" 
+                                            <a href="{{ route('admin.competitions.competition-days.edit', [$competition, $day]) }}"
                                                class="text-indigo-600 hover:text-indigo-900">編集</a>
                                         </td>
                                     </tr>
@@ -179,7 +179,7 @@
                         </div>
                         <h3 class="text-lg font-medium text-gray-900 mb-2">競技日程が登録されていません</h3>
                         <p class="text-gray-600 mb-6">この大会の競技日程を追加してください。</p>
-                        <a href="{{ route('admin.competitions.competition-days.create', $competition) }}" 
+                        <a href="{{ route('admin.competitions.competition-days.create', $competition) }}"
                            class="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-200">
                             <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m-6 0h6m0 0h6"></path>

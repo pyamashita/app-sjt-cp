@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>管理画面ホーム - SkillJapan Tools</title>
+    <title>管理画面ホーム - SJT-CP</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -19,7 +19,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
                             </svg>
                         </div>
-                        <h1 class="text-xl font-bold text-gray-900 hidden sm:block">SkillJapan Tools</h1>
+                        <h1 class="text-xl font-bold text-gray-900 hidden sm:block">SJT-CP</h1>
                         <h1 class="text-lg font-bold text-gray-900 sm:hidden">SJT</h1>
                     </div>
                 </div>
@@ -72,7 +72,7 @@
                     </svg>
                 </div>
                 <h2 class="text-3xl font-bold text-gray-900 mb-2">管理画面ホーム</h2>
-                <p class="text-lg text-gray-600 mb-6">SkillJapan Tools 競技大会管理システムへようこそ</p>
+                <p class="text-lg text-gray-600 mb-6">SJT-CP 競技大会管理システムへようこそ</p>
 
                 <!-- ステータス表示 -->
                 <div class="inline-flex items-center px-4 py-2 bg-green-100 text-green-800 text-sm font-medium rounded-full">
@@ -86,7 +86,7 @@
 
         <!-- 機能カード -->
         <div class="px-4 sm:px-0">
-            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 <!-- スケジュール管理 -->
                 <div class="bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-shadow duration-300">
                     <div class="p-6">
@@ -138,32 +138,6 @@
                                     準備中
                                 </span> --}}
                                 <a href="{{ route('admin.players.index') }}" class="text-green-600 hover:text-green-800 text-sm font-medium">
-                                    開く →
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 大会選手管理 -->
-                <div class="bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-shadow duration-300">
-                    <div class="p-6">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <div class="h-12 w-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                                    <svg class="h-6 w-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
-                                    </svg>
-                                </div>
-                            </div>
-                            <div class="ml-4">
-                                <h3 class="text-lg font-semibold text-gray-900">大会選手管理</h3>
-                                <p class="text-sm text-gray-600">大会への選手割り当てを管理</p>
-                            </div>
-                        </div>
-                        <div class="mt-4">
-                            <div class="flex items-center justify-between">
-                                <a href="{{ route('admin.competition-players.index') }}" class="text-orange-600 hover:text-orange-800 text-sm font-medium">
                                     開く →
                                 </a>
                             </div>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>選手登録 - SkillJapan Tools</title>
+    <title>選手登録 - SJT-CP</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -18,10 +18,10 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
                             </svg>
                         </div>
-                        <h1 class="text-xl font-bold text-gray-900">SkillJapan Tools</h1>
+                        <h1 class="text-xl font-bold text-gray-900">SJT-CP</h1>
                     </a>
                     <span class="ml-4 text-gray-400">|</span>
-                    <span class="ml-4 text-gray-600 font-medium">選手登録</span>
+                    <span class="ml-4 text-gray-600 font-medium">選手情報管理 / 選手登録</span>
                 </div>
                 <div class="flex items-center space-x-4">
                     <span class="text-sm text-gray-700">{{ auth()->user()->name }}</span>
@@ -43,13 +43,27 @@
                     <h2 class="text-2xl font-bold text-gray-900">選手登録</h2>
                     <p class="text-gray-600 mt-1">新しい選手の基本情報を登録します</p>
                 </div>
-                <a href="{{ route('admin.players.index') }}" 
+                <a href="{{ route('admin.players.index') }}"
                    class="inline-flex items-center px-4 py-2 bg-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-400 transition duration-200">
                     <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                     </svg>
                     戻る
                 </a>
+            </div>
+
+            <!-- サブメニュー -->
+            <div class="bg-white shadow-lg rounded-xl p-4 mb-6">
+                <nav class="flex space-x-8">
+                    <a href="{{ route('admin.players.index') }}"
+                       class="px-3 py-2 text-sm font-medium text-blue-600 border-b-2 border-blue-600">
+                        選手一覧
+                    </a>
+                    <a href="{{ route('admin.competition-players.index') }}"
+                       class="px-3 py-2 text-sm font-medium text-gray-600 hover:text-blue-600 hover:border-b-2 hover:border-blue-600 transition-colors">
+                        大会選手割当
+                    </a>
+                </nav>
             </div>
 
             <!-- エラーメッセージ -->
@@ -74,16 +88,16 @@
             <div class="bg-white shadow-lg rounded-xl p-6">
                 <form action="{{ route('admin.players.store') }}" method="POST">
                     @csrf
-                    
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- 選手名 -->
                         <div>
                             <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
                                 選手名 <span class="text-red-500">*</span>
                             </label>
-                            <input type="text" 
-                                   id="name" 
-                                   name="name" 
+                            <input type="text"
+                                   id="name"
+                                   name="name"
                                    value="{{ old('name') }}"
                                    required
                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 @error('name') border-red-500 @enderror">
@@ -97,8 +111,8 @@
                             <label for="prefecture" class="block text-sm font-medium text-gray-700 mb-2">
                                 都道府県 <span class="text-red-500">*</span>
                             </label>
-                            <select id="prefecture" 
-                                    name="prefecture" 
+                            <select id="prefecture"
+                                    name="prefecture"
                                     required
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 @error('prefecture') border-red-500 @enderror">
                                 <option value="">選択してください</option>
@@ -118,9 +132,9 @@
                             <label for="affiliation" class="block text-sm font-medium text-gray-700 mb-2">
                                 所属
                             </label>
-                            <input type="text" 
-                                   id="affiliation" 
-                                   name="affiliation" 
+                            <input type="text"
+                                   id="affiliation"
+                                   name="affiliation"
                                    value="{{ old('affiliation') }}"
                                    placeholder="学校名、企業名など"
                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 @error('affiliation') border-red-500 @enderror">
@@ -134,8 +148,8 @@
                             <label for="gender" class="block text-sm font-medium text-gray-700 mb-2">
                                 性別 <span class="text-red-500">*</span>
                             </label>
-                            <select id="gender" 
-                                    name="gender" 
+                            <select id="gender"
+                                    name="gender"
                                     required
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 @error('gender') border-red-500 @enderror">
                                 <option value="">選択してください</option>
@@ -153,11 +167,11 @@
 
                     <!-- 送信ボタン -->
                     <div class="mt-8 flex justify-end space-x-3">
-                        <a href="{{ route('admin.players.index') }}" 
+                        <a href="{{ route('admin.players.index') }}"
                            class="px-6 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition duration-200">
                             キャンセル
                         </a>
-                        <button type="submit" 
+                        <button type="submit"
                                 class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200">
                             登録
                         </button>

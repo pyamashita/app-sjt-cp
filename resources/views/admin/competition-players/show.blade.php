@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>選手割り当て詳細 - SkillJapan Tools</title>
+    <title>選手割り当て詳細 - SJT-CP</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -18,10 +18,10 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
                             </svg>
                         </div>
-                        <h1 class="text-xl font-bold text-gray-900">SkillJapan Tools</h1>
+                        <h1 class="text-xl font-bold text-gray-900">SJT-CP</h1>
                     </a>
                     <span class="ml-4 text-gray-400">|</span>
-                    <span class="ml-4 text-gray-600 font-medium">選手割り当て詳細</span>
+                    <span class="ml-4 text-gray-600 font-medium">選手情報管理 / 大会選手割当</span>
                 </div>
                 <div class="flex items-center space-x-4">
                     <span class="text-sm text-gray-700">{{ auth()->user()->name }}</span>
@@ -44,14 +44,14 @@
                     <p class="text-gray-600 mt-1">{{ $competitionPlayer->player->name }} の大会参加情報</p>
                 </div>
                 <div class="flex space-x-3">
-                    <a href="{{ route('admin.competition-players.edit', $competitionPlayer) }}" 
+                    <a href="{{ route('admin.competition-players.edit', $competitionPlayer) }}"
                        class="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-200">
                         <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                         </svg>
                         編集
                     </a>
-                    <a href="{{ route('admin.competition-players.index', ['competition_id' => $competitionPlayer->competition_id]) }}" 
+                    <a href="{{ route('admin.competition-players.index', ['competition_id' => $competitionPlayer->competition_id]) }}"
                        class="inline-flex items-center px-4 py-2 bg-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-400 transition duration-200">
                         <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
@@ -129,7 +129,7 @@
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-lg font-semibold text-gray-900">割り当て情報</h3>
                     </div>
-                    
+
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <dt class="text-sm font-medium text-gray-500">割り当て日</dt>
@@ -155,30 +155,30 @@
             <div class="mt-6">
                 <div class="bg-white shadow-lg rounded-xl p-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">アクション</h3>
-                    
+
                     <div class="flex flex-wrap gap-3">
-                        <a href="{{ route('admin.players.show', $competitionPlayer->player) }}" 
+                        <a href="{{ route('admin.players.show', $competitionPlayer->player) }}"
                            class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition duration-200">
                             <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                             </svg>
                             選手詳細を見る
                         </a>
-                        
-                        <a href="{{ route('admin.competitions.show', $competitionPlayer->competition) }}" 
+
+                        <a href="{{ route('admin.competitions.show', $competitionPlayer->competition) }}"
                            class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-200">
                             <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                             </svg>
                             大会詳細を見る
                         </a>
-                        
-                        <form action="{{ route('admin.competition-players.destroy', $competitionPlayer) }}" 
-                              method="POST" class="inline" 
+
+                        <form action="{{ route('admin.competition-players.destroy', $competitionPlayer) }}"
+                              method="POST" class="inline"
                               onsubmit="return confirm('この選手の大会への割り当てを解除しますか？')">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" 
+                            <button type="submit"
                                     class="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition duration-200">
                                 <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>

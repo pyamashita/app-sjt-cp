@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $competitionDay->day_name }} 編集 - {{ $competition->name }} - SkillJapan Tools</title>
+    <title>{{ $competitionDay->day_name }} 編集 - {{ $competition->name }} - SJT-CP</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -18,7 +18,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
                             </svg>
                         </div>
-                        <h1 class="text-xl font-bold text-gray-900">SkillJapan Tools</h1>
+                        <h1 class="text-xl font-bold text-gray-900">SJT-CP</h1>
                     </a>
                     <span class="ml-4 text-gray-400">|</span>
                     <a href="{{ route('admin.competitions.competition-days.index', $competition) }}" class="ml-4 text-gray-600 hover:text-gray-900">{{ $competition->name }}</a>
@@ -58,10 +58,10 @@
                             <label for="day_name" class="block text-sm font-semibold text-gray-700 mb-2">
                                 実施日名称 <span class="text-red-500">*</span>
                             </label>
-                            <input 
-                                type="text" 
-                                id="day_name" 
-                                name="day_name" 
+                            <input
+                                type="text"
+                                id="day_name"
+                                name="day_name"
                                 value="{{ old('day_name', $competitionDay->day_name) }}"
                                 required
                                 placeholder="例：1日目 -実施準備、競技A-"
@@ -77,10 +77,10 @@
                             <label for="date" class="block text-sm font-semibold text-gray-700 mb-2">
                                 実施日 <span class="text-red-500">*</span>
                             </label>
-                            <input 
-                                type="date" 
-                                id="date" 
-                                name="date" 
+                            <input
+                                type="date"
+                                id="date"
+                                name="date"
                                 value="{{ old('date', $competitionDay->date->format('Y-m-d')) }}"
                                 min="{{ $competition->start_date->format('Y-m-d') }}"
                                 max="{{ $competition->end_date->format('Y-m-d') }}"
@@ -97,11 +97,11 @@
 
                         <!-- フォームボタン -->
                         <div class="flex items-center justify-between pt-6 border-t border-gray-200">
-                            <a href="{{ route('admin.competitions.competition-days.show', [$competition, $competitionDay]) }}" 
+                            <a href="{{ route('admin.competitions.competition-days.show', [$competition, $competitionDay]) }}"
                                class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-200">
                                 キャンセル
                             </a>
-                            <button 
+                            <button
                                 type="submit"
                                 class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-200"
                             >

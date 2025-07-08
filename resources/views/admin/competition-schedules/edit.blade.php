@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>スケジュール編集 - {{ $competitionDay->day_name }} - SkillJapan Tools</title>
+    <title>スケジュール編集 - {{ $competitionDay->day_name }} - SJT-CP</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -18,7 +18,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
                             </svg>
                         </div>
-                        <h1 class="text-xl font-bold text-gray-900">SkillJapan Tools</h1>
+                        <h1 class="text-xl font-bold text-gray-900">SJT-CP</h1>
                     </a>
                     <span class="ml-4 text-gray-400">|</span>
                     <a href="{{ route('admin.competitions.competition-days.show', [$competitionDay->competition, $competitionDay]) }}" class="ml-4 text-gray-600 hover:text-gray-900">{{ $competitionDay->day_name }}</a>
@@ -57,10 +57,10 @@
                             <label for="start_time" class="block text-sm font-semibold text-gray-700 mb-2">
                                 開始時刻 <span class="text-red-500">*</span>
                             </label>
-                            <input 
-                                type="time" 
-                                id="start_time" 
-                                name="start_time" 
+                            <input
+                                type="time"
+                                id="start_time"
+                                name="start_time"
                                 value="{{ old('start_time', $competitionSchedule->start_time->format('H:i')) }}"
                                 required
                                 class="block w-full px-3 py-3 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 sm:text-sm"
@@ -75,10 +75,10 @@
                             <label for="content" class="block text-sm font-semibold text-gray-700 mb-2">
                                 内容 <span class="text-red-500">*</span>
                             </label>
-                            <input 
-                                type="text" 
-                                id="content" 
-                                name="content" 
+                            <input
+                                type="text"
+                                id="content"
+                                name="content"
                                 value="{{ old('content', $competitionSchedule->content) }}"
                                 required
                                 placeholder="例：開会式"
@@ -94,9 +94,9 @@
                             <label for="notes" class="block text-sm font-semibold text-gray-700 mb-2">
                                 備考
                             </label>
-                            <textarea 
-                                id="notes" 
-                                name="notes" 
+                            <textarea
+                                id="notes"
+                                name="notes"
                                 rows="3"
                                 placeholder="詳細な説明や注意事項があれば入力してください"
                                 class="block w-full px-3 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 sm:text-sm"
@@ -113,10 +113,10 @@
                             </label>
                             <div class="space-y-3">
                                 <div class="flex items-center">
-                                    <input 
-                                        type="checkbox" 
-                                        id="count_up" 
-                                        name="count_up" 
+                                    <input
+                                        type="checkbox"
+                                        id="count_up"
+                                        name="count_up"
                                         value="1"
                                         {{ old('count_up', $competitionSchedule->count_up) ? 'checked' : '' }}
                                         class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition duration-200"
@@ -127,10 +127,10 @@
                                     </label>
                                 </div>
                                 <div class="flex items-center">
-                                    <input 
-                                        type="checkbox" 
-                                        id="auto_advance" 
-                                        name="auto_advance" 
+                                    <input
+                                        type="checkbox"
+                                        id="auto_advance"
+                                        name="auto_advance"
                                         value="1"
                                         {{ old('auto_advance', $competitionSchedule->auto_advance) ? 'checked' : '' }}
                                         class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition duration-200"
@@ -145,11 +145,11 @@
 
                         <!-- フォームボタン -->
                         <div class="flex items-center justify-between pt-6 border-t border-gray-200">
-                            <a href="{{ route('admin.competitions.competition-days.show', [$competitionDay->competition, $competitionDay]) }}" 
+                            <a href="{{ route('admin.competitions.competition-days.show', [$competitionDay->competition, $competitionDay]) }}"
                                class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-200">
                                 キャンセル
                             </a>
-                            <button 
+                            <button
                                 type="submit"
                                 class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-200"
                             >

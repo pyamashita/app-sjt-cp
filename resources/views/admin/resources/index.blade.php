@@ -75,16 +75,7 @@
     <!-- データテーブル -->
     <x-data-table
         :headers="['リソース名', 'ファイル名', 'カテゴリ', 'サイズ', '公開状態', '登録日']"
-        :rows="$resources->map(function($resource) {
-            return [
-                $resource->name,
-                $resource->original_name,
-                $resource->category ? App\Models\Resource::getCategories()[$resource->category] : '-',
-                $resource->getFormattedSize(),
-                $resource->is_public ? '<span class=\"inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800\">公開</span>' : '<span class=\"inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800\">非公開</span>',
-                $resource->created_at->format('Y/m/d H:i')
-            ];
-        })->toArray()"
+        :rows="$tableRows"
         :actions="[
             ['label' => '詳細', 'url' => 'admin.resources.show', 'class' => 'text-blue-600 hover:text-blue-800'],
             ['label' => '編集', 'url' => 'admin.resources.edit', 'class' => 'text-green-600 hover:text-green-800'],

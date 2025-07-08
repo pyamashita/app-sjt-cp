@@ -74,16 +74,7 @@
     <!-- データテーブル -->
     <x-data-table
         :headers="['トークン名', '権限', '状態', '有効期限', '最終使用', '作成日']"
-        :rows="$tokens->map(function($token) {
-            return [
-                $token->name,
-                implode(', ', array_map(fn($perm) => App\Models\ApiToken::getPermissions()[$perm] ?? $perm, $token->permissions ?? [])),
-                $token->is_active ? '<span class=\"inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800\">有効</span>' : '<span class=\"inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800\">無効</span>',
-                $token->expires_at ? $token->expires_at->format('Y/m/d H:i') : '無期限',
-                $token->last_used_at ? $token->last_used_at->format('Y/m/d H:i') : '未使用',
-                $token->created_at->format('Y/m/d H:i')
-            ];
-        })->toArray()"
+        :rows="$tableRows"
         :actions="[
             ['label' => '詳細', 'url' => 'admin.api-tokens.show', 'class' => 'text-blue-600 hover:text-blue-800'],
             ['label' => '編集', 'url' => 'admin.api-tokens.edit', 'class' => 'text-green-600 hover:text-green-800'],

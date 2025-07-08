@@ -8,6 +8,8 @@ use App\Http\Controllers\Admin\CompetitionDayController;
 use App\Http\Controllers\Admin\CompetitionScheduleController;
 use App\Http\Controllers\Admin\PlayerController;
 use App\Http\Controllers\Admin\CompetitionPlayerController;
+use App\Http\Controllers\Admin\DeviceController;
+use App\Http\Controllers\Admin\CompetitionDeviceController;
 
 // 認証系ルート
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -55,6 +57,18 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::post('competition-players/import', [CompetitionPlayerController::class, 'import'])->name('competition-players.import');
     Route::post('competition-players/generate-player-numbers', [CompetitionPlayerController::class, 'generatePlayerNumbers'])
         ->name('competition-players.generate-player-numbers');
+    
+    // 端末管理
+    Route::resource('devices', DeviceController::class);
+    Route::get('devices/export', [DeviceController::class, 'export'])->name('devices.export');
+    Route::post('devices/import', [DeviceController::class, 'import'])->name('devices.import');
+    
+    // 競技端末割り当て管理
+    Route::resource('competition-devices', CompetitionDeviceController::class);
+    Route::get('competition-devices/export', [CompetitionDeviceController::class, 'export'])->name('competition-devices.export');
+    Route::post('competition-devices/import', [CompetitionDeviceController::class, 'import'])->name('competition-devices.import');
+    Route::get('api/competition-devices/player-numbers', [CompetitionDeviceController::class, 'getAvailablePlayerNumbers'])
+        ->name('api.competition-devices.player-numbers');
 });
 
 // ルートアクセス時のリダイレクト

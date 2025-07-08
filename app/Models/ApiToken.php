@@ -174,4 +174,51 @@ class ApiToken extends Model
         return $query->whereJsonContains('permissions', $permission)
             ->orWhereJsonContains('permissions', 'manage');
     }
+
+    /**
+     * 検索スコープ
+     */
+    public function scopeSearch($query, $term)
+    {
+        return $query->where(function ($q) use ($term) {
+            $q->where('name', 'like', "%{$term}%")
+              ->orWhere('description', 'like', "%{$term}%");
+        });
+    }
+
+    /**
+     * CSV出力用のヘッダー
+     */
+    public static function getCsvHeaders(): array
+    {
+        return [
+            'ID',
+            'トークン名',
+            '権限',
+            '状態',
+            '有効期限',
+            '許可IP',
+            '最終使用',
+            '説明',
+            '作成日',
+        ];
+    }
+
+    /**
+     * CSV出力用のデータ配列
+     */
+    public function toCsvArray(): array
+    {
+        return [
+            $this->id,
+            $this->name,
+            implode(', ', array_map(fn($perm) => self::getPermissions()[$perm] ?? $perm, $this->permissions ?? [])),
+            $this->is_active ? '有効' : '無効',
+            $this->expires_at ? $this->expires_at->format('Y-m-d H:i:s') : '無期限',
+            $this->allowed_ips ? implode(', ', $this->allowed_ips) : 'すべて許可',
+            $this->last_used_at ? $this->last_used_at->format('Y-m-d H:i:s') : '未使用',
+            $this->description ?? '',
+            $this->created_at->format('Y-m-d H:i:s'),
+        ];
+    }
 }

@@ -42,7 +42,7 @@ class ResourceController extends Controller
                 $resource->name,
                 $resource->original_name,
                 $resource->category ? Resource::getCategories()[$resource->category] : '-',
-                $resource->getFormattedSize(),
+                $resource->formatted_size,
                 $resource->is_public ? '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">公開</span>' : '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">非公開</span>',
                 $resource->created_at->format('Y/m/d H:i')
             ];

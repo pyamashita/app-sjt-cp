@@ -50,7 +50,7 @@
                     
                     <div class="mt-2 p-4 bg-gray-50 rounded-md">
                         <p class="text-sm text-gray-600">現在のファイル: {{ $resource->original_name }}</p>
-                        <p class="text-sm text-gray-600">サイズ: {{ $resource->getFormattedSize() }}</p>
+                        <p class="text-sm text-gray-600">サイズ: {{ $resource->formatted_size }}</p>
                         <p class="text-sm text-gray-600">MIMEタイプ: {{ $resource->mime_type }}</p>
                     </div>
                 </div>

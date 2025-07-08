@@ -16,7 +16,7 @@
                 ['label' => 'リソース名', 'value' => $resource->name],
                 ['label' => 'ファイル名', 'value' => $resource->original_name],
                 ['label' => 'MIMEタイプ', 'value' => $resource->mime_type],
-                ['label' => 'ファイルサイズ', 'value' => $resource->getFormattedSize()],
+                ['label' => 'ファイルサイズ', 'value' => $resource->formatted_size],
                 ['label' => 'カテゴリ', 'value' => $resource->category ? App\Models\Resource::getCategories()[$resource->category] : '-'],
                 ['label' => '公開状態', 'value' => $resource->is_public ? '公開' : '非公開', 'badge' => true, 'badgeClass' => $resource->is_public ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'],
                 ['label' => '登録日', 'value' => $resource->created_at->format('Y年m月d日 H:i')]

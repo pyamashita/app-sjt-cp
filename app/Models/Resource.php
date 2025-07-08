@@ -177,4 +177,40 @@ class Resource extends Model
     {
         return $query->where('is_public', $isPublic);
     }
+
+    /**
+     * CSV出力用のヘッダー
+     */
+    public static function getCsvHeaders(): array
+    {
+        return [
+            'ID',
+            'リソース名',
+            'ファイル名',
+            'MIMEタイプ',
+            'サイズ',
+            'カテゴリ',
+            '公開状態',
+            '説明',
+            '登録日',
+        ];
+    }
+
+    /**
+     * CSV出力用のデータ配列
+     */
+    public function toCsvArray(): array
+    {
+        return [
+            $this->id,
+            $this->name,
+            $this->original_name,
+            $this->mime_type,
+            $this->formatted_size,
+            $this->category ? self::getCategories()[$this->category] : '',
+            $this->is_public ? '公開' : '非公開',
+            $this->description ?? '',
+            $this->created_at->format('Y-m-d H:i:s'),
+        ];
+    }
 }

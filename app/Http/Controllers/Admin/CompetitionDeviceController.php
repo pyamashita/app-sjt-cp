@@ -92,6 +92,18 @@ class CompetitionDeviceController extends Controller
             'player_number' => 'required|string|max:255',
         ]);
 
+        // 選手番号の存在確認
+        $playerExists = CompetitionPlayer::where([
+            'competition_id' => $validated['competition_id'],
+            'player_number' => $validated['player_number']
+        ])->exists();
+
+        if (!$playerExists) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'この選手番号はこの大会に存在しません。');
+        }
+
         // 重複チェック
         $exists = CompetitionDevice::where('competition_id', $validated['competition_id'])
             ->where(function ($query) use ($validated) {
@@ -152,6 +164,18 @@ class CompetitionDeviceController extends Controller
         $validated = $request->validate([
             'player_number' => 'required|string|max:255',
         ]);
+
+        // 選手番号の存在確認
+        $playerExists = CompetitionPlayer::where([
+            'competition_id' => $competitionDevice->competition_id,
+            'player_number' => $validated['player_number']
+        ])->exists();
+
+        if (!$playerExists) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'この選手番号はこの大会に存在しません。');
+        }
 
         // 重複チェック（自分自身を除く）
         $exists = CompetitionDevice::where('competition_id', $competitionDevice->competition_id)
@@ -277,6 +301,17 @@ class CompetitionDeviceController extends Controller
                 // 必須項目のチェック
                 if (empty($playerNumber) || empty($deviceName)) {
                     $errors[] = '行 ' . ($index + 2) . ': 必須項目が不足しています';
+                    continue;
+                }
+
+                // 選手番号の存在確認
+                $playerExists = CompetitionPlayer::where([
+                    'competition_id' => $competitionId,
+                    'player_number' => $playerNumber
+                ])->exists();
+
+                if (!$playerExists) {
+                    $errors[] = '行 ' . ($index + 2) . ': 選手番号「' . $playerNumber . '」はこの大会に存在しません';
                     continue;
                 }
 

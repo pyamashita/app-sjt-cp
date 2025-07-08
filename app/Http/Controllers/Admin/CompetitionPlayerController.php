@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Competition;
 use App\Models\CompetitionPlayer;
+use App\Models\CompetitionDevice;
 use App\Models\Player;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
@@ -195,17 +196,46 @@ class CompetitionPlayerController extends Controller
                 ->withInput();
         }
 
-        $competitionPlayer->update($validated);
+        // 選手番号が変更される場合、関連する端末割り当ても更新
+        $oldPlayerNumber = $competitionPlayer->player_number;
+        
+        DB::beginTransaction();
+        try {
+            $competitionPlayer->update($validated);
 
-        // JSON APIリクエストの場合
-        if ($request->expectsJson()) {
-            return response()->json([
-                'message' => '選手番号を更新しました。'
-            ]);
+            // 選手番号が変更された場合、端末割り当ての選手番号も更新
+            if ($oldPlayerNumber !== $validated['player_number']) {
+                CompetitionDevice::where([
+                    'competition_id' => $competitionPlayer->competition_id,
+                    'player_number' => $oldPlayerNumber
+                ])->update(['player_number' => $validated['player_number']]);
+            }
+
+            DB::commit();
+
+            // JSON APIリクエストの場合
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => '選手番号を更新しました。'
+                ]);
+            }
+
+            return redirect()->route('admin.competition-players.index', ['competition_id' => $competitionPlayer->competition_id])
+                ->with('success', '選手番号を更新しました。');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => '選手番号の更新に失敗しました。'
+                ], 500);
+            }
+            
+            return redirect()->back()
+                ->with('error', '選手番号の更新に失敗しました。')
+                ->withInput();
         }
-
-        return redirect()->route('admin.competition-players.index', ['competition_id' => $competitionPlayer->competition_id])
-            ->with('success', '選手番号を更新しました。');
     }
 
     /**

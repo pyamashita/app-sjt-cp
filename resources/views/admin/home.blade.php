@@ -140,18 +140,14 @@
                                class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-800 rounded-md transition-colors duration-200">
                                 大会選手管理
                             </a>
-                            <a href="{{ route('admin.competition-devices.index') }}" 
-                               class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-800 rounded-md transition-colors duration-200">
-                                競技端末割り当て
-                            </a>
                         </div>
                     </div>
                 </div>
 
                 <!-- 端末管理 -->
-                <a href="{{ route('admin.devices.index') }}" class="block bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                <div class="bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-all duration-300">
                     <div class="p-6">
-                        <div class="flex items-center">
+                        <div class="flex items-center mb-4">
                             <div class="flex-shrink-0">
                                 <div class="h-12 w-12 bg-orange-100 rounded-lg flex items-center justify-center">
                                     <svg class="h-6 w-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -164,15 +160,20 @@
                                 <p class="text-sm text-gray-600">端末情報と大会割り当てを管理</p>
                             </div>
                         </div>
-                        <div class="mt-4">
-                            <div class="flex items-center justify-between">
-                                <span class="text-orange-600 text-sm font-medium">
-                                    開く →
-                                </span>
-                            </div>
+                        
+                        <!-- サブメニュー -->
+                        <div class="space-y-2">
+                            <a href="{{ route('admin.devices.index') }}" 
+                               class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-800 rounded-md transition-colors duration-200">
+                                端末一覧
+                            </a>
+                            <a href="{{ route('admin.competition-devices.index') }}" 
+                               class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-800 rounded-md transition-colors duration-200">
+                                競技端末割り当て
+                            </a>
                         </div>
                     </div>
-                </a>
+                </div>
 
                 <!-- システム管理 -->
                 <div class="bg-white overflow-hidden shadow-lg rounded-xl opacity-75 cursor-not-allowed">

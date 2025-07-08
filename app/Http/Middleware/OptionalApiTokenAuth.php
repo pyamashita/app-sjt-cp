@@ -16,7 +16,8 @@ class OptionalApiTokenAuth
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $token = $request->bearerToken();
+        // Bearer トークンまたはURLパラメータからトークンを取得
+        $token = $request->bearerToken() ?? $request->input('token');
 
         if ($token) {
             $hashedToken = hash('sha256', $token);

@@ -39,6 +39,19 @@ class ApiTokenController extends Controller
 
         $tokens = $query->orderBy('created_at', 'desc')->paginate(20);
 
+        // JSON形式でのレスポンスに対応
+        if ($request->input('format') === 'json') {
+            return response()->json([
+                'tokens' => $tokens->map(function($token) {
+                    return [
+                        'id' => $token->id,
+                        'name' => $token->name,
+                        'is_active' => $token->is_active,
+                    ];
+                })
+            ]);
+        }
+
         // データテーブル用の行データを準備
         $tableRows = $tokens->map(function($token) {
             return [

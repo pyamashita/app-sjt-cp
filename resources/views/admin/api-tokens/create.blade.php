@@ -2,17 +2,13 @@
 
 @section('title', 'APIトークン新規作成 - SJT-CP')
 
-@push('styles')
-<base href="{{ url('/') }}/">
-@endpush
-
 @section('content')
     <div class="mb-6">
         <h1 class="text-2xl font-bold text-gray-900">APIトークン新規作成</h1>
         <p class="mt-2 text-sm text-gray-600">新しいAPIトークンを作成します</p>
     </div>
 
-    <form method="POST" action="../api-tokens" id="token-form">
+    <form method="POST" action="{{ route('admin.api-tokens.store') }}">
         @csrf
         
         @if ($errors->any())
@@ -37,111 +33,121 @@
             </div>
         @endif
         
-        <x-form-card title="基本情報">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <x-form-field
-                    name="name"
-                    label="トークン名"
-                    type="text"
-                    :value="old('name')"
-                    placeholder="トークン名を入力"
-                    required
-                />
-                
-                <x-form-field
-                    name="expires_at"
-                    label="有効期限"
-                    type="datetime-local"
-                    :value="old('expires_at')"
-                    help-text="空の場合は無期限"
-                />
-                
-                <x-form-field
-                    name="description"
-                    label="説明"
-                    type="textarea"
-                    :value="old('description')"
-                    placeholder="このトークンの用途を説明"
-                    col-span="2"
-                />
+        <!-- 基本情報 -->
+        <div class="bg-white shadow-lg rounded-xl overflow-hidden mb-6">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">基本情報</h3>
             </div>
-        </x-form-card>
-
-        <x-form-card title="権限設定">
-            <div class="space-y-4">
-                <p class="text-sm text-gray-600">このトークンに付与する権限を選択してください</p>
-                
-                @foreach(App\Models\ApiToken::getPermissions() as $key => $label)
-                    <div class="flex items-center">
-                        <input type="checkbox" 
-                               name="permissions[]" 
-                               id="permission_{{ $key }}"
-                               value="{{ $key }}"
-                               {{ in_array($key, old('permissions', [])) ? 'checked' : '' }}
-                               class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded">
-                        <label for="permission_{{ $key }}" class="ml-2 block text-sm text-gray-700">
-                            {{ $label }}
-                        </label>
-                    </div>
-                @endforeach
-            </div>
-        </x-form-card>
-
-        <x-form-card title="アクセス制御">
-            <div class="space-y-4">
-                <p class="text-sm text-gray-600">このトークンからのアクセスを許可するIPアドレスを指定できます</p>
-                
-                <div id="ip-addresses">
-                    @forelse(old('allowed_ips', ['']) as $index => $ip)
-                        <div class="flex items-center space-x-2 ip-address-row">
-                            <input type="text" 
-                                   name="allowed_ips[]" 
-                                   value="{{ $ip }}"
-                                   placeholder="192.168.1.100"
-                                   class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
-                            <button type="button" 
-                                    onclick="removeIpAddress(this)"
-                                    class="bg-red-600 text-white px-3 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
-                                削除
-                            </button>
-                        </div>
-                    @empty
-                        <div class="flex items-center space-x-2 ip-address-row">
-                            <input type="text" 
-                                   name="allowed_ips[]" 
-                                   placeholder="192.168.1.100"
-                                   class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
-                            <button type="button" 
-                                    onclick="removeIpAddress(this)"
-                                    class="bg-red-600 text-white px-3 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
-                                削除
-                            </button>
-                        </div>
-                    @endforelse
+            <div class="px-6 py-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <x-form-field
+                        name="name"
+                        label="トークン名"
+                        type="text"
+                        :value="old('name')"
+                        placeholder="トークン名を入力"
+                        required
+                    />
+                    
+                    <x-form-field
+                        name="expires_at"
+                        label="有効期限"
+                        type="datetime-local"
+                        :value="old('expires_at')"
+                        help-text="空の場合は無期限"
+                    />
+                    
+                    <x-form-field
+                        name="description"
+                        label="説明"
+                        type="textarea"
+                        :value="old('description')"
+                        placeholder="このトークンの用途を説明"
+                        col-span="2"
+                    />
                 </div>
-                
-                <button type="button" 
-                        onclick="addIpAddress()"
-                        class="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500">
-                    IPアドレスを追加
-                </button>
             </div>
-        </x-form-card>
+        </div>
 
-        <x-form-card title="その他の設定">
-            <div class="flex items-center">
-                <input type="checkbox" 
-                       name="is_active" 
-                       id="is_active"
-                       value="1"
-                       {{ old('is_active', true) ? 'checked' : '' }}
-                       class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded">
-                <label for="is_active" class="ml-2 block text-sm text-gray-700">
-                    有効にする
-                </label>
+        <!-- 権限設定 -->
+        <div class="bg-white shadow-lg rounded-xl overflow-hidden mb-6">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">権限設定</h3>
             </div>
-        </x-form-card>
+            <div class="px-6 py-8">
+                <div class="space-y-4">
+                    <p class="text-sm text-gray-600">このトークンに付与する権限を選択してください</p>
+                    
+                    @foreach(App\Models\ApiToken::getPermissions() as $key => $label)
+                        <div class="flex items-center">
+                            <input type="checkbox" 
+                                   name="permissions[]" 
+                                   id="permission_{{ $key }}"
+                                   value="{{ $key }}"
+                                   {{ in_array($key, old('permissions', [])) ? 'checked' : '' }}
+                                   class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded">
+                            <label for="permission_{{ $key }}" class="ml-2 block text-sm text-gray-700">
+                                {{ $label }}
+                            </label>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
 
+        <!-- アクセス制御 -->
+        <div class="bg-white shadow-lg rounded-xl overflow-hidden mb-6">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">アクセス制御</h3>
+            </div>
+            <div class="px-6 py-8">
+                <div class="space-y-4">
+                    <p class="text-sm text-gray-600">このトークンからのアクセスを許可するIPアドレスを指定できます（オプション）</p>
+                    
+                    <div id="ip-addresses" class="space-y-2">
+                        <div class="flex items-center space-x-2 ip-address-row">
+                            <input type="text" 
+                                   name="allowed_ips[]" 
+                                   placeholder="192.168.1.100"
+                                   class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            <button type="button" 
+                                    onclick="removeIpAddress(this)"
+                                    class="bg-red-600 text-white px-3 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                                削除
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <button type="button" 
+                            onclick="addIpAddress()"
+                            class="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                        IPアドレスを追加
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- その他の設定 -->
+        <div class="bg-white shadow-lg rounded-xl overflow-hidden mb-6">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">その他の設定</h3>
+            </div>
+            <div class="px-6 py-8">
+                <div class="flex items-center">
+                    <input type="checkbox" 
+                           name="is_active" 
+                           id="is_active"
+                           value="1"
+                           {{ old('is_active', true) ? 'checked' : '' }}
+                           class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded">
+                    <label for="is_active" class="ml-2 block text-sm text-gray-700">
+                        有効にする
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- 送信ボタン -->
         <div class="mt-6 flex items-center justify-end space-x-3">
             <a href="{{ route('admin.api-tokens.index') }}" 
                class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500">
@@ -181,21 +187,5 @@ function removeIpAddress(button) {
         button.parentElement.remove();
     }
 }
-
-// フォーム送信時にaction属性を確認
-document.getElementById('token-form').addEventListener('submit', function(e) {
-    e.preventDefault(); // デフォルトの送信を防ぐ
-    
-    console.log('Original form action:', this.action);
-    console.log('Form method:', this.method);
-    
-    // 強制的に正しいURLに設定
-    this.action = "http://localhost/admin/api-tokens";
-    
-    console.log('New form action:', this.action);
-    
-    // フォームを再送信
-    this.submit();
-});
 </script>
 @endpush

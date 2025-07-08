@@ -64,20 +64,23 @@ class ResourceController extends Controller
     {
         $apiToken = $request->get('api_token');
         
-        // 非公開リソースの場合は認証が必要
-        if (!$resource->is_public && !$apiToken) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'このリソースにアクセスするには認証が必要です。',
-            ], 401);
-        }
+        // 非公開リソースのアクセス制御チェック
+        if (!$resource->is_public) {
+            if (!$apiToken) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'このリソースにアクセスするには認証が必要です。',
+                ], 401);
+            }
 
-        // 非公開リソースで管理権限がない場合は拒否
-        if (!$resource->is_public && !$apiToken->hasPermission('manage')) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'このリソースにアクセスする権限がありません。',
-            ], 403);
+            // リソースにアクセス制御が設定されている場合はチェック
+            $hasAccess = $this->checkResourceAccess($resource, $apiToken, $request);
+            if (!$hasAccess) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'このリソースにアクセスする権限がありません。',
+                ], 403);
+            }
         }
 
         $resource->load(['accessControls']);
@@ -106,20 +109,23 @@ class ResourceController extends Controller
     {
         $apiToken = $request->get('api_token');
         
-        // 非公開リソースの場合は認証が必要
-        if (!$resource->is_public && !$apiToken) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'このリソースにアクセスするには認証が必要です。',
-            ], 401);
-        }
+        // 非公開リソースのアクセス制御チェック
+        if (!$resource->is_public) {
+            if (!$apiToken) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'このリソースにアクセスするには認証が必要です。',
+                ], 401);
+            }
 
-        // 非公開リソースで管理権限がない場合は拒否
-        if (!$resource->is_public && !$apiToken->hasPermission('manage')) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'このリソースにアクセスする権限がありません。',
-            ], 403);
+            // リソースにアクセス制御が設定されている場合はチェック
+            $hasAccess = $this->checkResourceAccess($resource, $apiToken, $request);
+            if (!$hasAccess) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'このリソースにアクセスする権限がありません。',
+                ], 403);
+            }
         }
 
         if (!$resource->file_path || !Storage::disk('public')->exists($resource->file_path)) {
@@ -147,20 +153,23 @@ class ResourceController extends Controller
     {
         $apiToken = $request->get('api_token');
         
-        // 非公開リソースの場合は認証が必要
-        if (!$resource->is_public && !$apiToken) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'このリソースにアクセスするには認証が必要です。',
-            ], 401);
-        }
+        // 非公開リソースのアクセス制御チェック
+        if (!$resource->is_public) {
+            if (!$apiToken) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'このリソースにアクセスするには認証が必要です。',
+                ], 401);
+            }
 
-        // 非公開リソースで管理権限がない場合は拒否
-        if (!$resource->is_public && !$apiToken->hasPermission('manage')) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'このリソースにアクセスする権限がありません。',
-            ], 403);
+            // リソースにアクセス制御が設定されている場合はチェック
+            $hasAccess = $this->checkResourceAccess($resource, $apiToken, $request);
+            if (!$hasAccess) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'このリソースにアクセスする権限がありません。',
+                ], 403);
+            }
         }
 
         if (!$resource->file_path || !Storage::disk('public')->exists($resource->file_path)) {
@@ -221,5 +230,38 @@ class ResourceController extends Controller
             'status' => 'success',
             'data' => $stats,
         ]);
+    }
+
+    /**
+     * リソースのアクセス制御をチェック
+     */
+    private function checkResourceAccess(Resource $resource, ?ApiToken $apiToken, Request $request): bool
+    {
+        $accessControls = $resource->accessControls()->where('is_active', true)->get();
+        
+        // アクセス制御が設定されていない場合はアクセス拒否
+        if ($accessControls->isEmpty()) {
+            return false;
+        }
+
+        foreach ($accessControls as $control) {
+            switch ($control->type) {
+                case 'api_token':
+                    // 指定されたAPIトークンかチェック
+                    if ($apiToken && $apiToken->id == $control->value) {
+                        return true;
+                    }
+                    break;
+                    
+                case 'ip_whitelist':
+                    // IPアドレスチェック
+                    if ($request->ip() === $control->value) {
+                        return true;
+                    }
+                    break;
+            }
+        }
+
+        return false;
     }
 }

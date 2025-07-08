@@ -113,7 +113,7 @@ class ResourceController extends Controller
      */
     public function show(Resource $resource)
     {
-        $resource->load(['accessControls', 'accessLogs' => function ($query) {
+        $resource->load(['accessControls.apiToken', 'accessLogs' => function ($query) {
             $query->orderBy('created_at', 'desc')->limit(10);
         }]);
 
@@ -220,9 +220,31 @@ class ResourceController extends Controller
     public function addAccessControl(Request $request, Resource $resource)
     {
         $validated = $request->validate([
-            'type' => 'required|string|in:ip_whitelist,token_required',
+            'type' => 'required|string|in:ip_whitelist,api_token,token_required',
             'value' => 'required|string',
+        ], [
+            'type.required' => 'タイプを選択してください。',
+            'type.in' => '有効なタイプを選択してください。',
+            'value.required' => '値を入力してください。',
         ]);
+
+        // APIトークンの場合、存在確認
+        if ($validated['type'] === 'api_token') {
+            $request->validate([
+                'value' => 'exists:api_tokens,id',
+            ], [
+                'value.exists' => '選択されたAPIトークンが見つかりません。',
+            ]);
+        }
+
+        // IPアドレスの場合、形式確認
+        if ($validated['type'] === 'ip_whitelist') {
+            $request->validate([
+                'value' => 'ip',
+            ], [
+                'value.ip' => '有効なIPアドレスを入力してください。',
+            ]);
+        }
 
         $resource->accessControls()->create([
             'type' => $validated['type'],

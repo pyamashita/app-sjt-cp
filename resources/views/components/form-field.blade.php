@@ -16,7 +16,7 @@
         {{ $label }} @if($required)<span class="text-red-500">*</span>@endif
     </label>
     
-    @if($type === 'text' || $type === 'email' || $type === 'password' || $type === 'date' || $type === 'url')
+    @if($type === 'text' || $type === 'email' || $type === 'password' || $type === 'date' || $type === 'datetime-local' || $type === 'url')
         <input type="{{ $type }}" 
                id="{{ $name }}" 
                name="{{ $name }}" 

@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Admin\HomeController;
 use App\Http\Controllers\Admin\CompetitionController;
@@ -82,9 +83,20 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     // APIトークン管理
     Route::get('api-tokens/export', [ApiTokenController::class, 'export'])->name('api-tokens.export');
     Route::get('api-tokens/debug', function() { return view('admin.api-tokens.debug'); })->name('api-tokens.debug');
+    Route::get('api-tokens/test', function() { return view('admin.api-tokens.test'); })->name('api-tokens.test');
+    Route::get('api-tokens/simple-test', function() { return view('admin.api-tokens.simple-test'); })->name('api-tokens.simple-test');
+    
+    // テスト用の直接POSTルート
+    Route::post('api-tokens-test-store', function(Request $request) {
+        return response()->json(['message' => 'POST received', 'data' => $request->all()]);
+    })->name('api-tokens.test-store');
+    
+    // 明示的なstoreルートを最初に定義
+    Route::post('api-tokens', [ApiTokenController::class, 'store'])->name('api-tokens.store');
+    
     Route::post('api-tokens/{apiToken}/regenerate', [ApiTokenController::class, 'regenerate'])->name('api-tokens.regenerate');
     Route::post('api-tokens/{apiToken}/toggle', [ApiTokenController::class, 'toggle'])->name('api-tokens.toggle');
-    Route::resource('api-tokens', ApiTokenController::class);
+    Route::resource('api-tokens', ApiTokenController::class)->except(['store']);
 });
 
 // ルートアクセス時のリダイレクト

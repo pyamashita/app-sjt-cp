@@ -67,4 +67,17 @@ class ResourceRequest extends FormRequest
             'category' => 'カテゴリ',
         ];
     }
+
+    /**
+     * Prepare the data for validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        // チェックボックスの処理（チェックされていない場合は false）
+        if (!$this->has('is_public')) {
+            $this->merge(['is_public' => false]);
+        } else {
+            $this->merge(['is_public' => $this->boolean('is_public')]);
+        }
+    }
 }

@@ -33,12 +33,21 @@ class ResourceAccessControl extends Model
     }
 
     /**
+     * APIトークンとのリレーション（typeがapi_tokenの場合）
+     */
+    public function apiToken(): BelongsTo
+    {
+        return $this->belongsTo(ApiToken::class, 'value');
+    }
+
+    /**
      * アクセス制御タイプの選択肢
      */
     public static function getTypes(): array
     {
         return [
             'ip_whitelist' => 'IP許可リスト',
+            'api_token' => 'APIトークン',
             'token_required' => 'トークン必須',
             'time_limited' => '時間制限',
         ];

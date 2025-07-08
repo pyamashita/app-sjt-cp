@@ -65,7 +65,118 @@
                 ['label' => 'ダウンロード URL', 'value' => url('/api/resources/' . $resource->id . '/download')],
                 ['label' => 'ストリーミング URL', 'value' => url('/api/resources/' . $resource->id . '/stream')]
             ]"
-        />
+        >
+            <div class="mt-4 border-t pt-4">
+                <h4 class="text-sm font-medium text-gray-700 mb-3">APIアクセス方法</h4>
+                
+                @if($resource->is_public)
+                <!-- 公開リソースの場合 -->
+                <div class="space-y-3">
+                    <p class="text-xs text-gray-600 mb-2">このリソースは公開されているため、認証なしでアクセスできます。</p>
+                    
+                    <div>
+                        <p class="text-xs text-gray-600 mb-1">リソース情報を取得:</p>
+                        <code class="block bg-gray-100 p-2 rounded text-xs">
+                            curl {{ url('/api/resources/' . $resource->id) }}
+                        </code>
+                    </div>
+                    
+                    <div>
+                        <p class="text-xs text-gray-600 mb-1">ファイルをダウンロード:</p>
+                        <code class="block bg-gray-100 p-2 rounded text-xs">
+                            curl -O {{ url('/api/resources/' . $resource->id . '/download') }}
+                        </code>
+                    </div>
+                </div>
+                @else
+                <!-- 非公開リソースの場合 -->
+                <div class="space-y-3">
+                    <p class="text-xs text-gray-600 mb-2">このリソースは非公開のため、APIトークンが必要です。</p>
+                    
+                    <div class="bg-gray-50 p-3 rounded mb-3">
+                        <p class="text-xs text-gray-700 font-medium mb-2">APIトークンの送信方法:</p>
+                        
+                        <div class="mb-3">
+                            <p class="text-xs text-gray-600 mb-1"><strong>方法1: Authorizationヘッダー（推奨）</strong></p>
+                            <code class="block bg-white p-2 rounded text-xs">
+                                Authorization: Bearer YOUR_API_TOKEN
+                            </code>
+                        </div>
+                        
+                        <div>
+                            <p class="text-xs text-gray-600 mb-1"><strong>方法2: URLパラメータ</strong></p>
+                            <code class="block bg-white p-2 rounded text-xs">
+                                ?token=YOUR_API_TOKEN
+                            </code>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <p class="text-xs text-gray-600 mb-1">リソース情報を取得（Authorizationヘッダー使用）:</p>
+                        <code class="block bg-gray-100 p-2 rounded text-xs">
+                            curl -H "Authorization: Bearer YOUR_API_TOKEN" {{ url('/api/resources/' . $resource->id) }}
+                        </code>
+                    </div>
+                    
+                    <div>
+                        <p class="text-xs text-gray-600 mb-1">ファイルをダウンロード（Authorizationヘッダー使用）:</p>
+                        <code class="block bg-gray-100 p-2 rounded text-xs">
+                            curl -H "Authorization: Bearer YOUR_API_TOKEN" -O {{ url('/api/resources/' . $resource->id . '/download') }}
+                        </code>
+                    </div>
+                    
+                    <div>
+                        <p class="text-xs text-gray-600 mb-1">ファイルをダウンロード（URLパラメータ使用）:</p>
+                        <code class="block bg-gray-100 p-2 rounded text-xs">
+                            curl -O "{{ url('/api/resources/' . $resource->id . '/download') }}?token=YOUR_API_TOKEN"
+                        </code>
+                    </div>
+                </div>
+                @endif
+                    
+                    @if(!$resource->is_public)
+                    <div class="bg-yellow-50 p-3 rounded">
+                        <p class="text-xs text-yellow-800 font-medium mb-1">認証が必要です:</p>
+                        @if($resource->accessControls->where('type', 'api_token')->count() > 0)
+                        <p class="text-xs text-gray-700 mb-2">以下のAPIトークンのいずれかが必要です：</p>
+                        <ul class="list-disc list-inside text-xs text-gray-700 space-y-1 mb-3">
+                            @foreach($resource->accessControls->where('type', 'api_token') as $control)
+                                @if($control->apiToken)
+                                <li>{{ $control->apiToken->name }} (トークンID: {{ $control->apiToken->id }})</li>
+                                @endif
+                            @endforeach
+                        </ul>
+                        
+                        <p class="text-xs text-gray-700 font-medium mb-2">APIトークンの使用方法:</p>
+                        
+                        <p class="text-xs text-gray-600 mb-1">方法1: Authorizationヘッダー（推奨）</p>
+                        <code class="block bg-gray-100 p-2 rounded text-xs mb-3">
+                            curl -H "Authorization: Bearer YOUR_API_TOKEN" {{ url('/api/resources/' . $resource->id . '/download') }}
+                        </code>
+                        
+                        <p class="text-xs text-gray-600 mb-1">方法2: URLパラメータ</p>
+                        <code class="block bg-gray-100 p-2 rounded text-xs mb-3">
+                            curl "{{ url('/api/resources/' . $resource->id . '/download') }}?token=YOUR_API_TOKEN"
+                        </code>
+                        
+                        <div class="bg-blue-50 p-2 rounded mt-3">
+                            <p class="text-xs text-blue-800">
+                                <strong>注意:</strong> YOUR_API_TOKEN の部分を実際のトークン値に置き換えてください。
+                                トークン値はAPIトークン詳細画面で確認できます。
+                            </p>
+                        </div>
+                        @else
+                        <div class="bg-red-50 p-3 rounded">
+                            <p class="text-xs text-red-800 font-medium">アクセス制御が設定されていません</p>
+                            <p class="text-xs text-red-700 mt-1">このリソースは非公開で、アクセス制御が設定されていないため、どこからもアクセスできません。</p>
+                            <p class="text-xs text-red-700 mt-1">APIからアクセスするには、上記のフォームでAPIトークンまたはIPアドレスの制御を追加してください。</p>
+                        </div>
+                        @endif
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </x-detail-card>
     </div>
 
     <!-- アクセス制御 -->
@@ -83,9 +194,21 @@
                             <div class="flex items-center justify-between p-3 bg-gray-50 rounded-md">
                                 <div>
                                     <span class="text-sm font-medium">
-                                        {{ $control->type === 'ip_whitelist' ? 'IP許可' : 'トークン必須' }}
+                                        @if($control->type === 'ip_whitelist')
+                                            IP許可
+                                        @elseif($control->type === 'api_token')
+                                            APIトークン
+                                        @else
+                                            {{ $control->type }}
+                                        @endif
                                     </span>
-                                    <span class="text-sm text-gray-600 ml-2">{{ $control->value }}</span>
+                                    <span class="text-sm text-gray-600 ml-2">
+                                        @if($control->type === 'api_token' && $control->apiToken)
+                                            {{ $control->apiToken->name }}
+                                        @else
+                                            {{ $control->value }}
+                                        @endif
+                                    </span>
                                 </div>
                                 <form method="POST" action="{{ route('admin.resources.access-control.remove', [$resource, $control]) }}">
                                     @csrf
@@ -100,7 +223,10 @@
                         @endforeach
                     </div>
                 @else
-                    <p class="text-sm text-gray-600">アクセス制御が設定されていません。</p>
+                    <div class="bg-yellow-50 p-3 rounded">
+                        <p class="text-sm text-yellow-800 font-medium">アクセス制御が設定されていません</p>
+                        <p class="text-sm text-yellow-700 mt-1">このリソースは非公開のため、アクセス制御を設定しないとAPIからアクセスできません。</p>
+                    </div>
                 @endif
             </div>
 
@@ -110,17 +236,17 @@
                     @csrf
                     <div class="flex-1">
                         <label for="type" class="block text-sm font-medium text-gray-700 mb-1">タイプ</label>
-                        <select name="type" id="type" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        <select name="type" id="type" onchange="updateValueField()" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
                             <option value="ip_whitelist">IP許可</option>
-                            <option value="token_required">トークン必須</option>
+                            <option value="api_token">APIトークン</option>
                         </select>
                     </div>
-                    <div class="flex-1">
-                        <label for="value" class="block text-sm font-medium text-gray-700 mb-1">値</label>
+                    <div class="flex-1" id="value-container">
+                        <label for="value" class="block text-sm font-medium text-gray-700 mb-1">IPアドレス</label>
                         <input type="text" 
                                name="value" 
                                id="value"
-                               placeholder="IPアドレスまたは設定値"
+                               placeholder="192.168.1.100"
                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
                     </div>
                     <button type="submit" 
@@ -186,3 +312,47 @@
     </div>
     @endif
 @endsection
+
+@push('scripts')
+<script>
+function updateValueField() {
+    const typeSelect = document.getElementById('type');
+    const valueContainer = document.getElementById('value-container');
+    
+    if (typeSelect.value === 'api_token') {
+        // APIトークンを取得
+        fetch('/admin/api-tokens?format=json')
+            .then(response => response.json())
+            .then(data => {
+                valueContainer.innerHTML = `
+                    <label for="value" class="block text-sm font-medium text-gray-700 mb-1">APIトークン</label>
+                    <select name="value" id="value" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        <option value="">トークンを選択</option>
+                        ${data.tokens.map(token => `<option value="${token.id}">${token.name}</option>`).join('')}
+                    </select>
+                `;
+            })
+            .catch(() => {
+                // フォールバック
+                valueContainer.innerHTML = `
+                    <label for="value" class="block text-sm font-medium text-gray-700 mb-1">APIトークンID</label>
+                    <input type="text" 
+                           name="value" 
+                           id="value"
+                           placeholder="APIトークンIDを入力"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                `;
+            });
+    } else {
+        valueContainer.innerHTML = `
+            <label for="value" class="block text-sm font-medium text-gray-700 mb-1">IPアドレス</label>
+            <input type="text" 
+                   name="value" 
+                   id="value"
+                   placeholder="192.168.1.100"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+        `;
+    }
+}
+</script>
+@endpush

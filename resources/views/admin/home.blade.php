@@ -88,7 +88,7 @@
         <div class="px-4 sm:px-0">
             <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 <!-- スケジュール管理 -->
-                <div class="bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-shadow duration-300">
+                <a href="{{ route('admin.competitions.index') }}" class="block bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                     <div class="p-6">
                         <div class="flex items-center">
                             <div class="flex-shrink-0">
@@ -105,19 +105,16 @@
                         </div>
                         <div class="mt-4">
                             <div class="flex items-center justify-between">
-                                {{-- <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                    準備中
-                                </span> --}}
-                                <a href="{{ route('admin.competitions.index') }}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                <span class="text-blue-600 text-sm font-medium">
                                     開く →
-                                </a>
+                                </span>
                             </div>
                         </div>
                     </div>
-                </div>
+                </a>
 
                 <!-- 選手情報管理 -->
-                <div class="bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-shadow duration-300">
+                <a href="{{ route('admin.players.index') }}" class="block bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                     <div class="p-6">
                         <div class="flex items-center">
                             <div class="flex-shrink-0">
@@ -134,19 +131,16 @@
                         </div>
                         <div class="mt-4">
                             <div class="flex items-center justify-between">
-                                {{-- <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                    準備中
-                                </span> --}}
-                                <a href="{{ route('admin.players.index') }}" class="text-green-600 hover:text-green-800 text-sm font-medium">
+                                <span class="text-green-600 text-sm font-medium">
                                     開く →
-                                </a>
+                                </span>
                             </div>
                         </div>
                     </div>
-                </div>
+                </a>
 
                 <!-- システム管理 -->
-                <div class="bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-shadow duration-300">
+                <div class="bg-white overflow-hidden shadow-lg rounded-xl opacity-75 cursor-not-allowed">
                     <div class="p-6">
                         <div class="flex items-center">
                             <div class="flex-shrink-0">
@@ -167,9 +161,9 @@
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                                     準備中
                                 </span>
-                                <button class="text-purple-600 hover:text-purple-800 text-sm font-medium disabled:opacity-50" disabled>
+                                <span class="text-purple-600 text-sm font-medium opacity-50">
                                     開く →
-                                </button>
+                                </span>
                             </div>
                         </div>
                     </div>

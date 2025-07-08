@@ -202,6 +202,11 @@ class CompetitionDeviceController extends Controller
         
         $path = 'exports/' . $filename;
         
+        // exportsディレクトリが存在しない場合は作成
+        if (!Storage::exists('exports')) {
+            Storage::makeDirectory('exports');
+        }
+        
         // UTF-8 BOM付きでCSVを作成
         $csv = chr(0xEF) . chr(0xBB) . chr(0xBF);
         $csv .= implode(',', CompetitionDevice::getCsvHeaders()) . "\n";

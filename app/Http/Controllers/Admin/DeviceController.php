@@ -134,6 +134,11 @@ class DeviceController extends Controller
         $filename = '端末一覧_' . now()->format('Ymd_His') . '.csv';
         $path = 'exports/' . $filename;
         
+        // exportsディレクトリが存在しない場合は作成
+        if (!Storage::exists('exports')) {
+            Storage::makeDirectory('exports');
+        }
+        
         // UTF-8 BOM付きでCSVを作成（Excelで文字化けしないように）
         $csv = chr(0xEF) . chr(0xBB) . chr(0xBF);
         $csv .= implode(',', Device::getCsvHeaders()) . "\n";

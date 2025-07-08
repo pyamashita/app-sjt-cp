@@ -114,6 +114,7 @@ class Device extends Model
             $this->user_type,
             $this->ip_address ?? '',
             $this->mac_address ?? '',
+            $this->created_at->format('Y-m-d'),
         ];
     }
 
@@ -122,6 +123,6 @@ class Device extends Model
      */
     public static function getCsvHeaders(): array
     {
-        return ['端末名', '端末種別', '利用者', 'IPアドレス', 'MACアドレス'];
+        return ['端末名', '端末種別', '利用者', 'IPアドレス', 'MACアドレス', '登録日'];
     }
 }

@@ -61,11 +61,13 @@ class CompetitionDevice extends Model
     public function toCsvArray(): array
     {
         return [
+            $this->competition->name,
             $this->player_number,
             $this->device->name,
             $this->device->type,
             $this->device->ip_address ?? '',
             $this->device->mac_address ?? '',
+            $this->created_at->format('Y-m-d'),
         ];
     }
 
@@ -74,7 +76,7 @@ class CompetitionDevice extends Model
      */
     public static function getCsvHeaders(): array
     {
-        return ['選手番号', '端末名', '端末種別', 'IPアドレス', 'MACアドレス'];
+        return ['大会名', '選手番号', '端末名', '端末種別', 'IPアドレス', 'MACアドレス', '割り当て日'];
     }
 
     /**

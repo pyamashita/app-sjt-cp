@@ -48,6 +48,13 @@ class CompetitionController extends Controller
             'committee_members.*' => 'string|max:255',
         ]);
 
+        // 競技委員の配列から空の値を除去
+        if (isset($validated['committee_members'])) {
+            $validated['committee_members'] = array_values(array_filter($validated['committee_members'], function($member) {
+                return !empty(trim($member));
+            }));
+        }
+
         \Log::info('Validated data:', $validated);
 
         Competition::create($validated);
@@ -91,6 +98,13 @@ class CompetitionController extends Controller
             'committee_members' => 'nullable|array',
             'committee_members.*' => 'string|max:255',
         ]);
+
+        // 競技委員の配列から空の値を除去
+        if (isset($validated['committee_members'])) {
+            $validated['committee_members'] = array_values(array_filter($validated['committee_members'], function($member) {
+                return !empty(trim($member));
+            }));
+        }
 
         \Log::info('Validated data:', $validated);
 

@@ -76,9 +76,9 @@
         :headers="['トークン名', '権限', '状態', '有効期限', '最終使用', '作成日']"
         :rows="$tableRows"
         :actions="[
-            ['label' => '詳細', 'url' => 'admin.api-tokens.show', 'class' => 'text-blue-600 hover:text-blue-800'],
-            ['label' => '編集', 'url' => 'admin.api-tokens.edit', 'class' => 'text-green-600 hover:text-green-800'],
-            ['label' => '削除', 'url' => 'admin.api-tokens.destroy', 'method' => 'DELETE', 'class' => 'text-red-600 hover:text-red-800', 'confirm' => 'このAPIトークンを削除してもよろしいですか？']
+            ['type' => 'link', 'label' => '詳細', 'url' => '{{ route(\"admin.api-tokens.show\", \":id\") }}', 'color' => 'blue'],
+            ['type' => 'link', 'label' => '編集', 'url' => '{{ route(\"admin.api-tokens.edit\", \":id\") }}', 'color' => 'green'],
+            ['type' => 'form', 'label' => '削除', 'url' => '{{ route(\"admin.api-tokens.destroy\", \":id\") }}', 'method' => 'DELETE', 'color' => 'red', 'confirm' => 'このAPIトークンを削除してもよろしいですか？']
         ]"
         :pagination="$tokens"
         empty-message="APIトークンが見つかりません。"

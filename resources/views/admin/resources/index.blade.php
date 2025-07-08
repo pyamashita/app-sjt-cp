@@ -77,9 +77,9 @@
         :headers="['リソース名', 'ファイル名', 'カテゴリ', 'サイズ', '公開状態', '登録日']"
         :rows="$tableRows"
         :actions="[
-            ['label' => '詳細', 'url' => 'admin.resources.show', 'class' => 'text-blue-600 hover:text-blue-800'],
-            ['label' => '編集', 'url' => 'admin.resources.edit', 'class' => 'text-green-600 hover:text-green-800'],
-            ['label' => '削除', 'url' => 'admin.resources.destroy', 'method' => 'DELETE', 'class' => 'text-red-600 hover:text-red-800', 'confirm' => 'このリソースを削除してもよろしいですか？関連するファイルも削除されます。']
+            ['type' => 'link', 'label' => '詳細', 'url' => '{{ route(\"admin.resources.show\", \":id\") }}', 'color' => 'blue'],
+            ['type' => 'link', 'label' => '編集', 'url' => '{{ route(\"admin.resources.edit\", \":id\") }}', 'color' => 'green'],
+            ['type' => 'form', 'label' => '削除', 'url' => '{{ route(\"admin.resources.destroy\", \":id\") }}', 'method' => 'DELETE', 'color' => 'red', 'confirm' => 'このリソースを削除してもよろしいですか？関連するファイルも削除されます。']
         ]"
         :pagination="$resources"
         empty-message="リソースが見つかりません。"

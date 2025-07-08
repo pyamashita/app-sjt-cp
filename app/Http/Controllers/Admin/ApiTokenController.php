@@ -42,12 +42,15 @@ class ApiTokenController extends Controller
         // データテーブル用の行データを準備
         $tableRows = $tokens->map(function($token) {
             return [
-                $token->name,
-                implode(', ', array_map(fn($perm) => ApiToken::getPermissions()[$perm] ?? $perm, $token->permissions ?? [])),
-                $token->is_active ? '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">有効</span>' : '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">無効</span>',
-                $token->expires_at ? $token->expires_at->format('Y/m/d H:i') : '無期限',
-                $token->last_used_at ? $token->last_used_at->format('Y/m/d H:i') : '未使用',
-                $token->created_at->format('Y/m/d H:i')
+                'id' => $token->id,
+                'data' => [
+                    $token->name,
+                    implode(', ', array_map(fn($perm) => ApiToken::getPermissions()[$perm] ?? $perm, $token->permissions ?? [])),
+                    $token->is_active ? '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">有効</span>' : '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">無効</span>',
+                    $token->expires_at ? $token->expires_at->format('Y/m/d H:i') : '無期限',
+                    $token->last_used_at ? $token->last_used_at->format('Y/m/d H:i') : '未使用',
+                    $token->created_at->format('Y/m/d H:i')
+                ]
             ];
         })->toArray();
 

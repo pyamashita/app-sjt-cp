@@ -47,28 +47,28 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         ->name('competition-schedules.import');
     
     // 選手管理
-    Route::resource('players', PlayerController::class);
     Route::get('players/export', [PlayerController::class, 'export'])->name('players.export');
     Route::post('players/import', [PlayerController::class, 'import'])->name('players.import');
+    Route::resource('players', PlayerController::class);
     
     // 大会選手割り当て管理
-    Route::resource('competition-players', CompetitionPlayerController::class);
     Route::get('competition-players/export', [CompetitionPlayerController::class, 'export'])->name('competition-players.export');
     Route::post('competition-players/import', [CompetitionPlayerController::class, 'import'])->name('competition-players.import');
     Route::post('competition-players/generate-player-numbers', [CompetitionPlayerController::class, 'generatePlayerNumbers'])
         ->name('competition-players.generate-player-numbers');
+    Route::resource('competition-players', CompetitionPlayerController::class);
     
     // 端末管理
-    Route::resource('devices', DeviceController::class);
     Route::get('devices/export', [DeviceController::class, 'export'])->name('devices.export');
     Route::post('devices/import', [DeviceController::class, 'import'])->name('devices.import');
+    Route::resource('devices', DeviceController::class);
     
     // 競技端末割り当て管理
-    Route::resource('competition-devices', CompetitionDeviceController::class);
     Route::get('competition-devices/export', [CompetitionDeviceController::class, 'export'])->name('competition-devices.export');
     Route::post('competition-devices/import', [CompetitionDeviceController::class, 'import'])->name('competition-devices.import');
     Route::get('api/competition-devices/player-numbers', [CompetitionDeviceController::class, 'getAvailablePlayerNumbers'])
         ->name('api.competition-devices.player-numbers');
+    Route::resource('competition-devices', CompetitionDeviceController::class);
 });
 
 // ルートアクセス時のリダイレクト

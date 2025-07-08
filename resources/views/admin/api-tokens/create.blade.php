@@ -2,13 +2,17 @@
 
 @section('title', 'APIトークン新規作成 - SJT-CP')
 
+@push('styles')
+<base href="{{ url('/') }}/">
+@endpush
+
 @section('content')
     <div class="mb-6">
         <h1 class="text-2xl font-bold text-gray-900">APIトークン新規作成</h1>
         <p class="mt-2 text-sm text-gray-600">新しいAPIトークンを作成します</p>
     </div>
 
-    <form method="POST" action="{{ url('/admin/api-tokens') }}" id="token-form">
+    <form method="POST" action="../api-tokens" id="token-form">
         @csrf
         
         @if ($errors->any())
@@ -180,11 +184,18 @@ function removeIpAddress(button) {
 
 // フォーム送信時にaction属性を確認
 document.getElementById('token-form').addEventListener('submit', function(e) {
-    console.log('Form action:', this.action);
+    e.preventDefault(); // デフォルトの送信を防ぐ
+    
+    console.log('Original form action:', this.action);
     console.log('Form method:', this.method);
     
-    // 念のため、action属性を強制的に設定
-    this.action = "{{ url('/admin/api-tokens') }}";
+    // 強制的に正しいURLに設定
+    this.action = "http://localhost/admin/api-tokens";
+    
+    console.log('New form action:', this.action);
+    
+    // フォームを再送信
+    this.submit();
 });
 </script>
 @endpush

@@ -14,6 +14,7 @@ use Illuminate\View\View;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 class CompetitionDeviceController extends Controller
 {
@@ -185,43 +186,60 @@ class CompetitionDeviceController extends Controller
     /**
      * CSVエクスポート
      */
-    public function export(Request $request): BinaryFileResponse
+    public function export(Request $request): Response
     {
-        $query = CompetitionDevice::with(['competition', 'device']);
+        try {
+            $query = CompetitionDevice::with(['competition', 'device']);
 
-        // 大会でフィルタ
-        if ($request->filled('competition_id')) {
-            $query->forCompetition($request->competition_id);
-            $competition = Competition::find($request->competition_id);
-            $filename = $competition->name . '_端末割当_' . now()->format('Ymd_His') . '.csv';
-        } else {
-            $filename = '端末割当一覧_' . now()->format('Ymd_His') . '.csv';
-        }
+            // 大会でフィルタ
+            if ($request->filled('competition_id')) {
+                $query->forCompetition($request->competition_id);
+                $competition = Competition::find($request->competition_id);
+                $filename = $competition->name . '_端末割当_' . now()->format('Ymd_His') . '.csv';
+            } else {
+                $filename = '端末割当一覧_' . now()->format('Ymd_His') . '.csv';
+            }
 
-        $competitionDevices = $query->orderBy('player_number')->get();
-        
-        $path = 'exports/' . $filename;
-        
-        // exportsディレクトリが存在しない場合は作成
-        if (!Storage::exists('exports')) {
-            Storage::makeDirectory('exports');
+            $competitionDevices = $query->orderBy('player_number')->get();
+            
+            $path = 'exports/' . $filename;
+            
+            // exportsディレクトリが存在しない場合は作成
+            if (!Storage::exists('exports')) {
+                Storage::makeDirectory('exports');
+            }
+            
+            // UTF-8 BOM付きでCSVを作成
+            $csv = chr(0xEF) . chr(0xBB) . chr(0xBF);
+            $csv .= implode(',', CompetitionDevice::getCsvHeaders()) . "\n";
+            
+            foreach ($competitionDevices as $competitionDevice) {
+                $data = $competitionDevice->toCsvArray();
+                $csv .= implode(',', array_map(function ($item) {
+                    return '"' . str_replace('"', '""', $item) . '"';
+                }, $data)) . "\n";
+            }
+            
+            // ファイルの書き込みを試行
+            $result = Storage::put($path, $csv);
+            
+            if (!$result) {
+                throw new \Exception('CSV ファイルの作成に失敗しました');
+            }
+            
+            $fullPath = storage_path('app/' . $path);
+            
+            if (!file_exists($fullPath)) {
+                throw new \Exception('CSV ファイルが作成されませんでした: ' . $fullPath);
+            }
+            
+            return response()->download($fullPath, $filename)
+                ->deleteFileAfterSend(true);
+                
+        } catch (\Exception $e) {
+            return redirect()->route('admin.competition-devices.index')
+                ->with('error', 'CSVエクスポートでエラーが発生しました: ' . $e->getMessage());
         }
-        
-        // UTF-8 BOM付きでCSVを作成
-        $csv = chr(0xEF) . chr(0xBB) . chr(0xBF);
-        $csv .= implode(',', CompetitionDevice::getCsvHeaders()) . "\n";
-        
-        foreach ($competitionDevices as $competitionDevice) {
-            $data = $competitionDevice->toCsvArray();
-            $csv .= implode(',', array_map(function ($item) {
-                return '"' . str_replace('"', '""', $item) . '"';
-            }, $data)) . "\n";
-        }
-        
-        Storage::put($path, $csv);
-        
-        return response()->download(storage_path('app/' . $path), $filename)
-            ->deleteFileAfterSend(true);
     }
 
     /**

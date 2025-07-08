@@ -81,6 +81,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     
     // APIトークン管理
     Route::get('api-tokens/export', [ApiTokenController::class, 'export'])->name('api-tokens.export');
+    Route::get('api-tokens/debug', function() { return view('admin.api-tokens.debug'); })->name('api-tokens.debug');
     Route::post('api-tokens/{apiToken}/regenerate', [ApiTokenController::class, 'regenerate'])->name('api-tokens.regenerate');
     Route::post('api-tokens/{apiToken}/toggle', [ApiTokenController::class, 'toggle'])->name('api-tokens.toggle');
     Route::resource('api-tokens', ApiTokenController::class);

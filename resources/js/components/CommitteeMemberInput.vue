@@ -62,13 +62,13 @@
     </p>
 
     <!-- 隠しフィールドで配列データをサーバーに送信 -->
-    <input 
-      v-for="(member, index) in members" 
-      :key="`member-${index}`"
-      type="hidden" 
-      :name="`committee_members[${index}]`" 
-      :value="member"
-    >
+    <template v-for="(member, index) in members" :key="`member-hidden-${index}`">
+      <input 
+        type="hidden" 
+        :name="`committee_members[${index}]`" 
+        :value="member"
+      >
+    </template>
   </div>
 </template>
 

@@ -139,6 +139,32 @@
                     </div>
                 </a>
 
+                <!-- 端末管理 -->
+                <a href="{{ route('admin.devices.index') }}" class="block bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                    <div class="p-6">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <div class="h-12 w-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                                    <svg class="h-6 w-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-lg font-semibold text-gray-900">端末管理</h3>
+                                <p class="text-sm text-gray-600">端末情報と大会割り当てを管理</p>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <div class="flex items-center justify-between">
+                                <span class="text-orange-600 text-sm font-medium">
+                                    開く →
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+
                 <!-- システム管理 -->
                 <div class="bg-white overflow-hidden shadow-lg rounded-xl opacity-75 cursor-not-allowed">
                     <div class="p-6">

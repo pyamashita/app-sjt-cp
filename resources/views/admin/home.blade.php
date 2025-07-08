@@ -118,6 +118,37 @@
             </div>
         </div>
 
+        <!-- リソース管理 -->
+        <div class="bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-all duration-300">
+            <div class="p-6">
+                <div class="flex items-center mb-4">
+                    <div class="flex-shrink-0">
+                        <div class="h-12 w-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <svg class="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-lg font-semibold text-gray-900">リソース管理</h3>
+                        <p class="text-sm text-gray-600">ファイル管理とAPI制御</p>
+                    </div>
+                </div>
+                
+                <!-- サブメニュー -->
+                <div class="space-y-2">
+                    <a href="{{ route('admin.resources.index') }}" 
+                       class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-800 rounded-md transition-colors duration-200">
+                        リソース一覧
+                    </a>
+                    <a href="{{ route('admin.api-tokens.index') }}" 
+                       class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-800 rounded-md transition-colors duration-200">
+                        APIトークン管理
+                    </a>
+                </div>
+            </div>
+        </div>
+
         <!-- システム管理 -->
         <div class="bg-white overflow-hidden shadow-lg rounded-xl opacity-75 cursor-not-allowed">
             <div class="p-6">

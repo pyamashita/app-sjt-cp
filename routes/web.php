@@ -10,6 +10,8 @@ use App\Http\Controllers\Admin\PlayerController;
 use App\Http\Controllers\Admin\CompetitionPlayerController;
 use App\Http\Controllers\Admin\DeviceController;
 use App\Http\Controllers\Admin\CompetitionDeviceController;
+use App\Http\Controllers\Admin\ResourceController;
+use App\Http\Controllers\Admin\ApiTokenController;
 
 // 認証系ルート
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -69,6 +71,19 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('api/competition-devices/player-numbers', [CompetitionDeviceController::class, 'getAvailablePlayerNumbers'])
         ->name('api.competition-devices.player-numbers');
     Route::resource('competition-devices', CompetitionDeviceController::class);
+    
+    // リソース管理
+    Route::get('resources/export', [ResourceController::class, 'export'])->name('resources.export');
+    Route::get('resources/{resource}/download', [ResourceController::class, 'download'])->name('resources.download');
+    Route::post('resources/{resource}/access-control', [ResourceController::class, 'addAccessControl'])->name('resources.access-control.add');
+    Route::delete('resources/{resource}/access-control/{accessControl}', [ResourceController::class, 'removeAccessControl'])->name('resources.access-control.remove');
+    Route::resource('resources', ResourceController::class);
+    
+    // APIトークン管理
+    Route::get('api-tokens/export', [ApiTokenController::class, 'export'])->name('api-tokens.export');
+    Route::post('api-tokens/{apiToken}/regenerate', [ApiTokenController::class, 'regenerate'])->name('api-tokens.regenerate');
+    Route::post('api-tokens/{apiToken}/toggle', [ApiTokenController::class, 'toggle'])->name('api-tokens.toggle');
+    Route::resource('api-tokens', ApiTokenController::class);
 });
 
 // ルートアクセス時のリダイレクト

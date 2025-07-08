@@ -67,4 +67,22 @@ class Competition extends Model
         
         return $this->start_date->format('Y年m月d日') . ' 〜 ' . $this->end_date->format('Y年m月d日');
     }
+
+    /**
+     * 大会で使用する端末
+     */
+    public function devices(): BelongsToMany
+    {
+        return $this->belongsToMany(Device::class, 'competition_devices')
+            ->withPivot('player_number')
+            ->withTimestamps();
+    }
+
+    /**
+     * 大会の端末割り当て
+     */
+    public function competitionDevices(): HasMany
+    {
+        return $this->hasMany(CompetitionDevice::class);
+    }
 }

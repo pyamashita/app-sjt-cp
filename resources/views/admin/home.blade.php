@@ -114,9 +114,9 @@
                 </a>
 
                 <!-- 選手情報管理 -->
-                <a href="{{ route('admin.players.index') }}" class="block bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                <div class="bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-all duration-300">
                     <div class="p-6">
-                        <div class="flex items-center">
+                        <div class="flex items-center mb-4">
                             <div class="flex-shrink-0">
                                 <div class="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
                                     <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -129,15 +129,51 @@
                                 <p class="text-sm text-gray-600">選手の情報を管理</p>
                             </div>
                         </div>
-                        <div class="mt-4">
-                            <div class="flex items-center justify-between">
-                                <span class="text-green-600 text-sm font-medium">
-                                    開く →
-                                </span>
-                            </div>
+                        
+                        <!-- サブメニュー -->
+                        <div class="space-y-2">
+                            <a href="{{ route('admin.players.index') }}" 
+                               class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-800 rounded-md transition-colors duration-200">
+                                選手一覧
+                            </a>
+                            <a href="{{ route('admin.competition-players.index') }}" 
+                               class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-800 rounded-md transition-colors duration-200">
+                                大会選手管理
+                            </a>
                         </div>
                     </div>
-                </a>
+                </div>
+
+                <!-- 端末管理 -->
+                <div class="bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-all duration-300">
+                    <div class="p-6">
+                        <div class="flex items-center mb-4">
+                            <div class="flex-shrink-0">
+                                <div class="h-12 w-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                                    <svg class="h-6 w-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-lg font-semibold text-gray-900">端末管理</h3>
+                                <p class="text-sm text-gray-600">端末情報と大会割り当てを管理</p>
+                            </div>
+                        </div>
+                        
+                        <!-- サブメニュー -->
+                        <div class="space-y-2">
+                            <a href="{{ route('admin.devices.index') }}" 
+                               class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-800 rounded-md transition-colors duration-200">
+                                端末一覧
+                            </a>
+                            <a href="{{ route('admin.competition-devices.index') }}" 
+                               class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-800 rounded-md transition-colors duration-200">
+                                競技端末割り当て
+                            </a>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- システム管理 -->
                 <div class="bg-white overflow-hidden shadow-lg rounded-xl opacity-75 cursor-not-allowed">

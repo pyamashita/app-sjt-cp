@@ -13,11 +13,24 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class ResourceController extends Controller
 {
     /**
-     * Get a listing of public resources.
+     * Get a listing of resources (public only for unauthenticated, all for authenticated).
      */
     public function index(Request $request): JsonResponse
     {
-        $query = Resource::query()->where('is_public', true);
+        $apiToken = $request->get('api_token');
+        
+        $query = Resource::query();
+        
+        // 認証されていない場合は公開リソースのみ
+        if (!$apiToken) {
+            $query->where('is_public', true);
+        }
+        // 認証済みの場合、権限に応じてフィルタ
+        elseif (!$apiToken->hasPermission('manage')) {
+            // 管理権限がない場合は公開リソースのみ
+            $query->where('is_public', true);
+        }
+        // 管理権限がある場合はすべてのリソースにアクセス可能
 
         if ($request->filled('category')) {
             $query->where('category', $request->category);
@@ -27,14 +40,20 @@ class ResourceController extends Controller
             $query->search($request->search);
         }
 
+        if ($request->filled('is_public') && $apiToken && $apiToken->hasPermission('manage')) {
+            $query->where('is_public', $request->boolean('is_public'));
+        }
+
         $resources = $query->select([
             'id', 'name', 'original_name', 'mime_type', 'size', 
-            'description', 'category', 'created_at'
+            'description', 'category', 'is_public', 'created_at'
         ])->orderBy('created_at', 'desc')->paginate(20);
 
         return response()->json([
             'status' => 'success',
             'data' => $resources,
+            'authenticated' => (bool) $apiToken,
+            'permissions' => $apiToken ? $apiToken->permissions : [],
         ]);
     }
 
@@ -43,10 +62,21 @@ class ResourceController extends Controller
      */
     public function show(Request $request, Resource $resource): JsonResponse
     {
-        if (!$this->canAccess($resource, $request)) {
+        $apiToken = $request->get('api_token');
+        
+        // 非公開リソースの場合は認証が必要
+        if (!$resource->is_public && !$apiToken) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'アクセス権限がありません。',
+                'message' => 'このリソースにアクセスするには認証が必要です。',
+            ], 401);
+        }
+
+        // 非公開リソースで管理権限がない場合は拒否
+        if (!$resource->is_public && !$apiToken->hasPermission('manage')) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'このリソースにアクセスする権限がありません。',
             ], 403);
         }
 
@@ -63,7 +93,7 @@ class ResourceController extends Controller
                 'description' => $resource->description,
                 'category' => $resource->category,
                 'is_public' => $resource->is_public,
-                'download_url' => route('api.resources.download', $resource),
+                'download_url' => url('/api/resources/' . $resource->id . '/download'),
                 'created_at' => $resource->created_at,
             ],
         ]);
@@ -74,10 +104,21 @@ class ResourceController extends Controller
      */
     public function download(Request $request, Resource $resource): StreamedResponse|JsonResponse
     {
-        if (!$this->canAccess($resource, $request)) {
+        $apiToken = $request->get('api_token');
+        
+        // 非公開リソースの場合は認証が必要
+        if (!$resource->is_public && !$apiToken) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'アクセス権限がありません。',
+                'message' => 'このリソースにアクセスするには認証が必要です。',
+            ], 401);
+        }
+
+        // 非公開リソースで管理権限がない場合は拒否
+        if (!$resource->is_public && !$apiToken->hasPermission('manage')) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'このリソースにアクセスする権限がありません。',
             ], 403);
         }
 
@@ -104,10 +145,21 @@ class ResourceController extends Controller
      */
     public function stream(Request $request, Resource $resource): StreamedResponse|JsonResponse
     {
-        if (!$this->canAccess($resource, $request)) {
+        $apiToken = $request->get('api_token');
+        
+        // 非公開リソースの場合は認証が必要
+        if (!$resource->is_public && !$apiToken) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'アクセス権限がありません。',
+                'message' => 'このリソースにアクセスするには認証が必要です。',
+            ], 401);
+        }
+
+        // 非公開リソースで管理権限がない場合は拒否
+        if (!$resource->is_public && !$apiToken->hasPermission('manage')) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'このリソースにアクセスする権限がありません。',
             ], 403);
         }
 
@@ -140,84 +192,18 @@ class ResourceController extends Controller
         ]);
     }
 
-    /**
-     * Check if the request can access the resource.
-     */
-    private function canAccess(Resource $resource, Request $request): bool
-    {
-        // パブリックリソースは誰でもアクセス可能
-        if ($resource->is_public) {
-            return true;
-        }
-
-        $clientIp = $request->ip();
-
-        // IPアドレス制限チェック
-        if (!$resource->isIpAllowed($clientIp)) {
-            return false;
-        }
-
-        // トークンが必要な場合の認証チェック
-        if ($resource->requiresToken()) {
-            $token = $request->bearerToken();
-            
-            if (!$token) {
-                return false;
-            }
-
-            $hashedToken = hash('sha256', $token);
-            $apiToken = ApiToken::where('token', $hashedToken)
-                ->where('is_active', true)
-                ->where(function ($query) {
-                    $query->whereNull('expires_at')
-                          ->orWhere('expires_at', '>', now());
-                })
-                ->first();
-
-            if (!$apiToken) {
-                return false;
-            }
-
-            // トークンのIPアドレス制限チェック
-            if (!$apiToken->isIpAllowed($clientIp)) {
-                return false;
-            }
-
-            // トークンの権限チェック
-            if (!$apiToken->hasPermission('read')) {
-                return false;
-            }
-
-            // トークンの使用記録を更新
-            $apiToken->update(['last_used_at' => now()]);
-        }
-
-        return true;
-    }
 
     /**
      * Get API usage statistics.
      */
     public function stats(Request $request): JsonResponse
     {
-        $token = $request->bearerToken();
+        $apiToken = $request->get('api_token');
         
-        if (!$token) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'トークンが必要です。',
-            ], 401);
-        }
-
-        $hashedToken = hash('sha256', $token);
-        $apiToken = ApiToken::where('token', $hashedToken)
-            ->where('is_active', true)
-            ->first();
-
         if (!$apiToken || !$apiToken->hasPermission('stats')) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'アクセス権限がありません。',
+                'message' => '統計情報を取得する権限がありません。',
             ], 403);
         }
 

@@ -61,9 +61,9 @@
         <x-detail-card 
             title="API情報"
             :data="[
-                ['label' => 'API URL', 'value' => route('api.resources.show', $resource)],
-                ['label' => 'ダウンロード URL', 'value' => route('api.resources.download', $resource)],
-                ['label' => 'ストリーミング URL', 'value' => route('api.resources.stream', $resource)]
+                ['label' => 'API URL', 'value' => url('/api/resources/' . $resource->id)],
+                ['label' => 'ダウンロード URL', 'value' => url('/api/resources/' . $resource->id . '/download')],
+                ['label' => 'ストリーミング URL', 'value' => url('/api/resources/' . $resource->id . '/stream')]
             ]"
         />
     </div>

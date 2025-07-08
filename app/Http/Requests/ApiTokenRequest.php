@@ -20,11 +20,13 @@ class ApiTokenRequest extends FormRequest
      */
     public function rules(): array
     {
+        $permissions = ApiToken::getPermissions();
+        
         return [
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'permissions' => 'required|array|min:1',
-            'permissions.*' => 'string|in:' . implode(',', array_keys(ApiToken::getPermissions())),
+            'permissions.*' => 'string|in:' . implode(',', array_keys($permissions)),
             'allowed_ips' => 'nullable|array',
             'allowed_ips.*' => 'ip',
             'expires_at' => 'nullable|date|after:now',
@@ -74,12 +76,6 @@ class ApiTokenRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
-        if ($this->has('is_public')) {
-            $this->merge([
-                'is_public' => $this->boolean('is_public'),
-            ]);
-        }
-
         if ($this->has('is_active')) {
             $this->merge([
                 'is_active' => $this->boolean('is_active'),

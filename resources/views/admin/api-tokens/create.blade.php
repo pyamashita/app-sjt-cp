@@ -8,7 +8,7 @@
         <p class="mt-2 text-sm text-gray-600">新しいAPIトークンを作成します</p>
     </div>
 
-    <form method="POST" action="{{ route('admin.api-tokens.store') }}">
+    <form method="POST" action="{{ url('/admin/api-tokens') }}">
         @csrf
         
         <x-form-card title="基本情報">

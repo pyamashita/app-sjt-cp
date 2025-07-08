@@ -8,7 +8,6 @@ use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -128,50 +127,53 @@ class DeviceController extends Controller
     /**
      * CSVエクスポート
      */
-    public function export(): Response
+    public function export(Request $request): Response
     {
-        try {
-            $devices = Device::orderBy('name')->get();
-            
-            $filename = '端末一覧_' . now()->format('Ymd_His') . '.csv';
-            $path = 'exports/' . $filename;
-            
-            // exportsディレクトリが存在しない場合は作成
-            if (!Storage::exists('exports')) {
-                Storage::makeDirectory('exports');
-            }
-            
-            // UTF-8 BOM付きでCSVを作成（Excelで文字化けしないように）
-            $csv = chr(0xEF) . chr(0xBB) . chr(0xBF);
-            $csv .= implode(',', Device::getCsvHeaders()) . "\n";
-            
-            foreach ($devices as $device) {
-                $data = $device->toCsvArray();
-                $csv .= implode(',', array_map(function ($item) {
-                    return '"' . str_replace('"', '""', $item) . '"';
-                }, $data)) . "\n";
-            }
-            
-            // ファイルの書き込みを試行
-            $result = Storage::put($path, $csv);
-            
-            if (!$result) {
-                throw new \Exception('CSV ファイルの作成に失敗しました');
-            }
-            
-            $fullPath = storage_path('app/' . $path);
-            
-            if (!file_exists($fullPath)) {
-                throw new \Exception('CSV ファイルが作成されませんでした: ' . $fullPath);
-            }
-            
-            return response()->download($fullPath, $filename)
-                ->deleteFileAfterSend(true);
-                
-        } catch (\Exception $e) {
-            return redirect()->route('admin.devices.index')
-                ->with('error', 'CSVエクスポートでエラーが発生しました: ' . $e->getMessage());
+        $query = Device::query();
+
+        // 検索フィルタ適用
+        if ($request->filled('search')) {
+            $query->search($request->search);
         }
+        if ($request->filled('type')) {
+            $query->ofType($request->type);
+        }
+        if ($request->filled('user_type')) {
+            $query->ofUserType($request->user_type);
+        }
+
+        $devices = $query->orderBy('name')->get();
+
+        $csvData = [];
+        
+        // ヘッダー行を追加
+        $csvData[] = Device::getCsvHeaders();
+
+        // データ行を追加
+        foreach ($devices as $device) {
+            $csvData[] = $device->toCsvArray();
+        }
+
+        // CSV文字列を生成
+        $csv = '';
+        foreach ($csvData as $row) {
+            $csv .= implode(',', array_map(function($field) {
+                if (strpos($field, ',') !== false || strpos($field, "\n") !== false || strpos($field, '"') !== false) {
+                    $field = '"' . str_replace('"', '""', $field) . '"';
+                }
+                return $field;
+            }, $row)) . "\n";
+        }
+
+        // BOMを追加（Excel での文字化け防止）
+        $csv = "\xEF\xBB\xBF" . $csv;
+
+        $filename = '端末一覧_' . date('Y-m-d') . '.csv';
+        $encodedFilename = rawurlencode($filename);
+        
+        return response($csv)
+            ->header('Content-Type', 'text/csv; charset=UTF-8')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"; filename*=UTF-8\'\'' . $encodedFilename);
     }
 
     /**

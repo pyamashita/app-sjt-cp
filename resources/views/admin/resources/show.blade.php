@@ -61,9 +61,9 @@
         <x-detail-card 
             title="API情報"
             :data="[
-                ['label' => 'API URL', 'value' => url('/api/resources/' . $resource->id)],
-                ['label' => 'ダウンロード URL', 'value' => url('/api/resources/' . $resource->id . '/download')],
-                ['label' => 'ストリーミング URL', 'value' => url('/api/resources/' . $resource->id . '/stream')]
+                ['label' => 'API URL', 'value' => \App\Helpers\ApiHelper::url('resources/' . $resource->id)],
+                ['label' => 'ダウンロード URL', 'value' => \App\Helpers\ApiHelper::url('resources/' . $resource->id . '/download')],
+                ['label' => 'ストリーミング URL', 'value' => \App\Helpers\ApiHelper::url('resources/' . $resource->id . '/stream')]
             ]"
         >
             <div class="mt-4 border-t pt-4">
@@ -77,14 +77,14 @@
                     <div>
                         <p class="text-xs text-gray-600 mb-1">リソース情報を取得:</p>
                         <code class="block bg-gray-100 p-2 rounded text-xs">
-                            curl {{ url('/api/resources/' . $resource->id) }}
+                            curl {{ \App\Helpers\ApiHelper::url('resources/' . $resource->id) }}
                         </code>
                     </div>
                     
                     <div>
                         <p class="text-xs text-gray-600 mb-1">ファイルをダウンロード:</p>
                         <code class="block bg-gray-100 p-2 rounded text-xs">
-                            curl -O {{ url('/api/resources/' . $resource->id . '/download') }}
+                            curl -O {{ \App\Helpers\ApiHelper::url('resources/' . $resource->id . '/download') }}
                         </code>
                     </div>
                 </div>
@@ -114,21 +114,21 @@
                     <div>
                         <p class="text-xs text-gray-600 mb-1">リソース情報を取得（Authorizationヘッダー使用）:</p>
                         <code class="block bg-gray-100 p-2 rounded text-xs">
-                            curl -H "Authorization: Bearer YOUR_API_TOKEN" {{ url('/api/resources/' . $resource->id) }}
+                            curl -H "Authorization: Bearer YOUR_API_TOKEN" {{ \App\Helpers\ApiHelper::url('resources/' . $resource->id) }}
                         </code>
                     </div>
                     
                     <div>
                         <p class="text-xs text-gray-600 mb-1">ファイルをダウンロード（Authorizationヘッダー使用）:</p>
                         <code class="block bg-gray-100 p-2 rounded text-xs">
-                            curl -H "Authorization: Bearer YOUR_API_TOKEN" -O {{ url('/api/resources/' . $resource->id . '/download') }}
+                            curl -H "Authorization: Bearer YOUR_API_TOKEN" -O {{ \App\Helpers\ApiHelper::url('resources/' . $resource->id . '/download') }}
                         </code>
                     </div>
                     
                     <div>
                         <p class="text-xs text-gray-600 mb-1">ファイルをダウンロード（URLパラメータ使用）:</p>
                         <code class="block bg-gray-100 p-2 rounded text-xs">
-                            curl -O "{{ url('/api/resources/' . $resource->id . '/download') }}?token=YOUR_API_TOKEN"
+                            curl -O "{{ \App\Helpers\ApiHelper::url('resources/' . $resource->id . '/download') }}?token=YOUR_API_TOKEN"
                         </code>
                     </div>
                 </div>
@@ -151,12 +151,12 @@
                         
                         <p class="text-xs text-gray-600 mb-1">方法1: Authorizationヘッダー（推奨）</p>
                         <code class="block bg-gray-100 p-2 rounded text-xs mb-3">
-                            curl -H "Authorization: Bearer YOUR_API_TOKEN" {{ url('/api/resources/' . $resource->id . '/download') }}
+                            curl -H "Authorization: Bearer YOUR_API_TOKEN" {{ \App\Helpers\ApiHelper::url('resources/' . $resource->id . '/download') }}
                         </code>
                         
                         <p class="text-xs text-gray-600 mb-1">方法2: URLパラメータ</p>
                         <code class="block bg-gray-100 p-2 rounded text-xs mb-3">
-                            curl "{{ url('/api/resources/' . $resource->id . '/download') }}?token=YOUR_API_TOKEN"
+                            curl "{{ \App\Helpers\ApiHelper::url('resources/' . $resource->id . '/download') }}?token=YOUR_API_TOKEN"
                         </code>
                         
                         <div class="bg-blue-50 p-2 rounded mt-3">

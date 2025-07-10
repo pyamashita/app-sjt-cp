@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API CORS テスト</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success {
+            color: green;
+        }
+        .error {
+            color: red;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>API CORS テスト</h1>
+    <p>このページを <code>http://localhost/test-api-cors.html</code> で開いて、APIへのクロスドメインアクセスをテストしてください。</p>
+
+    <div class="test-section">
+        <h2>1. 基本的なGETリクエスト</h2>
+        <button onclick="testBasicGet()">GET /resources をテスト</button>
+        <div id="basic-get-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. 認証付きGETリクエスト</h2>
+        <p style="color: #666; font-size: 14px;">
+            注意: /resources/stats エンドポイントには「stats」権限を持つAPIトークンが必要です。<br>
+            403エラーが返される場合は、トークンに「stats」権限が付与されているか確認してください。
+        </p>
+        <input type="text" id="api-token" placeholder="APIトークンを入力" style="width: 300px; padding: 5px;">
+        <button onclick="testAuthGet()">認証付き GET /resources/stats をテスト</button>
+        <div id="auth-get-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Fetchメソッドのテスト</h2>
+        <button onclick="testFetch()">Fetch APIでテスト</button>
+        <div id="fetch-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. XMLHttpRequestのテスト</h2>
+        <button onclick="testXHR()">XMLHttpRequestでテスト</button>
+        <div id="xhr-result"></div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://api.localhost';
+
+        function displayResult(elementId, success, data) {
+            const element = document.getElementById(elementId);
+            const className = success ? 'success' : 'error';
+            const prefix = success ? '✓ 成功:' : '✗ エラー:';
+            element.innerHTML = `<p class="${className}">${prefix}</p><pre>${JSON.stringify(data, null, 2)}</pre>`;
+        }
+
+        // 1. 基本的なGETリクエスト
+        async function testBasicGet() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/resources`);
+                const data = await response.json();
+                displayResult('basic-get-result', true, {
+                    status: response.status,
+                    headers: {
+                        'content-type': response.headers.get('content-type'),
+                        'access-control-allow-origin': response.headers.get('access-control-allow-origin')
+                    },
+                    data: data
+                });
+            } catch (error) {
+                displayResult('basic-get-result', false, {
+                    error: error.message,
+                    type: error.name
+                });
+            }
+        }
+
+        // 2. 認証付きGETリクエスト
+        async function testAuthGet() {
+            const token = document.getElementById('api-token').value;
+            if (!token) {
+                displayResult('auth-get-result', false, { error: 'APIトークンを入力してください' });
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/resources/stats`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'include' // CORSでクッキーを送信する場合
+                });
+                const data = await response.json();
+                displayResult('auth-get-result', response.ok, {
+                    status: response.status,
+                    data: data
+                });
+            } catch (error) {
+                displayResult('auth-get-result', false, {
+                    error: error.message,
+                    type: error.name
+                });
+            }
+        }
+
+        // 3. Fetch APIのテスト
+        async function testFetch() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/resources/categories`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    mode: 'cors', // CORSモードを明示的に指定
+                    credentials: 'include' // 認証情報を含める
+                });
+                const data = await response.json();
+                displayResult('fetch-result', true, {
+                    status: response.status,
+                    corsHeaders: {
+                        'access-control-allow-origin': response.headers.get('access-control-allow-origin'),
+                        'access-control-allow-credentials': response.headers.get('access-control-allow-credentials')
+                    },
+                    data: data
+                });
+            } catch (error) {
+                displayResult('fetch-result', false, {
+                    error: error.message,
+                    note: 'CORSエラーの可能性があります'
+                });
+            }
+        }
+
+        // 4. XMLHttpRequestのテスト
+        function testXHR() {
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', `${API_BASE_URL}/resources`, true);
+            xhr.setRequestHeader('Accept', 'application/json');
+            xhr.withCredentials = true; // CORSでクッキーを送信
+
+            xhr.onload = function() {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    displayResult('xhr-result', true, {
+                        status: xhr.status,
+                        responseHeaders: xhr.getAllResponseHeaders(),
+                        data: JSON.parse(xhr.responseText)
+                    });
+                } else {
+                    displayResult('xhr-result', false, {
+                        status: xhr.status,
+                        statusText: xhr.statusText,
+                        response: xhr.responseText
+                    });
+                }
+            };
+
+            xhr.onerror = function() {
+                displayResult('xhr-result', false, {
+                    error: 'ネットワークエラー',
+                    note: 'CORSエラーまたは接続エラーの可能性があります'
+                });
+            };
+
+            xhr.send();
+        }
+
+        // ページ読み込み時の情報表示
+        window.onload = function() {
+            console.log('テストページURL:', window.location.href);
+            console.log('API URL:', API_BASE_URL);
+        };
+    </script>
+</body>
+</html>

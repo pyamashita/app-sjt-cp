@@ -189,7 +189,7 @@
             :data="[
                 ['label' => 'バージョン', 'value' => 'v1.0.0 (開発版)'],
                 ['label' => '最終更新', 'value' => now()->format('Y年m月d日 H:i')],
-                ['label' => '接続ユーザー', 'value' => auth()->user()->name . ' (' . auth()->user()->role . ')'],
+                ['label' => '接続ユーザー', 'value' => auth()->user()->name . ' (' . auth()->user()->role_display_name . ')'],
                 ['label' => '機能状態', 'value' => '基本機能 稼働中', 'badge' => true, 'badgeClass' => 'bg-green-100 text-green-800']
             ]" />
     </div>

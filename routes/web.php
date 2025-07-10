@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\ResourceController;
 use App\Http\Controllers\Admin\ApiTokenController;
 use App\Http\Controllers\Admin\GuidePageController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\ServerController;
 
 // 認証系ルート
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -123,6 +124,9 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::delete('guide-page-items/{item}', [GuidePageController::class, 'deleteItem'])->name('guide-page-items.delete');
     Route::put('guide-pages/{guidePage}/sections/order', [GuidePageController::class, 'updateSectionOrder'])->name('guide-pages.sections.order');
     Route::resource('guide-pages', GuidePageController::class);
+    
+    // サーバ管理
+    Route::resource('servers', ServerController::class);
 });
 
 // ルートアクセス時のリダイレクト

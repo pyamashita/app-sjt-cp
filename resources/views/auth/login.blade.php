@@ -115,6 +115,16 @@
                     </button>
                 </form>
 
+                <!-- 新規登録リンク -->
+                <div class="mt-6 text-center">
+                    <p class="text-sm text-gray-600">
+                        アカウントをお持ちでない方は
+                        <a href="{{ route('register') }}" class="font-medium text-blue-600 hover:text-blue-500 transition duration-200">
+                            こちらから登録申請
+                        </a>
+                    </p>
+                </div>
+
                 <!-- テスト用アカウント情報 -->
                 <div class="mt-8 pt-6 border-t border-gray-200">
                     <div class="text-center">

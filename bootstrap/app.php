@@ -16,6 +16,10 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->group(base_path('routes/api.php'));
             
             Route::middleware('web')
+                ->domain(config('app.guide_domain'))
+                ->group(base_path('routes/guide.php'));
+            
+            Route::middleware('web')
                 ->group(base_path('routes/web.php'));
         },
     )

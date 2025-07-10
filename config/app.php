@@ -56,6 +56,8 @@ return [
 
     'api_domain' => env('API_DOMAIN', 'api.localhost'),
 
+    'guide_domain' => env('GUIDE_DOMAIN', 'guide.localhost'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

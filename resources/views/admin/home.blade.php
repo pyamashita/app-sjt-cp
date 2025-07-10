@@ -145,6 +145,10 @@
                        class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-800 rounded-md transition-colors duration-200">
                         APIトークン管理
                     </a>
+                    <a href="{{ route('admin.guide-pages.index') }}" 
+                       class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-800 rounded-md transition-colors duration-200">
+                        ガイドページ管理
+                    </a>
                 </div>
             </div>
         </div>

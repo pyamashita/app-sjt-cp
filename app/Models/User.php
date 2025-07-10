@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -21,7 +22,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role',
+        'role_id',
     ];
 
     /**
@@ -47,21 +48,22 @@ class User extends Authenticatable
     }
 
     /**
-     * ユーザーロールの定数
+     * ユーザーのロール
      */
-    const ROLE_ADMIN = 'admin';
-    const ROLE_COMPETITION_COMMITTEE = 'competition_committee';
-    const ROLE_ASSISTANT = 'assistant';
+    public function role(): BelongsTo
+    {
+        return $this->belongsTo(Role::class);
+    }
 
     /**
      * ユーザーが指定されたロールかどうかを確認
      *
-     * @param string $role
+     * @param string $roleName
      * @return bool
      */
-    public function hasRole(string $role): bool
+    public function hasRole(string $roleName): bool
     {
-        return $this->role === $role;
+        return $this->role && $this->role->name === $roleName;
     }
 
     /**
@@ -71,6 +73,46 @@ class User extends Authenticatable
      */
     public function isAdmin(): bool
     {
-        return $this->hasRole(self::ROLE_ADMIN);
+        return $this->hasRole('admin');
+    }
+
+    /**
+     * ユーザーが競技委員かどうかを確認
+     *
+     * @return bool
+     */
+    public function isCommittee(): bool
+    {
+        return $this->hasRole('committee');
+    }
+
+    /**
+     * ユーザーが補佐員かどうかを確認
+     *
+     * @return bool
+     */
+    public function isAssistant(): bool
+    {
+        return $this->hasRole('assistant');
+    }
+
+    /**
+     * ロール表示名を取得
+     *
+     * @return string
+     */
+    public function getRoleDisplayNameAttribute(): string
+    {
+        return $this->role ? $this->role->display_name : '未設定';
+    }
+
+    /**
+     * ロール名を取得（旧互換性のため）
+     *
+     * @return string
+     */
+    public function getRoleAttribute(): string
+    {
+        return $this->role ? $this->role->name : '';
     }
 }

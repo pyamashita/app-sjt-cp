@@ -88,20 +88,22 @@
                 </div>
 
                 <div>
-                    <label for="role" class="block text-sm font-medium text-gray-700">
+                    <label for="role_id" class="block text-sm font-medium text-gray-700">
                         役割 <span class="text-red-500">*</span>
                     </label>
                     <div class="mt-1">
-                        <select id="role" 
-                                name="role" 
-                                class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('role') border-red-300 @enderror" 
+                        <select id="role_id" 
+                                name="role_id" 
+                                class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('role_id') border-red-300 @enderror" 
                                 required>
                             <option value="">選択してください</option>
-                            <option value="admin" {{ old('role') == 'admin' ? 'selected' : '' }}>管理者</option>
-                            <option value="競技委員" {{ old('role') == '競技委員' ? 'selected' : '' }}>競技委員</option>
-                            <option value="補佐員" {{ old('role') == '補佐員' ? 'selected' : '' }}>補佐員</option>
+                            @foreach($roles as $role)
+                                <option value="{{ $role->id }}" {{ old('role_id') == $role->id ? 'selected' : '' }}>
+                                    {{ $role->display_name }}
+                                </option>
+                            @endforeach
                         </select>
-                        @error('role')
+                        @error('role_id')
                             <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Role;
 use App\Models\UserRegistration;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -16,7 +17,7 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = User::orderBy('created_at', 'desc')->paginate(20);
+        $users = User::with('role')->orderBy('created_at', 'desc')->paginate(20);
         $pendingRegistrations = UserRegistration::where('status', 'pending')->count();
         
         return view('admin.users.index', compact('users', 'pendingRegistrations'));
@@ -27,7 +28,8 @@ class UserController extends Controller
      */
     public function create()
     {
-        return view('admin.users.create');
+        $roles = Role::active()->get();
+        return view('admin.users.create', compact('roles'));
     }
 
     /**
@@ -39,14 +41,14 @@ class UserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'confirmed', Password::defaults()],
-            'role' => ['required', 'in:admin,競技委員,補佐員'],
+            'role_id' => ['required', 'exists:roles,id'],
         ]);
 
         User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
-            'role' => $validated['role'],
+            'role_id' => $validated['role_id'],
         ]);
 
         return redirect()->route('admin.users.index')
@@ -58,6 +60,7 @@ class UserController extends Controller
      */
     public function show(User $user)
     {
+        $user->load('role');
         return view('admin.users.show', compact('user'));
     }
 
@@ -66,7 +69,9 @@ class UserController extends Controller
      */
     public function edit(User $user)
     {
-        return view('admin.users.edit', compact('user'));
+        $roles = Role::active()->get();
+        $user->load('role');
+        return view('admin.users.edit', compact('user', 'roles'));
     }
 
     /**
@@ -77,7 +82,7 @@ class UserController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
-            'role' => ['required', 'in:admin,競技委員,補佐員'],
+            'role_id' => ['required', 'exists:roles,id'],
         ]);
 
         $user->update($validated);
@@ -132,12 +137,19 @@ class UserController extends Controller
                 ->with('error', 'この申請は既に処理されています。');
         }
 
+        // 役割名から役割IDを取得
+        $role = Role::where('display_name', $registration->role)->first();
+        if (!$role) {
+            return redirect()->route('admin.users.registrations')
+                ->with('error', '指定された役割が見つかりません。');
+        }
+
         // ユーザーを作成
         User::create([
             'name' => $registration->name,
             'email' => $registration->email,
             'password' => $registration->password,
-            'role' => $registration->role,
+            'role_id' => $role->id,
         ]);
 
         // 申請を承認済みに更新

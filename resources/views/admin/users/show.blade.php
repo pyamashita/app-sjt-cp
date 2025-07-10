@@ -50,17 +50,21 @@
                         <div>
                             <dt class="text-sm font-medium text-gray-500">役割</dt>
                             <dd class="mt-1">
-                                @if($user->role === 'admin')
+                                @if($user->role && $user->role->name === 'admin')
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                        管理者
+                                        {{ $user->role->display_name }}
                                     </span>
-                                @elseif($user->role === '競技委員')
+                                @elseif($user->role && $user->role->name === 'committee')
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                        競技委員
+                                        {{ $user->role->display_name }}
+                                    </span>
+                                @elseif($user->role && $user->role->name === 'assistant')
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                        {{ $user->role->display_name }}
                                     </span>
                                 @else
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                        補佐員
+                                        未設定
                                     </span>
                                 @endif
                             </dd>

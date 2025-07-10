@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\DeviceController;
 use App\Http\Controllers\Admin\CompetitionDeviceController;
 use App\Http\Controllers\Admin\ResourceController;
 use App\Http\Controllers\Admin\ApiTokenController;
+use App\Http\Controllers\Admin\GuidePageController;
 
 // 認証系ルート
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -97,6 +98,18 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::post('api-tokens/{apiToken}/regenerate', [ApiTokenController::class, 'regenerate'])->name('api-tokens.regenerate');
     Route::post('api-tokens/{apiToken}/toggle', [ApiTokenController::class, 'toggle'])->name('api-tokens.toggle');
     Route::resource('api-tokens', ApiTokenController::class)->except(['store']);
+    
+    // ガイドページ管理
+    Route::post('guide-pages/{guidePage}/activate', [GuidePageController::class, 'activate'])->name('guide-pages.activate');
+    Route::get('guide-pages/{guidePage}/preview', [GuidePageController::class, 'preview'])->name('guide-pages.preview');
+    Route::post('guide-pages/{guidePage}/sections', [GuidePageController::class, 'addSection'])->name('guide-pages.sections.add');
+    Route::post('guide-page-sections/{section}/groups', [GuidePageController::class, 'addGroup'])->name('guide-page-sections.groups.add');
+    Route::post('guide-page-groups/{group}/items', [GuidePageController::class, 'addItem'])->name('guide-page-groups.items.add');
+    Route::delete('guide-page-sections/{section}', [GuidePageController::class, 'deleteSection'])->name('guide-page-sections.delete');
+    Route::delete('guide-page-groups/{group}', [GuidePageController::class, 'deleteGroup'])->name('guide-page-groups.delete');
+    Route::delete('guide-page-items/{item}', [GuidePageController::class, 'deleteItem'])->name('guide-page-items.delete');
+    Route::put('guide-pages/{guidePage}/sections/order', [GuidePageController::class, 'updateSectionOrder'])->name('guide-pages.sections.order');
+    Route::resource('guide-pages', GuidePageController::class);
 });
 
 // ルートアクセス時のリダイレクト

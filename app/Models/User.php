@@ -14,6 +14,11 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     /**
+     * リレーションを常にロードする
+     */
+    protected $with = ['role'];
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var list<string>
@@ -111,7 +116,7 @@ class User extends Authenticatable
      *
      * @return string
      */
-    public function getRoleAttribute(): string
+    public function getRoleNameAttribute(): string
     {
         return $this->role ? $this->role->name : '';
     }

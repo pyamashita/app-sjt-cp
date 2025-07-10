@@ -154,12 +154,12 @@
         </div>
 
         <!-- システム管理 -->
-        <div class="bg-white overflow-hidden shadow-lg rounded-xl opacity-75 cursor-not-allowed">
+        <div class="bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-all duration-300">
             <div class="p-6">
-                <div class="flex items-center">
+                <div class="flex items-center mb-4">
                     <div class="flex-shrink-0">
-                        <div class="h-12 w-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                            <svg class="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="h-12 w-12 bg-red-100 rounded-lg flex items-center justify-center">
+                            <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                             </svg>
@@ -170,15 +170,13 @@
                         <p class="text-sm text-gray-600">ユーザーやシステム設定を管理</p>
                     </div>
                 </div>
-                <div class="mt-4">
-                    <div class="flex items-center justify-between">
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                            準備中
-                        </span>
-                        <span class="text-purple-600 text-sm font-medium opacity-50">
-                            開く →
-                        </span>
-                    </div>
+                
+                <!-- サブメニュー -->
+                <div class="space-y-2">
+                    <a href="{{ route('admin.users.index') }}" 
+                       class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-800 rounded-md transition-colors duration-200">
+                        ユーザー管理
+                    </a>
                 </div>
             </div>
         </div>

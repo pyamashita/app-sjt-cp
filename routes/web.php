@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\CompetitionDeviceController;
 use App\Http\Controllers\Admin\ResourceController;
 use App\Http\Controllers\Admin\ApiTokenController;
 use App\Http\Controllers\Admin\GuidePageController;
+use App\Http\Controllers\Admin\UserController;
 
 // 認証系ルート
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -30,6 +31,13 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     // ダッシュボード
     Route::get('/', [HomeController::class, 'index'])->name('home');
     Route::get('/dashboard', [HomeController::class, 'index'])->name('dashboard');
+
+    // ユーザー管理
+    Route::get('users/registrations', [UserController::class, 'registrations'])->name('users.registrations');
+    Route::post('users/registrations/{registration}/approve', [UserController::class, 'approveRegistration'])->name('users.registrations.approve');
+    Route::post('users/registrations/{registration}/reject', [UserController::class, 'rejectRegistration'])->name('users.registrations.reject');
+    Route::post('users/{user}/change-password', [UserController::class, 'changePassword'])->name('users.change-password');
+    Route::resource('users', UserController::class);
 
     // 大会管理
     Route::resource('competitions', CompetitionController::class);

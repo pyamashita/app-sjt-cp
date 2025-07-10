@@ -152,7 +152,7 @@
     </div>
 
     <!-- アイテム追加モーダル -->
-    <div id="addItemModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center">
+    <div id="addItemModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
         <div class="bg-white rounded-lg p-6 w-full max-w-md">
             <h3 class="text-lg font-medium text-gray-900 mb-4">アイテム追加</h3>
             <form id="addItemForm">
@@ -176,12 +176,16 @@
                 
                 <div id="resourceField" class="mb-4 hidden">
                     <label class="block text-sm font-medium text-gray-700 mb-2">リソース</label>
-                    <select id="itemResource" class="w-full px-3 py-2 border border-gray-300 rounded-md">
-                        <option value="">リソースを選択</option>
-                        @foreach($resources as $resource)
-                            <option value="{{ $resource->id }}">{{ $resource->name }}</option>
-                        @endforeach
-                    </select>
+                    <div class="border border-gray-300 rounded-md p-2 bg-gray-50">
+                        <button type="button" onclick="openResourceExplorer()" 
+                                class="w-full px-3 py-2 text-left bg-white border border-gray-300 rounded-md hover:bg-gray-50 flex items-center justify-between">
+                            <span id="selectedResourceName" class="text-gray-500">リソースを選択してください</span>
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+                            </svg>
+                        </button>
+                        <input type="hidden" id="itemResource" name="resource_id">
+                    </div>
                 </div>
                 
                 <div class="mb-4">
@@ -204,11 +208,249 @@
             </form>
         </div>
     </div>
+
+    <!-- リソースエクスプローラーモーダル -->
+    <div id="resourceExplorerModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg w-full max-w-4xl max-h-[80vh] flex flex-col">
+            <div class="p-4 border-b border-gray-200">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">リソースを選択</h3>
+                    <button type="button" onclick="closeResourceExplorer()" class="text-gray-400 hover:text-gray-500">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <!-- 検索・フィルター -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <div class="md:col-span-2">
+                        <input type="text" 
+                               id="resourceSearch" 
+                               placeholder="ファイル名で検索..." 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                               onkeyup="filterResources()">
+                    </div>
+                    <div>
+                        <select id="resourceTypeFilter" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                                onchange="filterResources()">
+                            <option value="">すべてのタイプ</option>
+                            <option value="application/pdf">PDF</option>
+                            <option value="image">画像</option>
+                            <option value="text">テキスト</option>
+                            <option value="application">アプリケーション</option>
+                        </select>
+                    </div>
+                    <div>
+                        <select id="resourceDateFilter" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                                onchange="filterResources()">
+                            <option value="">すべての期間</option>
+                            <option value="today">今日</option>
+                            <option value="week">今週</option>
+                            <option value="month">今月</option>
+                            <option value="year">今年</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- リソース一覧 -->
+            <div class="flex-1 overflow-y-auto p-4">
+                <div id="resourceList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    @foreach($resources as $resource)
+                        <div class="resource-item border border-gray-200 rounded-lg p-3 hover:bg-gray-50 cursor-pointer transition-colors"
+                             data-resource-id="{{ $resource->id }}"
+                             data-resource-name="{{ $resource->name }}"
+                             data-resource-type="{{ $resource->mime_type }}"
+                             data-resource-ext="{{ pathinfo($resource->original_name, PATHINFO_EXTENSION) }}"
+                             data-resource-date="{{ $resource->created_at->format('Y-m-d') }}"
+                             onclick="selectResource({{ $resource->id }}, '{{ $resource->name }}')">
+                            <div class="flex items-start space-x-3">
+                                <div class="flex-shrink-0">
+                                    @php
+                                        $iconClass = 'text-gray-400';
+                                        if (str_contains($resource->mime_type, 'pdf')) {
+                                            $iconClass = 'text-red-500';
+                                        } elseif (str_contains($resource->mime_type, 'image')) {
+                                            $iconClass = 'text-blue-500';
+                                        } elseif (str_contains($resource->mime_type, 'text')) {
+                                            $iconClass = 'text-green-500';
+                                        }
+                                    @endphp
+                                    <svg class="w-10 h-10 {{ $iconClass }}" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M9 2v6h6V2h4a1 1 0 011 1v18a1 1 0 01-1 1H5a1 1 0 01-1-1V3a1 1 0 011-1h4zm3 0h2v4h-2V2z"/>
+                                    </svg>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium text-gray-900 truncate">{{ $resource->name }}</p>
+                                    <p class="text-xs text-gray-500">{{ $resource->original_name }}</p>
+                                    <div class="flex items-center mt-1 text-xs text-gray-400">
+                                        <span>{{ $resource->formatted_size }}</span>
+                                        <span class="mx-1">•</span>
+                                        <span>{{ $resource->created_at->format('Y/m/d') }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+                
+                <div id="noResourcesMessage" class="hidden text-center py-8">
+                    <svg class="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <p class="text-gray-500">該当するリソースが見つかりません</p>
+                </div>
+            </div>
+            
+            <!-- フッター -->
+            <div class="p-4 border-t border-gray-200 flex justify-between items-center">
+                <div id="selectedResourceInfo" class="text-sm text-gray-600">
+                    リソースを選択してください
+                </div>
+                <div class="flex space-x-3">
+                    <button type="button" onclick="closeResourceExplorer()" 
+                            class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+                        キャンセル
+                    </button>
+                    <button type="button" 
+                            id="confirmResourceButton"
+                            onclick="confirmResourceSelection()" 
+                            disabled
+                            class="px-4 py-2 bg-purple-600 text-white rounded-md text-sm font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                        選択
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('scripts')
 <script>
 let currentGroupId = null;
+let selectedResourceId = null;
+let selectedResourceName = null;
+
+// リソースエクスプローラー関連
+function openResourceExplorer() {
+    document.getElementById('resourceExplorerModal').classList.remove('hidden');
+    filterResources(); // 初期表示
+}
+
+function closeResourceExplorer() {
+    document.getElementById('resourceExplorerModal').classList.add('hidden');
+    // 選択状態をリセット
+    document.querySelectorAll('.resource-item').forEach(item => {
+        item.classList.remove('border-purple-500', 'bg-purple-50');
+    });
+    selectedResourceId = null;
+    selectedResourceName = null;
+    document.getElementById('confirmResourceButton').disabled = true;
+    document.getElementById('selectedResourceInfo').textContent = 'リソースを選択してください';
+}
+
+function selectResource(id, name) {
+    // 既存の選択をクリア
+    document.querySelectorAll('.resource-item').forEach(item => {
+        item.classList.remove('border-purple-500', 'bg-purple-50');
+    });
+    
+    // 新しい選択を設定
+    const selectedItem = document.querySelector(`[data-resource-id="${id}"]`);
+    selectedItem.classList.add('border-purple-500', 'bg-purple-50');
+    
+    selectedResourceId = id;
+    selectedResourceName = name;
+    
+    document.getElementById('confirmResourceButton').disabled = false;
+    document.getElementById('selectedResourceInfo').textContent = `選択中: ${name}`;
+}
+
+function confirmResourceSelection() {
+    if (selectedResourceId && selectedResourceName) {
+        document.getElementById('itemResource').value = selectedResourceId;
+        document.getElementById('selectedResourceName').textContent = selectedResourceName;
+        document.getElementById('selectedResourceName').classList.remove('text-gray-500');
+        document.getElementById('selectedResourceName').classList.add('text-gray-900');
+        closeResourceExplorer();
+    }
+}
+
+function filterResources() {
+    const searchTerm = document.getElementById('resourceSearch').value.toLowerCase();
+    const typeFilter = document.getElementById('resourceTypeFilter').value;
+    const dateFilter = document.getElementById('resourceDateFilter').value;
+    
+    const items = document.querySelectorAll('.resource-item');
+    let visibleCount = 0;
+    
+    items.forEach(item => {
+        const name = item.dataset.resourceName.toLowerCase();
+        const type = item.dataset.resourceType;
+        const date = new Date(item.dataset.resourceDate);
+        
+        let showItem = true;
+        
+        // 名前フィルター
+        if (searchTerm && !name.includes(searchTerm)) {
+            showItem = false;
+        }
+        
+        // タイプフィルター
+        if (typeFilter) {
+            if (typeFilter === 'image' && !type.includes('image')) {
+                showItem = false;
+            } else if (typeFilter !== 'image' && !type.includes(typeFilter)) {
+                showItem = false;
+            }
+        }
+        
+        // 日付フィルター
+        if (dateFilter) {
+            const now = new Date();
+            const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            
+            switch(dateFilter) {
+                case 'today':
+                    if (date < startOfDay) showItem = false;
+                    break;
+                case 'week':
+                    const weekAgo = new Date(startOfDay);
+                    weekAgo.setDate(weekAgo.getDate() - 7);
+                    if (date < weekAgo) showItem = false;
+                    break;
+                case 'month':
+                    const monthAgo = new Date(startOfDay);
+                    monthAgo.setMonth(monthAgo.getMonth() - 1);
+                    if (date < monthAgo) showItem = false;
+                    break;
+                case 'year':
+                    const yearAgo = new Date(startOfDay);
+                    yearAgo.setFullYear(yearAgo.getFullYear() - 1);
+                    if (date < yearAgo) showItem = false;
+                    break;
+            }
+        }
+        
+        if (showItem) {
+            item.style.display = 'block';
+            visibleCount++;
+        } else {
+            item.style.display = 'none';
+        }
+    });
+    
+    // 結果なしメッセージの表示/非表示
+    const noResultsMessage = document.getElementById('noResourcesMessage');
+    if (visibleCount === 0) {
+        noResultsMessage.classList.remove('hidden');
+    } else {
+        noResultsMessage.classList.add('hidden');
+    }
+}
 
 function addSection() {
     const title = prompt('セクション名を入力してください:');
@@ -276,14 +518,27 @@ function toggleItemFields() {
         resourceField.classList.add('hidden');
         document.getElementById('itemUrl').required = true;
         document.getElementById('itemResource').required = false;
+        // リソース選択をリセット
+        document.getElementById('itemResource').value = '';
+        document.getElementById('selectedResourceName').textContent = 'リソースを選択してください';
+        document.getElementById('selectedResourceName').classList.add('text-gray-500');
+        document.getElementById('selectedResourceName').classList.remove('text-gray-900');
     }
 }
 
 document.getElementById('addItemForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
+    const type = document.getElementById('itemType').value;
+    
+    // リソースタイプの場合、リソースが選択されているか確認
+    if (type === 'resource' && !document.getElementById('itemResource').value) {
+        alert('リソースを選択してください。');
+        return;
+    }
+    
     const formData = {
-        type: document.getElementById('itemType').value,
+        type: type,
         title: document.getElementById('itemTitle').value,
         url: document.getElementById('itemUrl').value,
         resource_id: document.getElementById('itemResource').value,

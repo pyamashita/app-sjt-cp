@@ -54,6 +54,15 @@
                             cancel-url="{{ route('admin.competitions.index') }}"
                             csrf-token="{{ csrf_token() }}"
                             :is-edit="false"
+                            :committee-members="{{ json_encode($committeeMembers->map(function($member) {
+                                return [
+                                    'id' => $member->id,
+                                    'name' => $member->name,
+                                    'display_name' => $member->display_name,
+                                    'organization' => $member->organization,
+                                    'is_active' => $member->is_active
+                                ];
+                            })->values()) }}"
                             :errors="{{ json_encode($errors->toArray()) }}"
                         ></competition-form>
                     </div>

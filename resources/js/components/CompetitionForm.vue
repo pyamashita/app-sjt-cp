@@ -73,23 +73,60 @@
 
     <!-- 競技主査 -->
     <div>
-      <label for="chief_judge" class="block text-sm font-semibold text-gray-700 mb-2">
+      <label for="chief_judge_id" class="block text-sm font-semibold text-gray-700 mb-2">
         競技主査
       </label>
-      <input 
-        type="text" 
-        id="chief_judge" 
-        name="chief_judge" 
-        v-model="form.chief_judge"
-        placeholder="競技主査名を入力"
-        class="block w-full px-3 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 sm:text-sm"
+      <select 
+        id="chief_judge_id" 
+        name="chief_judge_id" 
+        v-model="form.chief_judge_id"
+        class="block w-full px-3 py-3 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 sm:text-sm"
       >
-      <div v-if="errors.chief_judge" class="text-red-500 text-sm mt-1">{{ errors.chief_judge[0] }}</div>
+        <option value="">選択してください</option>
+        <option 
+          v-for="member in committeeMembers" 
+          :key="member.id" 
+          :value="member.id"
+        >
+          {{ member.display_name }}
+        </option>
+      </select>
+      <div v-if="errors.chief_judge_id" class="text-red-500 text-sm mt-1">{{ errors.chief_judge_id[0] }}</div>
     </div>
 
     <!-- 競技委員 -->
-    <committee-member-input :initial-members="initialCommitteeMembers"></committee-member-input>
-    <div v-if="errors.committee_members" class="text-red-500 text-sm">{{ errors.committee_members[0] }}</div>
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-2">
+        競技委員
+      </label>
+      <div class="space-y-2 max-h-48 overflow-y-auto border border-gray-300 rounded-lg p-3">
+        <label 
+          v-for="member in committeeMembers" 
+          :key="member.id"
+          class="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-2 rounded"
+        >
+          <input 
+            type="checkbox" 
+            :value="member.id"
+            v-model="form.committee_member_ids"
+            :disabled="form.chief_judge_id == member.id"
+            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          >
+          <span :class="{ 'text-gray-400': form.chief_judge_id == member.id }">
+            {{ member.display_name }}
+            <span v-if="form.chief_judge_id == member.id" class="text-xs text-gray-500">（競技主査として選択済み）</span>
+          </span>
+        </label>
+      </div>
+      <input 
+        v-for="(memberId, index) in form.committee_member_ids" 
+        :key="index"
+        type="hidden" 
+        name="committee_member_ids[]" 
+        :value="memberId"
+      >
+      <div v-if="errors.committee_member_ids" class="text-red-500 text-sm mt-1">{{ errors.committee_member_ids[0] }}</div>
+    </div>
 
     <!-- フォームボタン -->
     <div class="flex items-center justify-between pt-6 border-t border-gray-200">
@@ -115,13 +152,9 @@
 
 <script>
 import { ref, onMounted } from 'vue';
-import CommitteeMemberInput from './CommitteeMemberInput.vue';
 
 export default {
   name: 'CompetitionForm',
-  components: {
-    CommitteeMemberInput
-  },
   props: {
     formAction: {
       type: String,
@@ -143,6 +176,10 @@ export default {
       type: Object,
       default: () => ({})
     },
+    committeeMembers: {
+      type: Array,
+      default: () => []
+    },
     errors: {
       type: Object,
       default: () => ({})
@@ -154,10 +191,9 @@ export default {
       start_date: '',
       end_date: '',
       venue: '',
-      chief_judge: ''
+      chief_judge_id: null,
+      committee_member_ids: []
     });
-
-    const initialCommitteeMembers = ref([]);
 
     // 初期データの設定
     onMounted(() => {
@@ -167,17 +203,14 @@ export default {
           start_date: props.competition.start_date || '',
           end_date: props.competition.end_date || '',
           venue: props.competition.venue || '',
-          chief_judge: props.competition.chief_judge || ''
+          chief_judge_id: props.competition.chief_judge_id || null,
+          committee_member_ids: props.competition.committee_member_ids || []
         };
-        
-        initialCommitteeMembers.value = props.competition.committee_members || [];
-        console.log('Initial committee members:', initialCommitteeMembers.value);
       }
     });
 
     return {
-      form,
-      initialCommitteeMembers
+      form
     };
   }
 };

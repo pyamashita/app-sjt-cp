@@ -30,10 +30,10 @@
 
     <!-- 機能カード -->
     <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <!-- スケジュール管理 -->
-        <a href="{{ route('admin.competitions.index') }}" class="block bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+        <!-- 大会管理 -->
+        <div class="bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-all duration-300">
             <div class="p-6">
-                <div class="flex items-center">
+                <div class="flex items-center mb-4">
                     <div class="flex-shrink-0">
                         <div class="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
                             <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -42,19 +42,24 @@
                         </div>
                     </div>
                     <div class="ml-4">
-                        <h3 class="text-lg font-semibold text-gray-900">スケジュール管理</h3>
-                        <p class="text-sm text-gray-600">競技大会のスケジュールを管理</p>
+                        <h3 class="text-lg font-semibold text-gray-900">大会管理</h3>
+                        <p class="text-sm text-gray-600">競技大会と競技委員を管理</p>
                     </div>
                 </div>
-                <div class="mt-4">
-                    <div class="flex items-center justify-between">
-                        <span class="text-blue-600 text-sm font-medium">
-                            開く →
-                        </span>
-                    </div>
+                
+                <!-- サブメニュー -->
+                <div class="space-y-2">
+                    <a href="{{ route('admin.competitions.index') }}" 
+                       class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-800 rounded-md transition-colors duration-200">
+                        大会・スケジュール
+                    </a>
+                    <a href="{{ route('admin.committee-members.index') }}" 
+                       class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-800 rounded-md transition-colors duration-200">
+                        競技委員管理
+                    </a>
                 </div>
             </div>
-        </a>
+        </div>
 
         <!-- 選手情報管理 -->
         <div class="bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-all duration-300">
@@ -153,13 +158,40 @@
             </div>
         </div>
 
-        <!-- システム管理 -->
-        <div class="bg-white overflow-hidden shadow-lg rounded-xl opacity-75 cursor-not-allowed">
+        <!-- サーバ管理 -->
+        <div class="bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-all duration-300">
             <div class="p-6">
-                <div class="flex items-center">
+                <div class="flex items-center mb-4">
                     <div class="flex-shrink-0">
-                        <div class="h-12 w-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                            <svg class="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="h-12 w-12 bg-indigo-100 rounded-lg flex items-center justify-center">
+                            <svg class="h-6 w-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-lg font-semibold text-gray-900">サーバ管理</h3>
+                        <p class="text-sm text-gray-600">競技サーバとDB、DNS管理</p>
+                    </div>
+                </div>
+                
+                <!-- サブメニュー -->
+                <div class="space-y-2">
+                    <a href="{{ route('admin.servers.index') }}" 
+                       class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-800 rounded-md transition-colors duration-200">
+                        サーバ一覧
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- システム管理 -->
+        <div class="bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-all duration-300">
+            <div class="p-6">
+                <div class="flex items-center mb-4">
+                    <div class="flex-shrink-0">
+                        <div class="h-12 w-12 bg-red-100 rounded-lg flex items-center justify-center">
+                            <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                             </svg>
@@ -170,15 +202,13 @@
                         <p class="text-sm text-gray-600">ユーザーやシステム設定を管理</p>
                     </div>
                 </div>
-                <div class="mt-4">
-                    <div class="flex items-center justify-between">
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                            準備中
-                        </span>
-                        <span class="text-purple-600 text-sm font-medium opacity-50">
-                            開く →
-                        </span>
-                    </div>
+                
+                <!-- サブメニュー -->
+                <div class="space-y-2">
+                    <a href="{{ route('admin.users.index') }}" 
+                       class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-800 rounded-md transition-colors duration-200">
+                        ユーザー管理
+                    </a>
                 </div>
             </div>
         </div>
@@ -191,7 +221,7 @@
             :data="[
                 ['label' => 'バージョン', 'value' => 'v1.0.0 (開発版)'],
                 ['label' => '最終更新', 'value' => now()->format('Y年m月d日 H:i')],
-                ['label' => '接続ユーザー', 'value' => auth()->user()->name . ' (' . auth()->user()->role . ')'],
+                ['label' => '接続ユーザー', 'value' => auth()->user()->name . ' (' . auth()->user()->role_display_name . ')'],
                 ['label' => '機能状態', 'value' => '基本機能 稼働中', 'badge' => true, 'badgeClass' => 'bg-green-100 text-green-800']
             ]" />
     </div>

@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Admin\HomeController;
 use App\Http\Controllers\Admin\CompetitionController;
 use App\Http\Controllers\Admin\CompetitionDayController;
@@ -14,17 +15,34 @@ use App\Http\Controllers\Admin\CompetitionDeviceController;
 use App\Http\Controllers\Admin\ResourceController;
 use App\Http\Controllers\Admin\ApiTokenController;
 use App\Http\Controllers\Admin\GuidePageController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\ServerController;
+use App\Http\Controllers\Admin\DatabaseController;
+use App\Http\Controllers\Admin\DatabaseUserController;
+use App\Http\Controllers\Admin\DnsRecordController;
+use App\Http\Controllers\Admin\CommitteeMemberController;
 
 // 認証系ルート
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
+// ユーザー登録
+Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
+Route::post('/register', [RegisterController::class, 'register']);
+
 // 管理画面ルート（認証必須）
 Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     // ダッシュボード
     Route::get('/', [HomeController::class, 'index'])->name('home');
     Route::get('/dashboard', [HomeController::class, 'index'])->name('dashboard');
+
+    // ユーザー管理
+    Route::get('users/registrations', [UserController::class, 'registrations'])->name('users.registrations');
+    Route::post('users/registrations/{registration}/approve', [UserController::class, 'approveRegistration'])->name('users.registrations.approve');
+    Route::post('users/registrations/{registration}/reject', [UserController::class, 'rejectRegistration'])->name('users.registrations.reject');
+    Route::post('users/{user}/change-password', [UserController::class, 'changePassword'])->name('users.change-password');
+    Route::resource('users', UserController::class);
 
     // 大会管理
     Route::resource('competitions', CompetitionController::class);
@@ -110,6 +128,34 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::delete('guide-page-items/{item}', [GuidePageController::class, 'deleteItem'])->name('guide-page-items.delete');
     Route::put('guide-pages/{guidePage}/sections/order', [GuidePageController::class, 'updateSectionOrder'])->name('guide-pages.sections.order');
     Route::resource('guide-pages', GuidePageController::class);
+    
+    // サーバ管理
+    Route::resource('servers', ServerController::class);
+    
+    // データベース管理
+    Route::get('databases/create', [DatabaseController::class, 'create'])->name('databases.create');
+    Route::post('databases', [DatabaseController::class, 'store'])->name('databases.store');
+    Route::get('databases/{database}/edit', [DatabaseController::class, 'edit'])->name('databases.edit');
+    Route::put('databases/{database}', [DatabaseController::class, 'update'])->name('databases.update');
+    Route::delete('databases/{database}', [DatabaseController::class, 'destroy'])->name('databases.destroy');
+    
+    // DBユーザー管理
+    Route::get('database-users/create', [DatabaseUserController::class, 'create'])->name('database-users.create');
+    Route::post('database-users', [DatabaseUserController::class, 'store'])->name('database-users.store');
+    Route::get('database-users/{databaseUser}/edit', [DatabaseUserController::class, 'edit'])->name('database-users.edit');
+    Route::put('database-users/{databaseUser}', [DatabaseUserController::class, 'update'])->name('database-users.update');
+    Route::delete('database-users/{databaseUser}', [DatabaseUserController::class, 'destroy'])->name('database-users.destroy');
+    
+    // DNSレコード管理
+    Route::get('dns-records/create', [DnsRecordController::class, 'create'])->name('dns-records.create');
+    Route::post('dns-records', [DnsRecordController::class, 'store'])->name('dns-records.store');
+    Route::get('dns-records/{dnsRecord}/edit', [DnsRecordController::class, 'edit'])->name('dns-records.edit');
+    Route::put('dns-records/{dnsRecord}', [DnsRecordController::class, 'update'])->name('dns-records.update');
+    Route::delete('dns-records/{dnsRecord}', [DnsRecordController::class, 'destroy'])->name('dns-records.destroy');
+    
+    // 競技委員管理
+    Route::get('committee-members/export', [CommitteeMemberController::class, 'export'])->name('committee-members.export');
+    Route::resource('committee-members', CommitteeMemberController::class);
 });
 
 // ルートアクセス時のリダイレクト

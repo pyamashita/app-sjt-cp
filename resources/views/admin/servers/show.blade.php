@@ -57,13 +57,13 @@
                 <div class="px-6 py-4 border-b border-gray-200">
                     <div class="flex items-center justify-between">
                         <h3 class="text-lg font-semibold text-gray-900">データベース管理</h3>
-                        <button type="button" 
+                        <a href="{{ route('admin.databases.create', ['server_id' => $server->id]) }}" 
                                 class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                             <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                             </svg>
                             データベース追加
-                        </button>
+                        </a>
                     </div>
                 </div>
                 
@@ -113,8 +113,13 @@
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                                            <button class="text-blue-600 hover:text-blue-900 font-medium">編集</button>
-                                            <button class="text-red-600 hover:text-red-900 font-medium">削除</button>
+                                            <a href="{{ route('admin.databases.edit', $database) }}" class="text-blue-600 hover:text-blue-900 font-medium">編集</a>
+                                            <form class="inline" method="POST" action="{{ route('admin.databases.destroy', $database) }}"
+                                                  onsubmit="return confirm('このデータベースを削除してもよろしいですか？')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="text-red-600 hover:text-red-900 font-medium">削除</button>
+                                            </form>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -137,13 +142,13 @@
                 <div class="px-6 py-4 border-b border-gray-200">
                     <div class="flex items-center justify-between">
                         <h3 class="text-lg font-semibold text-gray-900">DBユーザー管理</h3>
-                        <button type="button" 
+                        <a href="{{ route('admin.database-users.create', ['server_id' => $server->id]) }}" 
                                 class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                             <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                             </svg>
                             DBユーザー追加
-                        </button>
+                        </a>
                     </div>
                 </div>
                 
@@ -187,8 +192,13 @@
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                                            <button class="text-blue-600 hover:text-blue-900 font-medium">編集</button>
-                                            <button class="text-red-600 hover:text-red-900 font-medium">削除</button>
+                                            <a href="{{ route('admin.database-users.edit', $dbUser) }}" class="text-blue-600 hover:text-blue-900 font-medium">編集</a>
+                                            <form class="inline" method="POST" action="{{ route('admin.database-users.destroy', $dbUser) }}"
+                                                  onsubmit="return confirm('このDBユーザーを削除してもよろしいですか？')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="text-red-600 hover:text-red-900 font-medium">削除</button>
+                                            </form>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -213,13 +223,13 @@
                 <div class="px-6 py-4 border-b border-gray-200">
                     <div class="flex items-center justify-between">
                         <h3 class="text-lg font-semibold text-gray-900">DNSレコード管理</h3>
-                        <button type="button" 
+                        <a href="{{ route('admin.dns-records.create', ['server_id' => $server->id]) }}" 
                                 class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
                             <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                             </svg>
                             DNSレコード追加
-                        </button>
+                        </a>
                     </div>
                 </div>
                 
@@ -277,8 +287,13 @@
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                                            <button class="text-blue-600 hover:text-blue-900 font-medium">編集</button>
-                                            <button class="text-red-600 hover:text-red-900 font-medium">削除</button>
+                                            <a href="{{ route('admin.dns-records.edit', $dnsRecord) }}" class="text-blue-600 hover:text-blue-900 font-medium">編集</a>
+                                            <form class="inline" method="POST" action="{{ route('admin.dns-records.destroy', $dnsRecord) }}"
+                                                  onsubmit="return confirm('このDNSレコードを削除してもよろしいですか？')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="text-red-600 hover:text-red-900 font-medium">削除</button>
+                                            </form>
                                         </td>
                                     </tr>
                                 @endforeach

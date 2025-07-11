@@ -17,6 +17,9 @@ use App\Http\Controllers\Admin\ApiTokenController;
 use App\Http\Controllers\Admin\GuidePageController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ServerController;
+use App\Http\Controllers\Admin\DatabaseController;
+use App\Http\Controllers\Admin\DatabaseUserController;
+use App\Http\Controllers\Admin\DnsRecordController;
 
 // 認証系ルート
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -127,6 +130,27 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     
     // サーバ管理
     Route::resource('servers', ServerController::class);
+    
+    // データベース管理
+    Route::get('databases/create', [DatabaseController::class, 'create'])->name('databases.create');
+    Route::post('databases', [DatabaseController::class, 'store'])->name('databases.store');
+    Route::get('databases/{database}/edit', [DatabaseController::class, 'edit'])->name('databases.edit');
+    Route::put('databases/{database}', [DatabaseController::class, 'update'])->name('databases.update');
+    Route::delete('databases/{database}', [DatabaseController::class, 'destroy'])->name('databases.destroy');
+    
+    // DBユーザー管理
+    Route::get('database-users/create', [DatabaseUserController::class, 'create'])->name('database-users.create');
+    Route::post('database-users', [DatabaseUserController::class, 'store'])->name('database-users.store');
+    Route::get('database-users/{databaseUser}/edit', [DatabaseUserController::class, 'edit'])->name('database-users.edit');
+    Route::put('database-users/{databaseUser}', [DatabaseUserController::class, 'update'])->name('database-users.update');
+    Route::delete('database-users/{databaseUser}', [DatabaseUserController::class, 'destroy'])->name('database-users.destroy');
+    
+    // DNSレコード管理
+    Route::get('dns-records/create', [DnsRecordController::class, 'create'])->name('dns-records.create');
+    Route::post('dns-records', [DnsRecordController::class, 'store'])->name('dns-records.store');
+    Route::get('dns-records/{dnsRecord}/edit', [DnsRecordController::class, 'edit'])->name('dns-records.edit');
+    Route::put('dns-records/{dnsRecord}', [DnsRecordController::class, 'update'])->name('dns-records.update');
+    Route::delete('dns-records/{dnsRecord}', [DnsRecordController::class, 'destroy'])->name('dns-records.destroy');
 });
 
 // ルートアクセス時のリダイレクト

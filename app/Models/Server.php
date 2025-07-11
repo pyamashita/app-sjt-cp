@@ -22,6 +22,7 @@ class Server extends Model
     protected $casts = [
         'is_active' => 'boolean',
         'status_info' => 'array',
+        'password' => 'encrypted',
     ];
 
     /**

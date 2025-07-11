@@ -20,6 +20,7 @@ class DatabaseUser extends Model
     protected $casts = [
         'is_active' => 'boolean',
         'privileges' => 'array',
+        'password' => 'encrypted',
     ];
 
     /**

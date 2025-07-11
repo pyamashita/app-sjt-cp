@@ -42,7 +42,7 @@
                     ['label' => 'IPアドレス', 'value' => $server->ip_address],
                     ['label' => 'ホスト名', 'value' => $server->hostname],
                     ['label' => 'ユーザ名', 'value' => $server->username],
-                    ['label' => 'パスワード', 'value' => str_repeat('*', strlen($server->password))],
+                    ['label' => 'パスワード', 'value' => str_repeat('*', 12) . ' (暗号化済み)'],
                     ['label' => 'Webドキュメントルート', 'value' => $server->web_document_root],
                     ['label' => '説明', 'value' => $server->description ?: '未設定'],
                     ['label' => '状態', 'value' => $server->is_active ? '稼働中' : '停止中', 'badge' => true, 'badgeClass' => $server->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'],

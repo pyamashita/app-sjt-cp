@@ -30,10 +30,10 @@
 
     <!-- 機能カード -->
     <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <!-- スケジュール管理 -->
-        <a href="{{ route('admin.competitions.index') }}" class="block bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+        <!-- 大会管理 -->
+        <div class="bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-all duration-300">
             <div class="p-6">
-                <div class="flex items-center">
+                <div class="flex items-center mb-4">
                     <div class="flex-shrink-0">
                         <div class="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
                             <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -42,19 +42,24 @@
                         </div>
                     </div>
                     <div class="ml-4">
-                        <h3 class="text-lg font-semibold text-gray-900">スケジュール管理</h3>
-                        <p class="text-sm text-gray-600">競技大会のスケジュールを管理</p>
+                        <h3 class="text-lg font-semibold text-gray-900">大会管理</h3>
+                        <p class="text-sm text-gray-600">競技大会と競技委員を管理</p>
                     </div>
                 </div>
-                <div class="mt-4">
-                    <div class="flex items-center justify-between">
-                        <span class="text-blue-600 text-sm font-medium">
-                            開く →
-                        </span>
-                    </div>
+                
+                <!-- サブメニュー -->
+                <div class="space-y-2">
+                    <a href="{{ route('admin.competitions.index') }}" 
+                       class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-800 rounded-md transition-colors duration-200">
+                        大会・スケジュール
+                    </a>
+                    <a href="{{ route('admin.committee-members.index') }}" 
+                       class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-800 rounded-md transition-colors duration-200">
+                        競技委員管理
+                    </a>
                 </div>
             </div>
-        </a>
+        </div>
 
         <!-- 選手情報管理 -->
         <div class="bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-all duration-300">

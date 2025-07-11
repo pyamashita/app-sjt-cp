@@ -20,6 +20,7 @@ use App\Http\Controllers\Admin\ServerController;
 use App\Http\Controllers\Admin\DatabaseController;
 use App\Http\Controllers\Admin\DatabaseUserController;
 use App\Http\Controllers\Admin\DnsRecordController;
+use App\Http\Controllers\Admin\CommitteeMemberController;
 
 // 認証系ルート
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -151,6 +152,10 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('dns-records/{dnsRecord}/edit', [DnsRecordController::class, 'edit'])->name('dns-records.edit');
     Route::put('dns-records/{dnsRecord}', [DnsRecordController::class, 'update'])->name('dns-records.update');
     Route::delete('dns-records/{dnsRecord}', [DnsRecordController::class, 'destroy'])->name('dns-records.destroy');
+    
+    // 競技委員管理
+    Route::get('committee-members/export', [CommitteeMemberController::class, 'export'])->name('committee-members.export');
+    Route::resource('committee-members', CommitteeMemberController::class);
 });
 
 // ルートアクセス時のリダイレクト

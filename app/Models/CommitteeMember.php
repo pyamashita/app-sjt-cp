@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class CommitteeMember extends Model
 {
@@ -63,5 +64,15 @@ class CommitteeMember extends Model
     public function getFullNameAttribute(): string
     {
         return "{$this->name} ({$this->name_kana})";
+    }
+
+    /**
+     * 参加大会とのリレーション（多対多）
+     */
+    public function competitions(): BelongsToMany
+    {
+        return $this->belongsToMany(Competition::class, 'competition_committee_member')
+            ->withPivot('role')
+            ->withTimestamps();
     }
 }

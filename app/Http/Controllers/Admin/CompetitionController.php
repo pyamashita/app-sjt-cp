@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Competition;
+use App\Models\CommitteeMember;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -27,7 +28,9 @@ class CompetitionController extends Controller
      */
     public function create(): View
     {
-        return view('admin.competitions.create');
+        $committeeMembers = CommitteeMember::active()->orderByNameKana()->get();
+        
+        return view('admin.competitions.create', compact('committeeMembers'));
     }
 
     /**
@@ -35,29 +38,46 @@ class CompetitionController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        // デバッグ用：リクエストデータの確認
-        \Log::info('Competition creation request:', $request->all());
-        
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'venue' => 'required|string|max:255',
-            'chief_judge' => 'nullable|string|max:255',
-            'committee_members' => 'nullable|array',
-            'committee_members.*' => 'string|max:255',
+            'chief_judge_id' => 'nullable|exists:committee_members,id',
+            'committee_member_ids' => 'nullable|array',
+            'committee_member_ids.*' => 'exists:committee_members,id',
+        ], [
+            'name.required' => '大会名を入力してください。',
+            'start_date.required' => '開始日を入力してください。',
+            'end_date.required' => '終了日を入力してください。',
+            'end_date.after_or_equal' => '終了日は開始日以降の日付を選択してください。',
+            'venue.required' => '開催場所を入力してください。',
+            'chief_judge_id.exists' => '選択された競技主査が存在しません。',
+            'committee_member_ids.*.exists' => '選択された競技委員が存在しません。',
         ]);
 
-        // 競技委員の配列から空の値を除去
-        if (isset($validated['committee_members'])) {
-            $validated['committee_members'] = array_values(array_filter($validated['committee_members'], function($member) {
-                return !empty(trim($member));
-            }));
+        // 大会を作成（競技委員情報は除く）
+        $competitionData = array_intersect_key($validated, array_flip(['name', 'start_date', 'end_date', 'venue']));
+        $competition = Competition::create($competitionData);
+
+        // 競技主査を関連付け
+        if ($validated['chief_judge_id']) {
+            $competition->committeeMembers()->attach($validated['chief_judge_id'], ['role' => '競技主査']);
         }
 
-        \Log::info('Validated data:', $validated);
-
-        Competition::create($validated);
+        // 競技委員を関連付け
+        if (isset($validated['committee_member_ids'])) {
+            $committeeData = [];
+            foreach ($validated['committee_member_ids'] as $memberId) {
+                // 競技主査と重複しないようにチェック
+                if ($memberId != $validated['chief_judge_id']) {
+                    $committeeData[$memberId] = ['role' => '競技委員'];
+                }
+            }
+            if (!empty($committeeData)) {
+                $competition->committeeMembers()->attach($committeeData);
+            }
+        }
 
         return redirect()->route('admin.competitions.index')
             ->with('success', '大会を作成しました。');
@@ -78,7 +98,10 @@ class CompetitionController extends Controller
      */
     public function edit(Competition $competition): View
     {
-        return view('admin.competitions.edit', compact('competition'));
+        $committeeMembers = CommitteeMember::active()->orderByNameKana()->get();
+        $competition->load('committeeMembers');
+        
+        return view('admin.competitions.edit', compact('competition', 'committeeMembers'));
     }
 
     /**
@@ -86,29 +109,49 @@ class CompetitionController extends Controller
      */
     public function update(Request $request, Competition $competition): RedirectResponse
     {
-        // デバッグ用：リクエストデータの確認
-        \Log::info('Competition update request:', $request->all());
-        
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'venue' => 'required|string|max:255',
-            'chief_judge' => 'nullable|string|max:255',
-            'committee_members' => 'nullable|array',
-            'committee_members.*' => 'string|max:255',
+            'chief_judge_id' => 'nullable|exists:committee_members,id',
+            'committee_member_ids' => 'nullable|array',
+            'committee_member_ids.*' => 'exists:committee_members,id',
+        ], [
+            'name.required' => '大会名を入力してください。',
+            'start_date.required' => '開始日を入力してください。',
+            'end_date.required' => '終了日を入力してください。',
+            'end_date.after_or_equal' => '終了日は開始日以降の日付を選択してください。',
+            'venue.required' => '開催場所を入力してください。',
+            'chief_judge_id.exists' => '選択された競技主査が存在しません。',
+            'committee_member_ids.*.exists' => '選択された競技委員が存在しません。',
         ]);
 
-        // 競技委員の配列から空の値を除去
-        if (isset($validated['committee_members'])) {
-            $validated['committee_members'] = array_values(array_filter($validated['committee_members'], function($member) {
-                return !empty(trim($member));
-            }));
+        // 大会基本情報を更新
+        $competitionData = array_intersect_key($validated, array_flip(['name', 'start_date', 'end_date', 'venue']));
+        $competition->update($competitionData);
+
+        // 既存の競技委員関連付けを削除
+        $competition->committeeMembers()->detach();
+
+        // 競技主査を関連付け
+        if ($validated['chief_judge_id']) {
+            $competition->committeeMembers()->attach($validated['chief_judge_id'], ['role' => '競技主査']);
         }
 
-        \Log::info('Validated data:', $validated);
-
-        $competition->update($validated);
+        // 競技委員を関連付け
+        if (isset($validated['committee_member_ids'])) {
+            $committeeData = [];
+            foreach ($validated['committee_member_ids'] as $memberId) {
+                // 競技主査と重複しないようにチェック
+                if ($memberId != $validated['chief_judge_id']) {
+                    $committeeData[$memberId] = ['role' => '競技委員'];
+                }
+            }
+            if (!empty($committeeData)) {
+                $competition->committeeMembers()->attach($committeeData);
+            }
+        }
 
         return redirect()->route('admin.competitions.index')
             ->with('success', '大会を更新しました。');

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Competition extends Model
 {
@@ -12,14 +13,11 @@ class Competition extends Model
         'start_date',
         'end_date',
         'venue',
-        'chief_judge',
-        'committee_members',
     ];
 
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
-        'committee_members' => 'array',
     ];
 
     /**
@@ -49,11 +47,25 @@ class Competition extends Model
     }
 
     /**
-     * 競技委員を配列から文字列に変換
+     * 競技委員を文字列で取得
      */
     public function getCommitteeMembersStringAttribute(): string
     {
-        return $this->committee_members ? implode(', ', $this->committee_members) : '';
+        $members = [];
+        
+        // 競技主査を最初に追加
+        $chiefJudge = $this->chiefJudge();
+        if ($chiefJudge) {
+            $members[] = $chiefJudge->display_name . '（競技主査）';
+        }
+        
+        // 競技委員を追加
+        $judges = $this->judges()->get();
+        foreach ($judges as $judge) {
+            $members[] = $judge->display_name;
+        }
+        
+        return implode(', ', $members);
     }
 
     /**
@@ -84,5 +96,31 @@ class Competition extends Model
     public function competitionDevices(): HasMany
     {
         return $this->hasMany(CompetitionDevice::class);
+    }
+
+    /**
+     * 競技委員とのリレーション（多対多）
+     */
+    public function committeeMembers(): BelongsToMany
+    {
+        return $this->belongsToMany(CommitteeMember::class, 'competition_committee_member')
+            ->withPivot('role')
+            ->withTimestamps();
+    }
+
+    /**
+     * 競技主査を取得
+     */
+    public function chiefJudge()
+    {
+        return $this->committeeMembers()->wherePivot('role', '競技主査')->first();
+    }
+
+    /**
+     * 競技委員（主査以外）を取得
+     */
+    public function judges()
+    {
+        return $this->committeeMembers()->wherePivot('role', '競技委員');
     }
 }

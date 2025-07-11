@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Admin\HomeController;
 use App\Http\Controllers\Admin\CompetitionController;
 use App\Http\Controllers\Admin\CompetitionDayController;
@@ -14,17 +15,29 @@ use App\Http\Controllers\Admin\CompetitionDeviceController;
 use App\Http\Controllers\Admin\ResourceController;
 use App\Http\Controllers\Admin\ApiTokenController;
 use App\Http\Controllers\Admin\GuidePageController;
+use App\Http\Controllers\Admin\UserController;
 
 // 認証系ルート
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
+// ユーザー登録
+Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
+Route::post('/register', [RegisterController::class, 'register']);
+
 // 管理画面ルート（認証必須）
 Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     // ダッシュボード
     Route::get('/', [HomeController::class, 'index'])->name('home');
     Route::get('/dashboard', [HomeController::class, 'index'])->name('dashboard');
+
+    // ユーザー管理
+    Route::get('users/registrations', [UserController::class, 'registrations'])->name('users.registrations');
+    Route::post('users/registrations/{registration}/approve', [UserController::class, 'approveRegistration'])->name('users.registrations.approve');
+    Route::post('users/registrations/{registration}/reject', [UserController::class, 'rejectRegistration'])->name('users.registrations.reject');
+    Route::post('users/{user}/change-password', [UserController::class, 'changePassword'])->name('users.change-password');
+    Route::resource('users', UserController::class);
 
     // 大会管理
     Route::resource('competitions', CompetitionController::class);

@@ -45,13 +45,7 @@
                     <div class="hidden md:flex flex-col text-right">
                         <span class="text-sm font-semibold text-gray-700">{{ auth()->user()->name }}</span>
                         <span class="text-xs text-gray-500 capitalize">
-                            @if(auth()->user()->role === 'admin')
-                                管理者
-                            @elseif(auth()->user()->role === 'competition_committee')
-                                競技委員
-                            @else
-                                補佐員
-                            @endif
+                            {{ auth()->user()->role_display_name }}
                         </span>
                     </div>
 

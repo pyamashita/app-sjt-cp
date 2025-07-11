@@ -58,9 +58,11 @@
                                 return [
                                     'id' => $member->id,
                                     'name' => $member->name,
-                                    'display_name' => $member->display_name
+                                    'display_name' => $member->display_name,
+                                    'organization' => $member->organization,
+                                    'is_active' => $member->is_active
                                 ];
-                            })) }}"
+                            })->values()) }}"
                             :errors="{{ json_encode($errors->toArray()) }}"
                         ></competition-form>
                     </div>

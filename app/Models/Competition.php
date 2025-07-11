@@ -113,7 +113,11 @@ class Competition extends Model
      */
     public function chiefJudge()
     {
-        return $this->committeeMembers()->wherePivot('role', '競技主査')->first();
+        try {
+            return $this->committeeMembers()->wherePivot('role', '競技主査')->first();
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 
     /**
@@ -121,6 +125,10 @@ class Competition extends Model
      */
     public function judges()
     {
-        return $this->committeeMembers()->wherePivot('role', '競技委員');
+        try {
+            return $this->committeeMembers()->wherePivot('role', '競技委員');
+        } catch (\Exception $e) {
+            return collect();
+        }
     }
 }

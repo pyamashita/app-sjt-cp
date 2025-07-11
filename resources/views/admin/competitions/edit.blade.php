@@ -59,7 +59,7 @@
                                 'start_date' => $competition->start_date->format('Y-m-d'),
                                 'end_date' => $competition->end_date->format('Y-m-d'),
                                 'venue' => $competition->venue,
-                                'chief_judge_id' => $competition->chiefJudge() ? $competition->chiefJudge()->id : null,
+                                'chief_judge_id' => optional($competition->chiefJudge())->id,
                                 'committee_member_ids' => $competition->judges()->pluck('id')->toArray()
                             ]) }}"
                             :committee-members="{{ json_encode($committeeMembers->map(function($member) {

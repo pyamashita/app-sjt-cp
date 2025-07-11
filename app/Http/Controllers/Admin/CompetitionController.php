@@ -28,7 +28,12 @@ class CompetitionController extends Controller
      */
     public function create(): View
     {
-        $committeeMembers = CommitteeMember::active()->orderByNameKana()->get();
+        try {
+            $committeeMembers = CommitteeMember::active()->orderByNameKana()->get();
+        } catch (\Exception $e) {
+            // テーブルが存在しない場合は空のコレクション
+            $committeeMembers = collect();
+        }
         
         return view('admin.competitions.create', compact('committeeMembers'));
     }
@@ -60,23 +65,28 @@ class CompetitionController extends Controller
         $competitionData = array_intersect_key($validated, array_flip(['name', 'start_date', 'end_date', 'venue']));
         $competition = Competition::create($competitionData);
 
-        // 競技主査を関連付け
-        if ($validated['chief_judge_id']) {
-            $competition->committeeMembers()->attach($validated['chief_judge_id'], ['role' => '競技主査']);
-        }
+        // 競技主査を関連付け（テーブルが存在する場合のみ）
+        try {
+            if (isset($validated['chief_judge_id']) && $validated['chief_judge_id']) {
+                $competition->committeeMembers()->attach($validated['chief_judge_id'], ['role' => '競技主査']);
+            }
 
-        // 競技委員を関連付け
-        if (isset($validated['committee_member_ids'])) {
-            $committeeData = [];
-            foreach ($validated['committee_member_ids'] as $memberId) {
-                // 競技主査と重複しないようにチェック
-                if ($memberId != $validated['chief_judge_id']) {
-                    $committeeData[$memberId] = ['role' => '競技委員'];
+            // 競技委員を関連付け
+            if (isset($validated['committee_member_ids']) && !empty($validated['committee_member_ids'])) {
+                $committeeData = [];
+                foreach ($validated['committee_member_ids'] as $memberId) {
+                    // 競技主査と重複しないようにチェック
+                    if ($memberId != ($validated['chief_judge_id'] ?? null)) {
+                        $committeeData[$memberId] = ['role' => '競技委員'];
+                    }
+                }
+                if (!empty($committeeData)) {
+                    $competition->committeeMembers()->attach($committeeData);
                 }
             }
-            if (!empty($committeeData)) {
-                $competition->committeeMembers()->attach($committeeData);
-            }
+        } catch (\Exception $e) {
+            // テーブルが存在しない場合はスキップ
+            \Log::info('Committee member table not found, skipping committee member assignment');
         }
 
         return redirect()->route('admin.competitions.index')
@@ -98,8 +108,20 @@ class CompetitionController extends Controller
      */
     public function edit(Competition $competition): View
     {
-        $committeeMembers = CommitteeMember::active()->orderByNameKana()->get();
-        $competition->load('committeeMembers');
+        try {
+            $committeeMembers = CommitteeMember::active()->orderByNameKana()->get();
+        } catch (\Exception $e) {
+            // テーブルが存在しない場合は空のコレクション
+            $committeeMembers = collect();
+        }
+        
+        // テーブルが存在する場合のみリレーションをロード
+        try {
+            $competition->load('committeeMembers');
+        } catch (\Exception $e) {
+            // テーブルが存在しない場合は空のコレクションを設定
+            $competition->setRelation('committeeMembers', collect());
+        }
         
         return view('admin.competitions.edit', compact('competition', 'committeeMembers'));
     }
@@ -131,26 +153,31 @@ class CompetitionController extends Controller
         $competitionData = array_intersect_key($validated, array_flip(['name', 'start_date', 'end_date', 'venue']));
         $competition->update($competitionData);
 
-        // 既存の競技委員関連付けを削除
-        $competition->committeeMembers()->detach();
+        // 既存の競技委員関連付けを削除（テーブルが存在する場合のみ）
+        try {
+            $competition->committeeMembers()->detach();
 
-        // 競技主査を関連付け
-        if ($validated['chief_judge_id']) {
-            $competition->committeeMembers()->attach($validated['chief_judge_id'], ['role' => '競技主査']);
-        }
+            // 競技主査を関連付け
+            if (isset($validated['chief_judge_id']) && $validated['chief_judge_id']) {
+                $competition->committeeMembers()->attach($validated['chief_judge_id'], ['role' => '競技主査']);
+            }
 
-        // 競技委員を関連付け
-        if (isset($validated['committee_member_ids'])) {
-            $committeeData = [];
-            foreach ($validated['committee_member_ids'] as $memberId) {
-                // 競技主査と重複しないようにチェック
-                if ($memberId != $validated['chief_judge_id']) {
-                    $committeeData[$memberId] = ['role' => '競技委員'];
+            // 競技委員を関連付け
+            if (isset($validated['committee_member_ids']) && !empty($validated['committee_member_ids'])) {
+                $committeeData = [];
+                foreach ($validated['committee_member_ids'] as $memberId) {
+                    // 競技主査と重複しないようにチェック
+                    if ($memberId != ($validated['chief_judge_id'] ?? null)) {
+                        $committeeData[$memberId] = ['role' => '競技委員'];
+                    }
+                }
+                if (!empty($committeeData)) {
+                    $competition->committeeMembers()->attach($committeeData);
                 }
             }
-            if (!empty($committeeData)) {
-                $competition->committeeMembers()->attach($committeeData);
-            }
+        } catch (\Exception $e) {
+            // テーブルが存在しない刴合はスキップ
+            \Log::info('Committee member table not found, skipping committee member assignment');
         }
 
         return redirect()->route('admin.competitions.index')

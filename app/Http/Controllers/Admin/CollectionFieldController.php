@@ -9,6 +9,18 @@ use Illuminate\Http\Request;
 
 class CollectionFieldController extends Controller
 {
+    public function show(Collection $collection, CollectionField $field)
+    {
+        if ($field->collection_id !== $collection->id) {
+            return response()->json(['success' => false, 'message' => '不正なリクエストです。'], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'field' => $field
+        ]);
+    }
+
     public function store(Request $request, Collection $collection)
     {
         $validated = $request->validate([

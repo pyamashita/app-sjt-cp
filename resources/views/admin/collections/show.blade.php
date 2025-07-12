@@ -448,13 +448,32 @@ function showEditFieldModal(fieldId) {
     document.getElementById('field-modal-title').textContent = 'フィールドを編集';
     document.getElementById('field-submit-btn').textContent = '更新';
     
-    // 既存データの取得と設定
-    const row = document.querySelector(`button[onclick="showEditFieldModal(${fieldId})"]`).closest('tr');
-    const cells = row.querySelectorAll('td');
-    
-    // データ抽出は簡略化、実際のデータは別途API等で取得
-    resetFieldForm();
-    document.getElementById('field-modal').classList.remove('hidden');
+    // 既存データをサーバーから取得
+    fetch(`/admin/collections/${collectionId}/fields/${fieldId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const field = data.field;
+                
+                // フォームに値を設定
+                document.getElementById('field_name').value = field.name || '';
+                document.getElementById('content_type').value = field.content_type || '';
+                document.getElementById('max_length').value = field.max_length || '';
+                document.getElementById('sort_order').value = field.sort_order || '';
+                document.getElementById('is_required').checked = field.is_required || false;
+                
+                // コンテンツタイプに応じてmax_lengthフィールドの表示を切り替え
+                onContentTypeChange();
+                
+                document.getElementById('field-modal').classList.remove('hidden');
+            } else {
+                alert('フィールドデータの取得に失敗しました。');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('通信エラーが発生しました。');
+        });
 }
 
 function hideFieldModal() {

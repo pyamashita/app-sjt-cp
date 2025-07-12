@@ -142,6 +142,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::resource('collections', CollectionController::class);
     
     // コレクション・フィールド管理
+    Route::get('collections/{collection}/fields/{field}', [CollectionFieldController::class, 'show'])->name('collections.fields.show');
     Route::post('collections/{collection}/fields', [CollectionFieldController::class, 'store'])->name('collections.fields.store');
     Route::put('collections/{collection}/fields/{field}', [CollectionFieldController::class, 'update'])->name('collections.fields.update');
     Route::delete('collections/{collection}/fields/{field}', [CollectionFieldController::class, 'destroy'])->name('collections.fields.destroy');

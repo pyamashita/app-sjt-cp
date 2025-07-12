@@ -19,6 +19,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\CommitteeMemberController;
 use App\Http\Controllers\Admin\MessageController;
 use App\Http\Controllers\Admin\ExternalConnectionController;
+use App\Http\Controllers\Admin\CollectionController;
 
 // 認証系ルート
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -132,6 +133,11 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     // 競技委員管理
     Route::get('committee-members/export', [CommitteeMemberController::class, 'export'])->name('committee-members.export');
     Route::resource('committee-members', CommitteeMemberController::class);
+    
+    // コレクション管理
+    Route::post('collections/{collection}/access-control', [CollectionController::class, 'addAccessControl'])->name('collections.access-control.add');
+    Route::delete('collections/{collection}/access-control/{accessControl}', [CollectionController::class, 'removeAccessControl'])->name('collections.access-control.remove');
+    Route::resource('collections', CollectionController::class);
     
     // メッセージ管理
     Route::post('messages/{message}/resend', [MessageController::class, 'resend'])->name('messages.resend');

@@ -67,15 +67,19 @@
             <!-- タイトル -->
             <div>
                 <label for="title" class="block text-sm font-medium text-gray-700 mb-1">
-                    タイトル（全角50文字まで）
+                    タイトル（全角50文字、最大3行まで）
                 </label>
-                <input type="text" 
-                       name="title" 
-                       id="title"
-                       value="{{ old('title', $message->title) }}"
-                       maxlength="50"
-                       placeholder="メッセージのタイトル"
-                       class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                <textarea name="title" 
+                          id="title"
+                          rows="3"
+                          maxlength="50"
+                          placeholder="メッセージのタイトル（改行可能、最大3行）"
+                          class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                          onkeydown="limitLines(this, 3)"
+                          onpaste="setTimeout(() => limitLines(this, 3), 0)">{{ old('title', $message->title) }}</textarea>
+                <p class="mt-1 text-sm text-gray-500">
+                    <span id="title-count">{{ strlen(old('title', $message->title)) }}</span> / 50文字、<span id="title-lines">{{ count(explode("\n", old('title', $message->title ?: ''))) }}</span> / 3行
+                </p>
                 @error('title')
                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                 @enderror
@@ -84,16 +88,18 @@
             <!-- 本文 -->
             <div>
                 <label for="content" class="block text-sm font-medium text-gray-700 mb-1">
-                    本文（全角1000文字まで） <span class="text-red-500">*</span>
+                    本文（全角1000文字、最大3行まで） <span class="text-red-500">*</span>
                 </label>
                 <textarea name="content" 
                           id="content" 
-                          rows="6"
+                          rows="3"
                           maxlength="1000"
-                          placeholder="メッセージの本文を入力してください"
-                          class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">{{ old('content', $message->content) }}</textarea>
+                          placeholder="メッセージの本文を入力してください（改行可能、最大3行）"
+                          class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                          onkeydown="limitLines(this, 3)"
+                          onpaste="setTimeout(() => limitLines(this, 3), 0)">{{ old('content', $message->content) }}</textarea>
                 <p class="mt-1 text-sm text-gray-500">
-                    <span id="content-count">{{ strlen(old('content', $message->content)) }}</span> / 1000文字
+                    <span id="content-count">{{ strlen(old('content', $message->content)) }}</span> / 1000文字、<span id="content-lines">{{ count(explode("\n", old('content', $message->content))) }}</span> / 3行
                 </p>
                 @error('content')
                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -260,10 +266,31 @@
     </div>
 
     <script>
-        // 文字数カウント
+        // 行数制限関数
+        function limitLines(textarea, maxLines) {
+            const lines = textarea.value.split('\n');
+            if (lines.length > maxLines) {
+                // 最大行数を超えた場合、余分な行を削除
+                textarea.value = lines.slice(0, maxLines).join('\n');
+            }
+        }
+
+        // 文字数・行数カウント関数
+        function updateCounts(textarea, countId, linesId) {
+            const charCount = textarea.value.length;
+            const lineCount = textarea.value.split('\n').length;
+            
+            document.getElementById(countId).textContent = charCount;
+            document.getElementById(linesId).textContent = lineCount;
+        }
+
+        // 文字数・行数カウント
+        document.getElementById('title').addEventListener('input', function() {
+            updateCounts(this, 'title-count', 'title-lines');
+        });
+
         document.getElementById('content').addEventListener('input', function() {
-            const count = this.value.length;
-            document.getElementById('content-count').textContent = count;
+            updateCounts(this, 'content-count', 'content-lines');
         });
 
         // 送信方法による表示切替

@@ -88,7 +88,7 @@
                                         
                                         @if($connection->service_type === 'websocket_message')
                                             <button type="button"
-                                                    onclick="testConnection({{ $connection->id }})"
+                                                    onclick="testConnection({{ $connection->id }}, this)"
                                                     class="text-green-600 hover:text-green-900">
                                                 テスト
                                             </button>
@@ -108,10 +108,10 @@
     </div>
 
     <script>
-        function testConnection(connectionId) {
+        function testConnection(connectionId, buttonElement) {
             // テストボタンを無効化
-            event.target.disabled = true;
-            event.target.textContent = 'テスト中...';
+            buttonElement.disabled = true;
+            buttonElement.textContent = 'テスト中...';
             
             fetch(`/admin/external-connections/${connectionId}/test`, {
                 method: 'POST',
@@ -129,12 +129,13 @@
                 }
             })
             .catch(error => {
+                console.error('接続テストエラー:', error);
                 alert('❌ 接続テストでエラーが発生しました: ' + error.message);
             })
             .finally(() => {
                 // テストボタンを有効化
-                event.target.disabled = false;
-                event.target.textContent = 'テスト';
+                buttonElement.disabled = false;
+                buttonElement.textContent = 'テスト';
             });
         }
     </script>

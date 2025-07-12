@@ -8,20 +8,23 @@ use React\EventLoop\Loop;
 use React\Socket\TimeoutConnector;
 use React\Socket\TcpConnector;
 use Illuminate\Support\Facades\Log;
+use App\Models\ExternalConnection;
 use Exception;
 
 class WebSocketService
 {
     private $loop;
     private $connector;
+    private $config;
     
     public function __construct()
     {
         $this->loop = Loop::get();
+        $this->config = ExternalConnection::getWebSocketConfig();
         
         // タイムアウト設定付きのコネクターを作成
         $tcpConnector = new TcpConnector($this->loop);
-        $timeoutConnector = new TimeoutConnector($tcpConnector, 10.0, $this->loop);
+        $timeoutConnector = new TimeoutConnector($tcpConnector, (float)$this->config['timeout'], $this->loop);
         $this->connector = new Connector($this->loop, $timeoutConnector);
     }
 
@@ -33,10 +36,13 @@ class WebSocketService
      * @param int $port WebSocketポート（デフォルト: 8080）
      * @return bool 送信成功フラグ
      */
-    public function sendMessageToDevice(string $deviceIp, array $messageData, int $port = 8080): bool
+    public function sendMessageToDevice(string $deviceIp, array $messageData, int $port = null): bool
     {
         try {
-            $url = "ws://{$deviceIp}:{$port}/message";
+            $port = $port ?: $this->config['default_port'];
+            $protocol = $this->config['protocol'];
+            $path = $this->config['path'];
+            $url = "{$protocol}://{$deviceIp}:{$port}{$path}";
             $success = false;
             $error = null;
 
@@ -170,10 +176,12 @@ class WebSocketService
      * @param int $port WebSocketポート
      * @return bool 接続可能フラグ
      */
-    public function testConnection(string $deviceIp, int $port = 8080): bool
+    public function testConnection(string $deviceIp, int $port = null): bool
     {
         try {
-            $url = "ws://{$deviceIp}:{$port}/ping";
+            $port = $port ?: $this->config['default_port'];
+            $protocol = $this->config['protocol'];
+            $url = "{$protocol}://{$deviceIp}:{$port}/ping";
             $connected = false;
 
             $this->connector->__invoke($url)
@@ -221,10 +229,12 @@ class WebSocketService
      * @param int $port HTTPポート
      * @return bool 送信成功フラグ
      */
-    public function sendMessageViaHttp(string $deviceIp, array $messageData, int $port = 8080): bool
+    public function sendMessageViaHttp(string $deviceIp, array $messageData, int $port = null): bool
     {
         try {
-            $url = "http://{$deviceIp}:{$port}/api/message";
+            $port = $port ?: $this->config['default_port'];
+            $protocol = $this->config['protocol'] === 'wss' ? 'https' : 'http';
+            $url = "{$protocol}://{$deviceIp}:{$port}/api/message";
             
             $ch = curl_init();
             curl_setopt_array($ch, [
@@ -235,7 +245,7 @@ class WebSocketService
                     'Content-Type: application/json',
                     'Accept: application/json'
                 ],
-                CURLOPT_TIMEOUT => 10,
+                CURLOPT_TIMEOUT => $this->config['timeout'],
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_SSL_VERIFYPEER => false,
                 CURLOPT_SSL_VERIFYHOST => false

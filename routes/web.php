@@ -22,6 +22,7 @@ use App\Http\Controllers\Admin\DatabaseUserController;
 use App\Http\Controllers\Admin\DnsRecordController;
 use App\Http\Controllers\Admin\CommitteeMemberController;
 use App\Http\Controllers\Admin\MessageController;
+use App\Http\Controllers\Admin\ExternalConnectionController;
 
 // 認証系ルート
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -164,6 +165,10 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::post('messages/{message}/cancel', [MessageController::class, 'cancel'])->name('messages.cancel');
     Route::post('devices/{device}/test-connection', [MessageController::class, 'testConnection'])->name('devices.test-connection');
     Route::resource('messages', MessageController::class);
+    
+    // 外部接続設定
+    Route::post('external-connections/{externalConnection}/test', [ExternalConnectionController::class, 'test'])->name('external-connections.test');
+    Route::resource('external-connections', ExternalConnectionController::class)->only(['index', 'edit', 'update']);
 });
 
 // ルートアクセス時のリダイレクト

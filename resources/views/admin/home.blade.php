@@ -185,6 +185,37 @@
             </div>
         </div>
 
+        <!-- メッセージ管理 -->
+        <div class="bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-all duration-300">
+            <div class="p-6">
+                <div class="flex items-center mb-4">
+                    <div class="flex-shrink-0">
+                        <div class="h-12 w-12 bg-cyan-100 rounded-lg flex items-center justify-center">
+                            <svg class="h-6 w-6 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-lg font-semibold text-gray-900">メッセージ管理</h3>
+                        <p class="text-sm text-gray-600">端末へのメッセージ送信と管理</p>
+                    </div>
+                </div>
+                
+                <!-- サブメニュー -->
+                <div class="space-y-2">
+                    <a href="{{ route('admin.messages.index') }}" 
+                       class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-cyan-50 hover:text-cyan-800 rounded-md transition-colors duration-200">
+                        メッセージ一覧
+                    </a>
+                    <a href="{{ route('admin.messages.create') }}" 
+                       class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-cyan-50 hover:text-cyan-800 rounded-md transition-colors duration-200">
+                        新規メッセージ
+                    </a>
+                </div>
+            </div>
+        </div>
+
         <!-- システム管理 -->
         <div class="bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-all duration-300">
             <div class="p-6">

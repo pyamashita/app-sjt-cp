@@ -21,6 +21,7 @@ use App\Http\Controllers\Admin\DatabaseController;
 use App\Http\Controllers\Admin\DatabaseUserController;
 use App\Http\Controllers\Admin\DnsRecordController;
 use App\Http\Controllers\Admin\CommitteeMemberController;
+use App\Http\Controllers\Admin\MessageController;
 
 // 認証系ルート
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -156,6 +157,11 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     // 競技委員管理
     Route::get('committee-members/export', [CommitteeMemberController::class, 'export'])->name('committee-members.export');
     Route::resource('committee-members', CommitteeMemberController::class);
+    
+    // メッセージ管理
+    Route::post('messages/{message}/resend', [MessageController::class, 'resend'])->name('messages.resend');
+    Route::post('messages/{message}/resend-device/{device}', [MessageController::class, 'resendToDevice'])->name('messages.resend-device');
+    Route::resource('messages', MessageController::class);
 });
 
 // ルートアクセス時のリダイレクト

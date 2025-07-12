@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>端末用WebSocketクライアント - SJT-CP</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: #3b82f6;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .content {
+            padding: 20px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .status.connected {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+        .status.disconnected {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+        .status.connecting {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fde68a;
+        }
+        .config {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .config label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .config input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .buttons {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .btn {
+            padding: 10px 20px;
+            margin: 0 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn.primary {
+            background: #3b82f6;
+            color: white;
+        }
+        .btn.danger {
+            background: #ef4444;
+            color: white;
+        }
+        .btn.secondary {
+            background: #6b7280;
+            color: white;
+        }
+        .btn:hover {
+            opacity: 0.9;
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .messages {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            padding: 10px;
+            background: #f9fafb;
+        }
+        .message {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .message.notification {
+            border-left: 4px solid #3b82f6;
+        }
+        .message.ping {
+            border-left: 4px solid #10b981;
+        }
+        .message.error {
+            border-left: 4px solid #ef4444;
+        }
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .message-title {
+            font-weight: bold;
+            color: #1f2937;
+        }
+        .message-time {
+            font-size: 0.8em;
+            color: #6b7280;
+        }
+        .message-content {
+            color: #374151;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+        .message-link {
+            margin-top: 10px;
+        }
+        .message-link a {
+            color: #3b82f6;
+            text-decoration: none;
+        }
+        .message-link a:hover {
+            text-decoration: underline;
+        }
+        .message-image {
+            margin-top: 10px;
+        }
+        .message-image img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+        }
+        .message-meta {
+            font-size: 0.8em;
+            color: #6b7280;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #e5e7eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>端末用WebSocketクライアント</h1>
+            <p>SJT-CP メッセージ受信デモ</p>
+        </div>
+        
+        <div class="content">
+            <div id="status" class="status disconnected">
+                接続されていません
+            </div>
+            
+            <div class="config">
+                <label for="port">WebSocketポート:</label>
+                <input type="number" id="port" value="8080" min="1" max="65535">
+                <br><br>
+                <label for="endpoint">エンドポイント:</label>
+                <input type="text" id="endpoint" value="/message" placeholder="/message">
+            </div>
+            
+            <div class="buttons">
+                <button id="connectBtn" class="btn primary">WebSocketサーバーを開始</button>
+                <button id="disconnectBtn" class="btn danger" disabled>サーバーを停止</button>
+                <button id="clearBtn" class="btn secondary">メッセージをクリア</button>
+            </div>
+            
+            <div class="messages" id="messages">
+                <div class="message">
+                    <div class="message-header">
+                        <span class="message-title">ようこそ</span>
+                        <span class="message-time">待機中</span>
+                    </div>
+                    <div class="message-content">WebSocketサーバーを開始してメッセージの受信を待機してください。</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let server = null;
+        let isConnected = false;
+
+        const statusEl = document.getElementById('status');
+        const connectBtn = document.getElementById('connectBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const messagesEl = document.getElementById('messages');
+        const portInput = document.getElementById('port');
+        const endpointInput = document.getElementById('endpoint');
+
+        // ステータス更新
+        function updateStatus(status, message) {
+            statusEl.className = `status ${status}`;
+            statusEl.textContent = message;
+        }
+
+        // メッセージ追加
+        function addMessage(type, title, content, data = {}) {
+            const messageEl = document.createElement('div');
+            messageEl.className = `message ${type}`;
+            
+            const timeStr = new Date().toLocaleString('ja-JP');
+            
+            let imageHtml = '';
+            if (data.image_url) {
+                imageHtml = `
+                    <div class="message-image">
+                        <img src="${data.image_url}" alt="添付画像">
+                    </div>
+                `;
+            }
+            
+            let linkHtml = '';
+            if (data.link) {
+                linkHtml = `
+                    <div class="message-link">
+                        <a href="${data.link}" target="_blank">リンクを開く</a>
+                    </div>
+                `;
+            }
+            
+            let metaHtml = '';
+            if (data.sender) {
+                metaHtml = `
+                    <div class="message-meta">
+                        送信者: ${data.sender}
+                    </div>
+                `;
+            }
+            
+            messageEl.innerHTML = `
+                <div class="message-header">
+                    <span class="message-title">${title}</span>
+                    <span class="message-time">${timeStr}</span>
+                </div>
+                <div class="message-content">${content}</div>
+                ${linkHtml}
+                ${imageHtml}
+                ${metaHtml}
+            `;
+            
+            messagesEl.appendChild(messageEl);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+        }
+
+        // WebSocketサーバー開始（簡易実装）
+        function startWebSocketServer() {
+            const port = parseInt(portInput.value);
+            const endpoint = endpointInput.value;
+            
+            // 注意: これは実際のWebSocketサーバーではなく、デモ用の簡易実装です
+            // 実際の端末では、適切なWebSocketサーバーライブラリを使用してください
+            
+            if (port < 1 || port > 65535) {
+                alert('ポート番号は1-65535の範囲で指定してください。');
+                return;
+            }
+            
+            updateStatus('connecting', `ポート${port}でWebSocketサーバーを開始中...`);
+            
+            // 模擬的なサーバー開始処理
+            setTimeout(() => {
+                isConnected = true;
+                updateStatus('connected', `ポート${port}でWebSocketサーバーが起動中 (${endpoint})`);
+                connectBtn.disabled = true;
+                disconnectBtn.disabled = false;
+                portInput.disabled = true;
+                endpointInput.disabled = true;
+                
+                addMessage('notification', 'サーバー開始', `WebSocketサーバーがポート${port}で開始されました。\nSJT-CPからのメッセージ受信待機中...`);
+                
+                // テスト用メッセージを5秒後に送信
+                setTimeout(() => {
+                    const testMessage = {
+                        type: 'message',
+                        timestamp: new Date().toISOString(),
+                        data: {
+                            title: 'テストメッセージ',
+                            content: 'これはWebSocket接続のテストメッセージです。\n正常に受信できています。',
+                            link: 'https://example.com',
+                            image_url: null,
+                            sender: 'SJT-CP (テスト)'
+                        }
+                    };
+                    handleMessage(testMessage);
+                }, 5000);
+                
+            }, 1000);
+        }
+
+        // WebSocketサーバー停止
+        function stopWebSocketServer() {
+            isConnected = false;
+            updateStatus('disconnected', 'WebSocketサーバーが停止されました');
+            connectBtn.disabled = false;
+            disconnectBtn.disabled = true;
+            portInput.disabled = false;
+            endpointInput.disabled = false;
+            
+            addMessage('notification', 'サーバー停止', 'WebSocketサーバーが停止されました。');
+        }
+
+        // メッセージ処理
+        function handleMessage(messageData) {
+            if (!isConnected) return;
+            
+            console.log('受信メッセージ:', messageData);
+            
+            if (messageData.type === 'ping') {
+                addMessage('ping', 'ping', '接続テストが受信されました');
+                return;
+            }
+            
+            if (messageData.type === 'message' && messageData.data) {
+                const data = messageData.data;
+                addMessage('notification', 
+                    data.title || '無題', 
+                    data.content || '', 
+                    data
+                );
+            } else {
+                addMessage('error', 'エラー', '不正なメッセージ形式です');
+            }
+        }
+
+        // メッセージクリア
+        function clearMessages() {
+            messagesEl.innerHTML = '';
+            addMessage('notification', 'クリア', 'メッセージをクリアしました。');
+        }
+
+        // イベントリスナー
+        connectBtn.addEventListener('click', startWebSocketServer);
+        disconnectBtn.addEventListener('click', stopWebSocketServer);
+        clearBtn.addEventListener('click', clearMessages);
+
+        // 実際のWebSocket実装の場合は、以下のようなコードになります:
+        /*
+        let websocket = null;
+        
+        function startWebSocketServer() {
+            const port = parseInt(portInput.value);
+            
+            // WebSocketサーバーライブラリを使用してサーバーを開始
+            // 例: ws, websocket, socket.io など
+            
+            websocket = new WebSocketServer({ port: port });
+            
+            websocket.on('connection', function connection(ws) {
+                console.log('クライアント接続');
+                
+                ws.on('message', function message(data) {
+                    try {
+                        const messageData = JSON.parse(data);
+                        handleMessage(messageData);
+                    } catch (error) {
+                        console.error('メッセージ解析エラー:', error);
+                    }
+                });
+                
+                ws.on('close', function close() {
+                    console.log('クライアント切断');
+                });
+            });
+        }
+        */
+
+        // 初期化
+        updateStatus('disconnected', '接続されていません');
+    </script>
+</body>
+</html>

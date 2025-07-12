@@ -165,16 +165,22 @@
             
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-64 overflow-y-auto border rounded p-3">
                 @foreach($devices as $device)
-                    <label class="flex items-center">
+                    <label class="flex items-center group">
                         <input type="checkbox" 
                                name="device_ids[]" 
                                value="{{ $device->id }}"
                                {{ in_array($device->id, old('device_ids', [])) ? 'checked' : '' }}
                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                        <span class="ml-2 text-sm text-gray-900">
+                        <span class="ml-2 text-sm text-gray-900 flex-1">
                             {{ $device->name }}
                             <span class="text-gray-500">({{ $device->ip_address }})</span>
                         </span>
+                        <button type="button" 
+                                onclick="testDeviceConnection({{ $device->id }}, '{{ $device->name }}', '{{ $device->ip_address }}')"
+                                class="ml-2 text-xs text-blue-600 hover:text-blue-800 opacity-0 group-hover:opacity-100 transition-opacity"
+                                title="接続テスト">
+                            テスト
+                        </button>
                     </label>
                 @endforeach
             </div>
@@ -300,6 +306,31 @@
             preview.style.display = 'block';
             
             closeResourceModal();
+        }
+
+        // 端末接続テスト
+        async function testDeviceConnection(deviceId, deviceName, deviceIp) {
+            try {
+                const response = await fetch(`/admin/devices/${deviceId}/test-connection`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    }
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(`✅ ${deviceName} (${deviceIp})\n接続テストに成功しました。`);
+                } else {
+                    alert(`❌ ${deviceName} (${deviceIp})\n接続テストに失敗しました。\n\nWebSocketサーバーが起動していない可能性があります。`);
+                }
+                
+            } catch (error) {
+                console.error('接続テストエラー:', error);
+                alert(`❌ ${deviceName} (${deviceIp})\n接続テストでエラーが発生しました。\n\n${error.message}`);
+            }
         }
     </script>
 @endsection

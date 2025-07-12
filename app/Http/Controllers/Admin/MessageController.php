@@ -10,9 +10,17 @@ use App\Models\MessageDevice;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use App\Services\WebSocketService;
 
 class MessageController extends Controller
 {
+    protected $webSocketService;
+
+    public function __construct(WebSocketService $webSocketService)
+    {
+        $this->webSocketService = $webSocketService;
+    }
     /**
      * メッセージ一覧
      */
@@ -252,6 +260,26 @@ class MessageController extends Controller
     }
 
     /**
+     * 端末への接続テスト
+     */
+    public function testConnection(Device $device)
+    {
+        $connected = $this->webSocketService->testConnection($device->ip_address);
+        
+        if ($connected) {
+            return response()->json([
+                'success' => true,
+                'message' => "端末「{$device->name}」への接続テストに成功しました。"
+            ]);
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => "端末「{$device->name}」への接続テストに失敗しました。"
+            ], 400);
+        }
+    }
+
+    /**
      * メッセージ送信処理
      */
     private function sendMessage(Message $message)
@@ -302,20 +330,50 @@ class MessageController extends Controller
     }
 
     /**
-     * WebSocket送信（仮実装）
+     * WebSocket送信（実装）
      */
     private function sendWebSocketMessage(Device $device, Message $message)
     {
-        // TODO: Laravel WebSocketsを使用した実装
-        $data = [
-            'title' => $message->title,
-            'content' => $message->content,
-            'link' => $message->link,
-            'image_url' => $message->resource ? asset('storage/' . $message->resource->file_path) : null,
-        ];
+        // メッセージデータを構築
+        $imageUrl = $message->resource ? asset('storage/' . $message->resource->file_path) : null;
+        $messageData = $this->webSocketService->buildMessageData(
+            $message->title ?? '',
+            $message->content,
+            $message->link,
+            $imageUrl
+        );
 
-        // 仮実装：ログに出力
-        \Log::info("WebSocket送信: {$device->ip_address}", $data);
+        try {
+            // まずWebSocketで送信を試行
+            $success = $this->webSocketService->sendMessageToDevice($device->ip_address, $messageData);
+            
+            if (!$success) {
+                // WebSocketが失敗した場合、HTTPでフォールバック送信
+                Log::info("WebSocket送信失敗、HTTPでフォールバック送信を試行", [
+                    'device_ip' => $device->ip_address
+                ]);
+                
+                $success = $this->webSocketService->sendMessageViaHttp($device->ip_address, $messageData);
+            }
+
+            if (!$success) {
+                throw new \Exception("WebSocketとHTTPの両方で送信に失敗しました");
+            }
+
+            Log::info("メッセージ送信成功", [
+                'device_ip' => $device->ip_address,
+                'message_id' => $message->id
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error("メッセージ送信エラー", [
+                'device_ip' => $device->ip_address,
+                'message_id' => $message->id,
+                'error' => $e->getMessage()
+            ]);
+            
+            throw $e;
+        }
     }
 
     /**

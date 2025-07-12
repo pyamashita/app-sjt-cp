@@ -36,7 +36,7 @@ class WebSocketService
      * @param int $port WebSocketポート（デフォルト: 8080）
      * @return bool 送信成功フラグ
      */
-    public function sendMessageToDevice(string $deviceIp, array $messageData, int $port = null): bool
+    public function sendMessageToDevice(string $deviceIp, array $messageData, ?int $port = null): bool
     {
         try {
             $port = $port ?: $this->config['default_port'];
@@ -179,34 +179,68 @@ class WebSocketService
      * @param int $port WebSocketポート
      * @return bool 接続可能フラグ
      */
-    public function testConnection(string $deviceIp, int $port = null): bool
+    public function testConnection(string $deviceIp, ?int $port = null): bool
     {
         try {
             $port = $port ?: $this->config['default_port'];
-            $protocol = $this->config['protocol'];
-            
-            // サーバーアドレス設定を確認
             $serverAddress = $this->getServerAddress();
-            $url = "{$protocol}://{$serverAddress}:{$port}/ping";
-            $connected = false;
+            
+            Log::info("WebSocket接続テスト開始", [
+                'device_ip' => $deviceIp,
+                'server_address' => $serverAddress,
+                'port' => $port
+            ]);
 
-            $this->connector->__invoke($url)
-                ->then(function (WebSocket $conn) use (&$connected) {
-                    $connected = true;
-                    $conn->send(json_encode(['type' => 'ping']));
-                    $conn->close();
-                }, function (Exception $e) use ($deviceIp) {
-                    Log::warning("WebSocket接続テスト失敗", [
+            // まずHTTPで接続テスト（WebSocketサーバーのステータス確認）
+            $httpProtocol = $this->config['protocol'] === 'wss' ? 'https' : 'http';
+            $statusUrl = "{$httpProtocol}://{$serverAddress}:{$port}/status";
+            
+            $ch = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_URL => $statusUrl,
+                CURLOPT_TIMEOUT => 5,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => false
+            ]);
+
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $error = curl_error($ch);
+            curl_close($ch);
+
+            if ($error) {
+                Log::warning("HTTP接続テスト失敗", [
+                    'device_ip' => $deviceIp,
+                    'error' => $error
+                ]);
+                return false;
+            }
+
+            if ($httpCode >= 200 && $httpCode < 300) {
+                $responseData = json_decode($response, true);
+                if (isset($responseData['status']) && $responseData['status'] === 'running') {
+                    Log::info("WebSocket接続テスト成功 (HTTP経由)", [
                         'device_ip' => $deviceIp,
-                        'error' => $e->getMessage()
+                        'response' => $responseData
                     ]);
-                });
+                    return true;
+                }
+            }
 
-            $this->runEventLoopWithTimeout(3.0);
+            Log::warning("WebSocket接続テスト失敗", [
+                'device_ip' => $deviceIp,
+                'http_code' => $httpCode,
+                'response' => $response
+            ]);
+            
+            return false;
 
-            return $connected;
-
-        } catch (Exception) {
+        } catch (Exception $e) {
+            Log::error("WebSocket接続テストエラー", [
+                'device_ip' => $deviceIp,
+                'error' => $e->getMessage()
+            ]);
             return false;
         }
     }
@@ -235,7 +269,7 @@ class WebSocketService
      * @param int $port HTTPポート
      * @return bool 送信成功フラグ
      */
-    public function sendMessageViaHttp(string $deviceIp, array $messageData, int $port = null): bool
+    public function sendMessageViaHttp(string $deviceIp, array $messageData, ?int $port = null): bool
     {
         try {
             $port = $port ?: $this->config['default_port'];

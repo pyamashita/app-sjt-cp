@@ -343,15 +343,30 @@
         // 端末接続テスト
         async function testDeviceConnection(deviceId, deviceName, deviceIp) {
             try {
+                console.log('接続テスト開始:', { deviceId, deviceName, deviceIp });
+                
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                console.log('CSRFトークン:', csrfToken);
+                
                 const response = await fetch(`/admin/devices/${deviceId}/test-connection`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                        'X-CSRF-TOKEN': csrfToken || ''
                     }
                 });
 
+                console.log('レスポンススタータス:', response.status);
+                console.log('レスポンスヘッダー:', Object.fromEntries(response.headers.entries()));
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('エラーレスポンス:', errorText);
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+
                 const result = await response.json();
+                console.log('レスポンス結果:', result);
                 
                 if (result.success) {
                     alert(`✅ ${deviceName} (${deviceIp})\n接続テストに成功しました。`);

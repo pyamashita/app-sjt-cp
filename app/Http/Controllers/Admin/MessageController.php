@@ -278,18 +278,42 @@ class MessageController extends Controller
      */
     public function testConnection(Device $device)
     {
-        $connected = $this->webSocketService->testConnection($device->ip_address);
-        
-        if ($connected) {
-            return response()->json([
-                'success' => true,
-                'message' => "端末「{$device->name}」への接続テストに成功しました。"
+        Log::info("接続テスト開始", [
+            'device_id' => $device->id,
+            'device_name' => $device->name,
+            'device_ip' => $device->ip_address
+        ]);
+
+        try {
+            $connected = $this->webSocketService->testConnection($device->ip_address);
+            
+            Log::info("接続テスト結果", [
+                'device_id' => $device->id,
+                'connected' => $connected
             ]);
-        } else {
+            
+            if ($connected) {
+                return response()->json([
+                    'success' => true,
+                    'message' => "端末「{$device->name}」への接続テストに成功しました。"
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => "端末「{$device->name}」への接続テストに失敗しました。"
+                ], 400);
+            }
+        } catch (\Exception $e) {
+            Log::error("接続テストでエラーが発生", [
+                'device_id' => $device->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return response()->json([
                 'success' => false,
-                'message' => "端末「{$device->name}」への接続テストに失敗しました。"
-            ], 400);
+                'message' => "接続テストでエラーが発生しました: " . $e->getMessage()
+            ], 500);
         }
     }
 

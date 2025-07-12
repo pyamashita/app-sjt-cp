@@ -734,9 +734,18 @@ document.getElementById('field-modal').addEventListener('click', function(e) {
             <div class="mb-4">
                 <h5 class="text-sm font-medium text-gray-700 mb-2">2. コンテンツ一覧を取得（フィルタ付き）</h5>
                 <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
-                    <pre class="text-sm text-gray-100"><code>curl -X GET "{{ url('/') }}/api/v1/collections/{{ $collection->id }}/contents?@if($collection->is_competition_managed)competition_id=1&@endif
-@if($collection->is_player_managed)player_id=1&@endif
-per_page=50" \
+                    @php
+                        $queryParams = [];
+                        if ($collection->is_competition_managed) {
+                            $queryParams[] = 'competition_id=1';
+                        }
+                        if ($collection->is_player_managed) {
+                            $queryParams[] = 'player_id=1';
+                        }
+                        $queryParams[] = 'per_page=50';
+                        $queryString = implode('&', $queryParams);
+                    @endphp
+                    <pre class="text-sm text-gray-100"><code>curl -X GET "{{ url('/') }}/api/v1/collections/{{ $collection->id }}/contents?{{ $queryString }}" \
   -H "Authorization: Bearer YOUR_API_TOKEN"</code></pre>
                 </div>
             </div>
@@ -745,9 +754,17 @@ per_page=50" \
             <div class="mb-4">
                 <h5 class="text-sm font-medium text-gray-700 mb-2">3. 特定コンテキストのコンテンツを取得</h5>
                 <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
-                    <pre class="text-sm text-gray-100"><code>curl -X GET "{{ url('/') }}/api/v1/collections/{{ $collection->id }}/content?@if($collection->is_competition_managed)competition_id=1@if($collection->is_player_managed)&@endif
-@endif
-@if($collection->is_player_managed)player_id=1@endif" \
+                    @php
+                        $contextParams = [];
+                        if ($collection->is_competition_managed) {
+                            $contextParams[] = 'competition_id=1';
+                        }
+                        if ($collection->is_player_managed) {
+                            $contextParams[] = 'player_id=1';
+                        }
+                        $contextQuery = implode('&', $contextParams);
+                    @endphp
+                    <pre class="text-sm text-gray-100"><code>curl -X GET "{{ url('/') }}/api/v1/collections/{{ $collection->id }}/content?{{ $contextQuery }}" \
   -H "Authorization: Bearer YOUR_API_TOKEN"</code></pre>
                 </div>
             </div>
@@ -760,18 +777,16 @@ per_page=50" \
   -H "Authorization: Bearer YOUR_API_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    @if($collection->is_competition_managed)"competition_id": 1,
-    @endif
-@if($collection->is_player_managed)"player_id": 1,
-    @endif
-"contents": [
+@if($collection->is_competition_managed)    "competition_id": 1,
+@endif
+@if($collection->is_player_managed)    "player_id": 1,
+@endif
+    "contents": [
 @foreach($collection->fields->take(2) as $index => $field)
       {
         "field_id": {{ $field->id }},
         "value": @if($field->content_type === 'string')"サンプル値"@elseif($field->content_type === 'boolean')true@elseif($field->content_type === 'date')"2024-01-01"@else"value"@endif
-
       }@if(!$loop->last),@endif
-
 @endforeach
     ]
   }'</code></pre>
@@ -788,20 +803,21 @@ per_page=50" \
     "id": {{ $collection->id }},
     "name": "{{ $collection->name }}",
     "display_name": "{{ $collection->display_name }}",
-    "description": {{ $collection->description ? '"' . $collection->description . '"' : 'null' }},
+    "description": {{ $collection->description ? '"' . e($collection->description) . '"' : 'null' }},
     "is_competition_managed": {{ $collection->is_competition_managed ? 'true' : 'false' }},
     "is_player_managed": {{ $collection->is_player_managed ? 'true' : 'false' }},
     "fields": [
+@if($collection->fields->count() > 0)
 @foreach($collection->fields->take(2) as $index => $field)
       {
         "id": {{ $field->id }},
-        "name": "{{ $field->name }}",
+        "name": "{{ e($field->name) }}",
         "content_type": "{{ $field->content_type }}",
         "is_required": {{ $field->is_required ? 'true' : 'false' }},
         "sort_order": {{ $field->sort_order }}
-      }@if(!$loop->last),@endif
-
+      }{{ !$loop->last ? ',' : '' }}
 @endforeach
+@endif
     ]
   }
 }</code></pre>

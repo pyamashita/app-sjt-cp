@@ -71,17 +71,106 @@
                                                                 @endif
                                                             </div>
                                                         </div>
+                                                    @elseif($item->type === 'collection')
+                                                        <div class="collection-item">
+                                                            <div class="font-medium text-gray-900 mb-2">{{ $item->title }}</div>
+                                                            @if($item->collection)
+                                                                @php
+                                                                    // コレクションデータを取得
+                                                                    $collection = $item->collection;
+                                                                    $collection->load(['fields']);
+                                                                    
+                                                                    // アクセス制御チェック
+                                                                    $competitionId = null;
+                                                                    $playerId = null;
+                                                                    
+                                                                    if ($collection->is_competition_managed) {
+                                                                        $competitionId = $guidePage->competition_id;
+                                                                    }
+                                                                    
+                                                                    if ($collection->is_player_managed) {
+                                                                        if ($emulatePlayer) {
+                                                                            $playerId = $emulatePlayer->id;
+                                                                            $competitionId = $guidePage->competition_id;
+                                                                        } else {
+                                                                            $playerId = null; // 選手未選択
+                                                                        }
+                                                                    }
+                                                                    
+                                                                    // コンテンツ取得
+                                                                    $query = \App\Models\CollectionContent::with(['field', 'competition', 'player'])
+                                                                        ->where('collection_id', $collection->id);
+                                                                        
+                                                                    if ($competitionId) {
+                                                                        $query->where('competition_id', $competitionId);
+                                                                    }
+                                                                    
+                                                                    if ($playerId) {
+                                                                        $query->where('player_id', $playerId);
+                                                                    }
+                                                                    
+                                                                    $contents = $query->orderBy('created_at', 'desc')->get();
+                                                                @endphp
+                                                                
+                                                                @if($collection->is_player_managed && !$emulatePlayer)
+                                                                    <div class="text-center py-4 bg-yellow-50 border border-yellow-200 rounded">
+                                                                        <span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">選手選択が必要</span>
+                                                                        <p class="text-sm text-yellow-700 mt-1">このコレクションは選手ごとに管理されています</p>
+                                                                    </div>
+                                                                @elseif($contents->count() > 0)
+                                                                    <div class="overflow-x-auto border border-gray-200 rounded">
+                                                                        <table class="min-w-full divide-y divide-gray-200">
+                                                                            <thead class="bg-gray-50">
+                                                                                <tr>
+                                                                                    <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                                                        フィールド名
+                                                                                    </th>
+                                                                                    <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                                                        値
+                                                                                    </th>
+                                                                                    <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                                                        更新日時
+                                                                                    </th>
+                                                                                </tr>
+                                                                            </thead>
+                                                                            <tbody class="bg-white divide-y divide-gray-200">
+                                                                                @foreach($contents as $content)
+                                                                                    <tr class="hover:bg-gray-50">
+                                                                                        <td class="px-3 py-2 text-sm font-medium text-gray-900">
+                                                                                            {{ $content->field->name }}
+                                                                                            @if($content->field->is_required)
+                                                                                                <span class="text-red-500 ml-1">*</span>
+                                                                                            @endif
+                                                                                        </td>
+                                                                                        <td class="px-3 py-2 text-sm text-gray-900">
+                                                                                            <div class="max-w-xs break-words" title="{{ $content->value }}">
+                                                                                                {{ $content->formatted_value }}
+                                                                                            </div>
+                                                                                        </td>
+                                                                                        <td class="px-3 py-2 text-sm text-gray-500">
+                                                                                            {{ $content->updated_at->format('m/d H:i') }}
+                                                                                        </td>
+                                                                                    </tr>
+                                                                                @endforeach
+                                                                            </tbody>
+                                                                        </table>
+                                                                    </div>
+                                                                @else
+                                                                    <div class="text-center py-4 bg-gray-50 border border-gray-200 rounded">
+                                                                        <p class="text-sm text-gray-500">データがありません</p>
+                                                                    </div>
+                                                                @endif
+                                                            @else
+                                                                <div class="text-center py-4 bg-red-50 border border-red-200 rounded">
+                                                                    <p class="text-sm text-red-600">コレクションが見つかりません</p>
+                                                                </div>
+                                                            @endif
+                                                        </div>
                                                     @else
                                                         <a href="{{ $item->getDisplayUrl($emulatePlayer?->id) }}" 
                                                            target="{{ $item->getTarget() }}"
                                                            class="flex items-center space-x-2 text-blue-600 hover:text-blue-800">
                                                             <span>{{ $item->title }}</span>
-                                                            @if($item->type === 'collection')
-                                                                <span class="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">コレクション</span>
-                                                                @if($item->collection && $item->collection->is_player_managed && !$emulatePlayer)
-                                                                    <span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">選手選択が必要</span>
-                                                                @endif
-                                                            @endif
                                                             @if($item->open_in_new_tab)
                                                                 <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                                                     <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"></path>

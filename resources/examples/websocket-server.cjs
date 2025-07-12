@@ -22,6 +22,9 @@ const url = require('url');
 const PORT = process.env.PORT || 8081;
 const HOST = process.env.HOST || '0.0.0.0';
 
+// 接続されているクライアントの管理
+const connectedClients = new Map(); // IPアドレス -> { ws, connectTime, lastPing } のマップ
+
 // HTTPサーバー（フォールバック用）
 const httpServer = http.createServer((req, res) => {
     const parsedUrl = url.parse(req.url, true);
@@ -87,6 +90,72 @@ const httpServer = http.createServer((req, res) => {
             timestamp: new Date().toISOString()
         }));
 
+    } else if (parsedUrl.pathname === '/api/clients') {
+        // 接続されているクライアント一覧
+        const clients = Array.from(connectedClients.entries()).map(([ip, client]) => ({
+            ip: ip,
+            connectTime: client.connectTime,
+            lastPing: client.lastPing,
+            isAlive: client.ws.readyState === WebSocket.OPEN
+        }));
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+            success: true,
+            clients: clients,
+            count: clients.length,
+            timestamp: new Date().toISOString()
+        }));
+
+    } else if (parsedUrl.pathname === '/api/client-check' && req.method === 'POST') {
+        // 特定のIPアドレスのクライアントが接続されているかチェック
+        let body = '';
+
+        req.on('data', chunk => {
+            body += chunk.toString();
+        });
+
+        req.on('end', () => {
+            try {
+                const requestData = JSON.parse(body);
+                const targetIp = requestData.ip;
+
+                if (!targetIp) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({
+                        success: false,
+                        error: 'IPアドレスが指定されていません'
+                    }));
+                    return;
+                }
+
+                const client = connectedClients.get(targetIp);
+                const isConnected = client && client.ws.readyState === WebSocket.OPEN;
+
+                console.log(`[${new Date().toLocaleString('ja-JP')}] クライアント接続チェック: ${targetIp} -> ${isConnected ? '接続中' : '未接続'}`);
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    success: true,
+                    ip: targetIp,
+                    connected: isConnected,
+                    clientInfo: client ? {
+                        connectTime: client.connectTime,
+                        lastPing: client.lastPing
+                    } : null,
+                    timestamp: new Date().toISOString()
+                }));
+
+            } catch (error) {
+                console.error('クライアント接続チェックエラー:', error.message);
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    success: false,
+                    error: 'リクエスト解析エラー'
+                }));
+            }
+        });
+
     } else {
         res.writeHead(404, { 'Content-Type': 'text/plain' });
         res.end('Not Found');
@@ -102,13 +171,22 @@ const wss = new WebSocket.Server({
 // WebSocket接続管理
 wss.on('connection', (ws, req) => {
     const clientIp = req.socket.remoteAddress;
-    console.log(`\n[${new Date().toLocaleString('ja-JP')}] WebSocket接続: ${clientIp}`);
+    const connectTime = new Date().toISOString();
+    
+    // クライアント情報を管理マップに追加
+    connectedClients.set(clientIp, {
+        ws: ws,
+        connectTime: connectTime,
+        lastPing: connectTime
+    });
+    
+    console.log(`\n[${new Date().toLocaleString('ja-JP')}] WebSocket接続: ${clientIp} (総接続数: ${connectedClients.size})`);
 
     // 接続確認メッセージ
     ws.send(JSON.stringify({
         type: 'connection',
         message: 'WebSocket接続が確立されました',
-        timestamp: new Date().toISOString()
+        timestamp: connectTime
     }));
 
     // メッセージ受信
@@ -117,12 +195,19 @@ wss.on('connection', (ws, req) => {
             const messageData = JSON.parse(data.toString());
 
             if (messageData.type === 'ping') {
+                const pingTime = new Date().toISOString();
                 console.log(`[${new Date().toLocaleString('ja-JP')}] Ping受信: ${clientIp}`);
+
+                // クライアント情報の最終Ping時刻を更新
+                const client = connectedClients.get(clientIp);
+                if (client) {
+                    client.lastPing = pingTime;
+                }
 
                 // Pong応答
                 ws.send(JSON.stringify({
                     type: 'pong',
-                    timestamp: new Date().toISOString()
+                    timestamp: pingTime
                 }));
 
             } else if (messageData.type === 'message') {
@@ -173,7 +258,9 @@ wss.on('connection', (ws, req) => {
 
     // 接続切断
     ws.on('close', (code) => {
-        console.log(`\n[${new Date().toLocaleString('ja-JP')}] WebSocket切断: ${clientIp} (コード: ${code})`);
+        // クライアント情報を管理マップから削除
+        connectedClients.delete(clientIp);
+        console.log(`\n[${new Date().toLocaleString('ja-JP')}] WebSocket切断: ${clientIp} (コード: ${code}, 総接続数: ${connectedClients.size})`);
     });
 });
 
@@ -231,8 +318,10 @@ httpServer.listen(PORT, HOST, () => {
     console.log('=================================');
     console.log(`🌐 HTTP/WebSocketサーバー: http://${HOST}:${PORT}`);
     console.log(`📡 WebSocketエンドポイント: ws://${HOST}:${PORT}/message`);
-    console.log(`🔗 HTTPエンドポイント: http://${HOST}:${PORT}/api/message`);
-    console.log(`📊 ステータス確認: http://${HOST}:${PORT}/status`);
+    console.log(`🔗 HTTPメッセージ送信: http://${HOST}:${PORT}/api/message`);
+    console.log(`📊 サーバーステータス: http://${HOST}:${PORT}/status`);
+    console.log(`👥 接続クライアント一覧: http://${HOST}:${PORT}/api/clients`);
+    console.log(`🔍 クライアント接続チェック: http://${HOST}:${PORT}/api/client-check`);
     console.log('=================================');
     console.log('SJT-CPからのメッセージ受信待機中...\n');
 });

@@ -262,6 +262,86 @@ class WebSocketService
     }
 
     /**
+     * 特定IPアドレスのクライアントが接続されているかチェック
+     *
+     * @param string $deviceIp 端末のIPアドレス
+     * @param int $port WebSocketポート
+     * @return bool 接続されているかどうか
+     */
+    public function checkClientConnection(string $deviceIp, ?int $port = null): bool
+    {
+        try {
+            $port = $port ?: $this->config['default_port'];
+            $serverAddress = $this->getServerAddress();
+            $httpProtocol = $this->config['protocol'] === 'wss' ? 'https' : 'http';
+            $checkUrl = "{$httpProtocol}://{$serverAddress}:{$port}/api/client-check";
+            
+            Log::info("クライアント接続チェック開始", [
+                'device_ip' => $deviceIp,
+                'server_address' => $serverAddress,
+                'port' => $port,
+                'check_url' => $checkUrl
+            ]);
+
+            $ch = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_URL => $checkUrl,
+                CURLOPT_POST => true,
+                CURLOPT_POSTFIELDS => json_encode(['ip' => $deviceIp]),
+                CURLOPT_HTTPHEADER => [
+                    'Content-Type: application/json',
+                    'Accept: application/json'
+                ],
+                CURLOPT_TIMEOUT => 5,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => false
+            ]);
+
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $error = curl_error($ch);
+            curl_close($ch);
+
+            if ($error) {
+                Log::warning("クライアント接続チェック失敗", [
+                    'device_ip' => $deviceIp,
+                    'error' => $error
+                ]);
+                return false;
+            }
+
+            if ($httpCode >= 200 && $httpCode < 300) {
+                $responseData = json_decode($response, true);
+                $connected = $responseData['connected'] ?? false;
+                
+                Log::info("クライアント接続チェック結果", [
+                    'device_ip' => $deviceIp,
+                    'connected' => $connected,
+                    'client_info' => $responseData['clientInfo'] ?? null
+                ]);
+                
+                return $connected;
+            }
+
+            Log::warning("クライアント接続チェック失敗", [
+                'device_ip' => $deviceIp,
+                'http_code' => $httpCode,
+                'response' => $response
+            ]);
+            
+            return false;
+
+        } catch (Exception $e) {
+            Log::error("クライアント接続チェックエラー", [
+                'device_ip' => $deviceIp,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
+    }
+
+    /**
      * HTTPでのフォールバック送信（WebSocketが利用できない場合）
      *
      * @param string $deviceIp 端末のIPアドレス

@@ -285,22 +285,35 @@ class MessageController extends Controller
         ]);
 
         try {
-            $connected = $this->webSocketService->testConnection($device->ip_address);
+            // まずWebSocketサーバーの動作確認
+            $serverAlive = $this->webSocketService->testConnection($device->ip_address);
+            
+            if (!$serverAlive) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "WebSocketサーバーが起動していません。"
+                ], 400);
+            }
+
+            // 特定IPアドレスのクライアント接続チェック
+            $clientConnected = $this->webSocketService->checkClientConnection($device->ip_address);
             
             Log::info("接続テスト結果", [
                 'device_id' => $device->id,
-                'connected' => $connected
+                'server_alive' => $serverAlive,
+                'client_connected' => $clientConnected
             ]);
             
-            if ($connected) {
+            if ($clientConnected) {
                 return response()->json([
                     'success' => true,
-                    'message' => "端末「{$device->name}」への接続テストに成功しました。"
+                    'message' => "端末「{$device->name}」({$device->ip_address})がWebSocketサーバーに接続されています。"
                 ]);
             } else {
                 return response()->json([
                     'success' => false,
-                    'message' => "端末「{$device->name}」への接続テストに失敗しました。"
+                    'message' => "端末「{$device->name}」({$device->ip_address})はWebSocketサーバーに接続されていません。",
+                    'detail' => 'WebSocketサーバーは動作していますが、該当IPアドレスからの接続が確認できません。'
                 ], 400);
             }
         } catch (\Exception $e) {

@@ -5,156 +5,217 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Collection;
 use App\Models\CollectionContent;
+use App\Models\Competition;
+use App\Models\Player;
 use App\Models\Resource;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class CollectionContentController extends Controller
 {
+    public function index(Collection $collection, Request $request)
+    {
+        $query = CollectionContent::with(['field', 'competition', 'player'])
+            ->where('collection_id', $collection->id);
+
+        // 大会フィルタ
+        if ($request->filled('competition_id')) {
+            $query->where('competition_id', $request->competition_id);
+        }
+
+        // 選手フィルタ
+        if ($request->filled('player_id')) {
+            $query->where('player_id', $request->player_id);
+        }
+
+        $contents = $query->orderBy('created_at', 'desc')->paginate(20);
+
+        // フィルタ用データ
+        $competitions = Competition::orderBy('name')->get();
+        $players = Player::orderBy('name')->get();
+
+        return view('admin.collections.contents.index', compact('collection', 'contents', 'competitions', 'players'));
+    }
+
+    public function create(Collection $collection, Request $request)
+    {
+        $collection->load('fields');
+        
+        // コンテキスト情報
+        $competitionId = $request->competition_id;
+        $playerId = $request->player_id;
+        
+        $competition = $competitionId ? Competition::find($competitionId) : null;
+        $player = $playerId ? Player::find($playerId) : null;
+
+        // 既存データの取得
+        $existingData = CollectionContent::where('collection_id', $collection->id)
+            ->where('competition_id', $competitionId)
+            ->where('player_id', $playerId)
+            ->with('field')
+            ->get()
+            ->keyBy('field_id');
+
+        // 選択可能なデータ
+        $competitions = Competition::orderBy('name')->get();
+        $players = Player::orderBy('name')->get();
+        $resources = Resource::orderBy('original_name')->get();
+
+        return view('admin.collections.contents.create', compact(
+            'collection', 'competition', 'player', 'existingData', 
+            'competitions', 'players', 'resources'
+        ));
+    }
+
     public function store(Request $request, Collection $collection)
     {
-        $validated = $request->validate([
-            'name' => [
-                'required', 
-                'string', 
-                'max:255', 
-                'regex:/^[a-zA-Z0-9_-]+$/',
-                Rule::unique('collection_contents', 'name')->where('collection_id', $collection->id)
-            ],
-            'content_type' => ['required', Rule::in(['string', 'text', 'boolean', 'resource', 'date', 'time'])],
-            'max_length' => ['nullable', 'integer', 'min:1', 'max:65535'],
-            'is_required' => ['boolean'],
-            'sort_order' => ['nullable', 'integer', 'min:0'],
-        ]);
+        $collection->load('fields');
 
-        // デフォルト値設定
-        if (!isset($validated['sort_order'])) {
-            $validated['sort_order'] = $collection->contents()->count();
+        // コンテキスト検証
+        $competitionId = $request->competition_id;
+        $playerId = $request->player_id;
+
+        if ($collection->is_competition_managed && !$competitionId) {
+            return back()->withErrors(['competition_id' => '大会を選択してください。']);
         }
 
-        // コンテンツタイプに応じたmax_length設定
-        if ($validated['content_type'] === 'string' && !isset($validated['max_length'])) {
-            $validated['max_length'] = 255;
-        } elseif ($validated['content_type'] === 'text' && !isset($validated['max_length'])) {
-            $validated['max_length'] = 5000;
-        } elseif (!in_array($validated['content_type'], ['string', 'text'])) {
-            $validated['max_length'] = null;
+        if ($collection->is_player_managed && !$playerId) {
+            return back()->withErrors(['player_id' => '選手を選択してください。']);
         }
 
-        $validated['collection_id'] = $collection->id;
-        $content = CollectionContent::create($validated);
+        // バリデーションルール動的生成
+        $rules = [
+            'competition_id' => $collection->is_competition_managed ? 'required|exists:competitions,id' : 'nullable',
+            'player_id' => $collection->is_player_managed ? 'required|exists:players,id' : 'nullable',
+        ];
 
-        return response()->json([
-            'success' => true,
-            'message' => 'コンテンツを追加しました。',
-            'content' => $content->load('collection')
-        ]);
+        foreach ($collection->fields as $field) {
+            $fieldName = "field_{$field->id}";
+            $rules[$fieldName] = $field->validation_rules;
+        }
+
+        $validated = $request->validate($rules);
+
+        // 既存データの削除
+        CollectionContent::where('collection_id', $collection->id)
+            ->where('competition_id', $competitionId)
+            ->where('player_id', $playerId)
+            ->delete();
+
+        // 新しいデータの保存
+        foreach ($collection->fields as $field) {
+            $fieldName = "field_{$field->id}";
+            $value = $validated[$fieldName] ?? null;
+
+            if ($value !== null && $value !== '') {
+                // boolean型の変換
+                if ($field->content_type === 'boolean') {
+                    $value = $value ? '1' : '0';
+                }
+
+                CollectionContent::create([
+                    'collection_id' => $collection->id,
+                    'field_id' => $field->id,
+                    'competition_id' => $competitionId,
+                    'player_id' => $playerId,
+                    'value' => $value,
+                ]);
+            }
+        }
+
+        $contextMessage = '';
+        if ($collection->is_player_managed && $playerId) {
+            $player = Player::find($playerId);
+            $competition = Competition::find($competitionId);
+            $contextMessage = " ({$competition->name} - {$player->name})";
+        } elseif ($collection->is_competition_managed && $competitionId) {
+            $competition = Competition::find($competitionId);
+            $contextMessage = " ({$competition->name})";
+        }
+
+        return redirect()->route('admin.collections.contents.index', $collection)
+            ->with('success', "コンテンツを保存しました{$contextMessage}。");
     }
 
-    public function update(Request $request, Collection $collection, CollectionContent $content)
+    public function edit(Collection $collection, Request $request)
     {
-        if ($content->collection_id !== $collection->id) {
-            abort(404);
-        }
-
-        $validated = $request->validate([
-            'name' => [
-                'required', 
-                'string', 
-                'max:255', 
-                'regex:/^[a-zA-Z0-9_-]+$/',
-                Rule::unique('collection_contents', 'name')
-                    ->where('collection_id', $collection->id)
-                    ->ignore($content->id)
-            ],
-            'content_type' => ['required', Rule::in(['string', 'text', 'boolean', 'resource', 'date', 'time'])],
-            'max_length' => ['nullable', 'integer', 'min:1', 'max:65535'],
-            'is_required' => ['boolean'],
-            'sort_order' => ['nullable', 'integer', 'min:0'],
-        ]);
-
-        // コンテンツタイプに応じたmax_length設定
-        if ($validated['content_type'] === 'string' && !isset($validated['max_length'])) {
-            $validated['max_length'] = 255;
-        } elseif ($validated['content_type'] === 'text' && !isset($validated['max_length'])) {
-            $validated['max_length'] = 5000;
-        } elseif (!in_array($validated['content_type'], ['string', 'text'])) {
-            $validated['max_length'] = null;
-        }
-
-        $content->update($validated);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'コンテンツを更新しました。',
-            'content' => $content->fresh()
-        ]);
+        // create メソッドと同じロジックを使用
+        return $this->create($collection, $request);
     }
 
-    public function destroy(Collection $collection, CollectionContent $content)
+    public function destroy(Collection $collection, Request $request)
     {
-        if ($content->collection_id !== $collection->id) {
-            abort(404);
-        }
+        $competitionId = $request->competition_id;
+        $playerId = $request->player_id;
 
-        // データが存在する場合は警告
-        $dataCount = $content->data()->count();
-        if ($dataCount > 0) {
+        $deleted = CollectionContent::where('collection_id', $collection->id)
+            ->where('competition_id', $competitionId)
+            ->where('player_id', $playerId)
+            ->delete();
+
+        if ($deleted > 0) {
             return response()->json([
-                'success' => false,
-                'message' => "このコンテンツには{$dataCount}件のデータが存在します。先にデータを削除してください。"
-            ], 422);
-        }
-
-        $content->delete();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'コンテンツを削除しました。'
-        ]);
-    }
-
-    public function updateOrder(Request $request, Collection $collection)
-    {
-        $validated = $request->validate([
-            'content_ids' => ['required', 'array'],
-            'content_ids.*' => ['integer', 'exists:collection_contents,id']
-        ]);
-
-        foreach ($validated['content_ids'] as $index => $contentId) {
-            CollectionContent::where('id', $contentId)
-                ->where('collection_id', $collection->id)
-                ->update(['sort_order' => $index]);
+                'success' => true,
+                'message' => 'コンテンツを削除しました。'
+            ]);
         }
 
         return response()->json([
-            'success' => true,
-            'message' => 'コンテンツの順序を更新しました。'
+            'success' => false,
+            'message' => '削除するコンテンツが見つかりません。'
+        ], 404);
+    }
+
+    public function getCompetitions(Request $request)
+    {
+        $query = Competition::query();
+        
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where('name', 'like', "%{$search}%");
+        }
+
+        $competitions = $query->orderBy('name')->get();
+
+        return response()->json([
+            'competitions' => $competitions->map(function ($competition) {
+                return [
+                    'id' => $competition->id,
+                    'name' => $competition->name,
+                    'year' => $competition->year,
+                    'status' => $competition->status,
+                ];
+            })
         ]);
     }
 
-    public function getResources(Request $request)
+    public function getPlayers(Request $request)
     {
-        $query = Resource::query();
+        $query = Player::query();
         
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('original_name', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('name_kana', 'like', "%{$search}%");
             });
         }
 
-        $resources = $query->orderBy('original_name')->get();
+        if ($request->filled('competition_id')) {
+            // 大会に登録されている選手のみ
+            $query->whereHas('competitionPlayers', function ($q) use ($request) {
+                $q->where('competition_id', $request->competition_id);
+            });
+        }
+
+        $players = $query->orderBy('name')->get();
 
         return response()->json([
-            'resources' => $resources->map(function ($resource) {
+            'players' => $players->map(function ($player) {
                 return [
-                    'id' => $resource->id,
-                    'name' => $resource->original_name,
-                    'description' => $resource->description,
-                    'size' => $resource->file_size ? number_format($resource->file_size / 1024, 1) . ' KB' : null,
-                    'created_at' => $resource->created_at->format('Y/m/d'),
+                    'id' => $player->id,
+                    'name' => $player->name,
+                    'name_kana' => $player->name_kana,
+                    'number' => $player->number,
                 ];
             })
         ]);

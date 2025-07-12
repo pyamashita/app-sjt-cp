@@ -369,7 +369,7 @@
                                placeholder="例: score"
                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                         <p class="mt-1 text-sm text-gray-500">半角英数字、アンダースコア(_)、ハイフン(-)のみ使用可能</p>
-                        <div id="content_name_error" class="mt-1 text-sm text-red-600 hidden"></div>
+                        <div id="field_name_error" class="mt-1 text-sm text-red-600 hidden"></div>
                     </div>
 
                     <div>
@@ -417,11 +417,11 @@
                     </div>
                 </div>
                 <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
-                    <button type="button" onclick="hideContentModal()" 
+                    <button type="button" onclick="hideFieldModal()" 
                             class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
                         キャンセル
                     </button>
-                    <button type="submit" id="content-submit-btn"
+                    <button type="submit" id="field-submit-btn"
                             class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
                         追加
                     </button>
@@ -432,39 +432,39 @@
 
 @push('scripts')
 <script>
-let editingContentId = null;
+let editingFieldId = null;
 const collectionId = {{ $collection->id }};
 
-function showAddContentModal() {
-    editingContentId = null;
-    document.getElementById('content-modal-title').textContent = 'コンテンツを追加';
-    document.getElementById('content-submit-btn').textContent = '追加';
-    resetContentForm();
-    document.getElementById('content-modal').classList.remove('hidden');
+function showAddFieldModal() {
+    editingFieldId = null;
+    document.getElementById('field-modal-title').textContent = 'フィールドを追加';
+    document.getElementById('field-submit-btn').textContent = '追加';
+    resetFieldForm();
+    document.getElementById('field-modal').classList.remove('hidden');
 }
 
-function showEditContentModal(contentId) {
-    editingContentId = contentId;
-    document.getElementById('content-modal-title').textContent = 'コンテンツを編集';
-    document.getElementById('content-submit-btn').textContent = '更新';
+function showEditFieldModal(fieldId) {
+    editingFieldId = fieldId;
+    document.getElementById('field-modal-title').textContent = 'フィールドを編集';
+    document.getElementById('field-submit-btn').textContent = '更新';
     
     // 既存データの取得と設定
-    const row = document.querySelector(`button[onclick="showEditContentModal(${contentId})"]`).closest('tr');
+    const row = document.querySelector(`button[onclick="showEditFieldModal(${fieldId})"]`).closest('tr');
     const cells = row.querySelectorAll('td');
     
     // データ抽出は簡略化、実際のデータは別途API等で取得
-    resetContentForm();
-    document.getElementById('content-modal').classList.remove('hidden');
+    resetFieldForm();
+    document.getElementById('field-modal').classList.remove('hidden');
 }
 
-function hideContentModal() {
-    document.getElementById('content-modal').classList.add('hidden');
-    resetContentForm();
-    editingContentId = null;
+function hideFieldModal() {
+    document.getElementById('field-modal').classList.add('hidden');
+    resetFieldForm();
+    editingFieldId = null;
 }
 
-function resetContentForm() {
-    document.getElementById('content-form').reset();
+function resetFieldForm() {
+    document.getElementById('field-form').reset();
     document.getElementById('max_length_field').classList.add('hidden');
     clearErrors();
 }
@@ -490,7 +490,7 @@ function onContentTypeChange() {
 }
 
 function clearErrors() {
-    const errorFields = ['content_name_error', 'content_type_error', 'max_length_error', 'sort_order_error'];
+    const errorFields = ['field_name_error', 'content_type_error', 'max_length_error', 'sort_order_error'];
     errorFields.forEach(fieldId => {
         const element = document.getElementById(fieldId);
         if (element) {
@@ -508,18 +508,18 @@ function showError(fieldName, message) {
     }
 }
 
-document.getElementById('content-form').addEventListener('submit', function(e) {
+document.getElementById('field-form').addEventListener('submit', function(e) {
     e.preventDefault();
     clearErrors();
     
     const formData = new FormData(this);
-    const url = editingContentId 
-        ? `/admin/collections/${collectionId}/contents/${editingContentId}`
-        : `/admin/collections/${collectionId}/contents`;
+    const url = editingFieldId 
+        ? `/admin/collections/${collectionId}/fields/${editingFieldId}`
+        : `/admin/collections/${collectionId}/fields`;
     
-    const method = editingContentId ? 'PUT' : 'POST';
+    const method = editingFieldId ? 'PUT' : 'POST';
     
-    if (editingContentId) {
+    if (editingFieldId) {
         formData.append('_method', 'PUT');
     }
     
@@ -533,7 +533,7 @@ document.getElementById('content-form').addEventListener('submit', function(e) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            hideContentModal();
+            hideFieldModal();
             location.reload(); // 簡単な実装として画面をリロード
         } else {
             if (data.errors) {
@@ -551,12 +551,12 @@ document.getElementById('content-form').addEventListener('submit', function(e) {
     });
 });
 
-function deleteContent(contentId) {
-    if (!confirm('このコンテンツを削除しますか？関連するデータも全て削除されます。')) {
+function deleteField(fieldId) {
+    if (!confirm('このフィールドを削除しますか？関連するコンテンツも全て削除されます。')) {
         return;
     }
     
-    fetch(`/admin/collections/${collectionId}/contents/${contentId}`, {
+    fetch(`/admin/collections/${collectionId}/fields/${fieldId}`, {
         method: 'DELETE',
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
@@ -624,9 +624,9 @@ document.getElementById('add-access-control-modal').addEventListener('click', fu
     }
 });
 
-document.getElementById('content-modal').addEventListener('click', function(e) {
+document.getElementById('field-modal').addEventListener('click', function(e) {
     if (e.target === this) {
-        hideContentModal();
+        hideFieldModal();
     }
 });
 </script>

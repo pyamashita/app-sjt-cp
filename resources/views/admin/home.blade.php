@@ -136,7 +136,7 @@
                     </div>
                     <div class="ml-4">
                         <h3 class="text-lg font-semibold text-gray-900">リソース管理</h3>
-                        <p class="text-sm text-gray-600">ファイル管理とガイドページ</p>
+                        <p class="text-sm text-gray-600">ファイル・リソースの管理</p>
                     </div>
                 </div>
                 
@@ -146,9 +146,36 @@
                        class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-800 rounded-md transition-colors duration-200">
                         リソース一覧
                     </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- ガイドページ管理 -->
+        <div class="bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-all duration-300">
+            <div class="p-6">
+                <div class="flex items-center mb-4">
+                    <div class="flex-shrink-0">
+                        <div class="h-12 w-12 bg-amber-100 rounded-lg flex items-center justify-center">
+                            <svg class="h-6 w-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C20.832 18.477 19.247 18 17.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-lg font-semibold text-gray-900">ガイドページ管理</h3>
+                        <p class="text-sm text-gray-600">競技ガイドページの作成・管理</p>
+                    </div>
+                </div>
+                
+                <!-- サブメニュー -->
+                <div class="space-y-2">
                     <a href="{{ route('admin.guide-pages.index') }}" 
-                       class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-800 rounded-md transition-colors duration-200">
-                        ガイドページ管理
+                       class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-800 rounded-md transition-colors duration-200">
+                        ガイドページ一覧
+                    </a>
+                    <a href="{{ route('admin.guide-pages.create') }}" 
+                       class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-800 rounded-md transition-colors duration-200">
+                        新規作成
                     </a>
                 </div>
             </div>

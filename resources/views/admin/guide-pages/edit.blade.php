@@ -124,14 +124,29 @@
                                             @foreach($group->items as $item)
                                                 <div class="item flex justify-between items-center py-2 px-3 bg-gray-50 rounded mb-2" data-item-id="{{ $item->id }}">
                                                     <div class="flex items-center space-x-3">
-                                                        <span class="text-xs px-2 py-1 rounded {{ $item->type === 'resource' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800' }}">
-                                                            {{ $item->type === 'resource' ? 'リソース' : 'リンク' }}
+                                                        @php
+                                                            $typeColors = [
+                                                                'resource' => 'bg-blue-100 text-blue-800',
+                                                                'link' => 'bg-green-100 text-green-800',
+                                                                'text' => 'bg-yellow-100 text-yellow-800',
+                                                                'collection' => 'bg-purple-100 text-purple-800'
+                                                            ];
+                                                        @endphp
+                                                        <span class="text-xs px-2 py-1 rounded {{ $typeColors[$item->type] ?? 'bg-gray-100 text-gray-800' }}">
+                                                            {{ $item->getTypeDisplayName() }}
                                                         </span>
                                                         <span class="text-sm text-gray-900">{{ $item->title }}</span>
                                                         @if($item->type === 'resource' && $item->resource)
                                                             <span class="text-xs text-gray-500">({{ $item->resource->name }})</span>
                                                         @elseif($item->type === 'link')
                                                             <span class="text-xs text-gray-500">({{ $item->url }})</span>
+                                                        @elseif($item->type === 'text')
+                                                            <span class="text-xs text-gray-500">({{ $item->getTruncatedTextContent(50) }})</span>
+                                                            @if($item->show_copy_button)
+                                                                <span class="text-xs text-blue-500">[コピー可]</span>
+                                                            @endif
+                                                        @elseif($item->type === 'collection' && $item->collection)
+                                                            <span class="text-xs text-gray-500">({{ $item->collection->display_name }})</span>
                                                         @endif
                                                     </div>
                                                     <button onclick="deleteItem({{ $item->id }})" 
@@ -161,6 +176,8 @@
                     <select id="itemType" class="w-full px-3 py-2 border border-gray-300 rounded-md" onchange="toggleItemFields()">
                         <option value="link">リンク</option>
                         <option value="resource">リソース</option>
+                        <option value="text">テキスト</option>
+                        <option value="collection">コレクション</option>
                     </select>
                 </div>
                 
@@ -185,6 +202,38 @@
                             </svg>
                         </button>
                         <input type="hidden" id="itemResource" name="resource_id">
+                    </div>
+                </div>
+                
+                <div id="textField" class="mb-4 hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">テキスト内容（255文字まで）</label>
+                    <textarea id="itemText" 
+                              class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                              rows="3"
+                              maxlength="255"
+                              placeholder="表示するテキストを入力してください"></textarea>
+                    <p class="text-xs text-gray-500 mt-1">
+                        <span id="textLength">0</span>/255文字
+                    </p>
+                    <div class="mt-2">
+                        <label class="flex items-center">
+                            <input type="checkbox" id="itemCopyButton" class="mr-2">
+                            <span class="text-sm text-gray-700">コピーボタンを表示</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div id="collectionField" class="mb-4 hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">コレクション</label>
+                    <div class="border border-gray-300 rounded-md p-2 bg-gray-50">
+                        <button type="button" onclick="showCollectionModal()" 
+                                class="w-full px-3 py-2 text-left bg-white border border-gray-300 rounded-md hover:bg-gray-50 flex items-center justify-between">
+                            <span id="selectedCollectionName" class="text-gray-500">コレクションを選択してください</span>
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                            </svg>
+                        </button>
+                        <input type="hidden" id="itemCollection" name="collection_id">
                     </div>
                 </div>
                 
@@ -507,22 +556,54 @@ function toggleItemFields() {
     const type = document.getElementById('itemType').value;
     const urlField = document.getElementById('urlField');
     const resourceField = document.getElementById('resourceField');
+    const textField = document.getElementById('textField');
+    const collectionField = document.getElementById('collectionField');
     
-    if (type === 'resource') {
-        urlField.classList.add('hidden');
-        resourceField.classList.remove('hidden');
-        document.getElementById('itemUrl').required = false;
-        document.getElementById('itemResource').required = true;
-    } else {
-        urlField.classList.remove('hidden');
-        resourceField.classList.add('hidden');
-        document.getElementById('itemUrl').required = true;
-        document.getElementById('itemResource').required = false;
-        // リソース選択をリセット
+    // すべてのフィールドを隠す
+    urlField.classList.add('hidden');
+    resourceField.classList.add('hidden');
+    textField.classList.add('hidden');
+    collectionField.classList.add('hidden');
+    
+    // すべてのrequiredを外す
+    document.getElementById('itemUrl').required = false;
+    document.getElementById('itemResource').required = false;
+    document.getElementById('itemText').required = false;
+    document.getElementById('itemCollection').required = false;
+    
+    // タイプに応じて表示
+    switch(type) {
+        case 'link':
+            urlField.classList.remove('hidden');
+            document.getElementById('itemUrl').required = true;
+            break;
+        case 'resource':
+            resourceField.classList.remove('hidden');
+            document.getElementById('itemResource').required = true;
+            break;
+        case 'text':
+            textField.classList.remove('hidden');
+            document.getElementById('itemText').required = true;
+            break;
+        case 'collection':
+            collectionField.classList.remove('hidden');
+            document.getElementById('itemCollection').required = true;
+            break;
+    }
+    
+    // 選択をリセット
+    if (type !== 'resource') {
         document.getElementById('itemResource').value = '';
         document.getElementById('selectedResourceName').textContent = 'リソースを選択してください';
         document.getElementById('selectedResourceName').classList.add('text-gray-500');
         document.getElementById('selectedResourceName').classList.remove('text-gray-900');
+    }
+    
+    if (type !== 'collection') {
+        document.getElementById('itemCollection').value = '';
+        document.getElementById('selectedCollectionName').textContent = 'コレクションを選択してください';
+        document.getElementById('selectedCollectionName').classList.add('text-gray-500');
+        document.getElementById('selectedCollectionName').classList.remove('text-gray-900');
     }
 }
 
@@ -531,9 +612,19 @@ document.getElementById('addItemForm').addEventListener('submit', function(e) {
     
     const type = document.getElementById('itemType').value;
     
-    // リソースタイプの場合、リソースが選択されているか確認
+    // 各タイプの必須項目チェック
     if (type === 'resource' && !document.getElementById('itemResource').value) {
         alert('リソースを選択してください。');
+        return;
+    }
+    
+    if (type === 'text' && !document.getElementById('itemText').value.trim()) {
+        alert('テキスト内容を入力してください。');
+        return;
+    }
+    
+    if (type === 'collection' && !document.getElementById('itemCollection').value) {
+        alert('コレクションを選択してください。');
         return;
     }
     
@@ -542,6 +633,9 @@ document.getElementById('addItemForm').addEventListener('submit', function(e) {
         title: document.getElementById('itemTitle').value,
         url: document.getElementById('itemUrl').value,
         resource_id: document.getElementById('itemResource').value,
+        text_content: document.getElementById('itemText').value,
+        show_copy_button: document.getElementById('itemCopyButton').checked,
+        collection_id: document.getElementById('itemCollection').value,
         open_in_new_tab: document.getElementById('itemNewTab').checked
     };
     
@@ -612,5 +706,68 @@ function deleteItem(itemId) {
         }
     });
 }
+
+// テキスト文字数カウント
+document.getElementById('itemText').addEventListener('input', function() {
+    const length = this.value.length;
+    document.getElementById('textLength').textContent = length;
+});
+
+// コレクション選択モーダル
+function showCollectionModal() {
+    document.getElementById('collectionModal').classList.remove('hidden');
+}
+
+function closeCollectionModal() {
+    document.getElementById('collectionModal').classList.add('hidden');
+}
+
+function selectCollection(id, name) {
+    document.getElementById('itemCollection').value = id;
+    document.getElementById('selectedCollectionName').textContent = name;
+    document.getElementById('selectedCollectionName').classList.remove('text-gray-500');
+    document.getElementById('selectedCollectionName').classList.add('text-gray-900');
+    closeCollectionModal();
+}
 </script>
+
+<!-- コレクション選択モーダル -->
+<div id="collectionModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[80vh] flex flex-col">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-medium text-gray-900">コレクションを選択</h3>
+            <button type="button" onclick="closeCollectionModal()" class="text-gray-400 hover:text-gray-500">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto">
+            <div class="space-y-2">
+                @foreach($collections as $collection)
+                    <div class="p-3 border border-gray-200 rounded-md hover:bg-gray-50 cursor-pointer"
+                         onclick="selectCollection({{ $collection->id }}, '{{ $collection->display_name }}')">
+                        <div class="font-medium text-gray-900">{{ $collection->display_name }}</div>
+                        <div class="text-sm text-gray-500">{{ $collection->name }}</div>
+                        <div class="text-xs text-gray-400 mt-1">
+                            @if($collection->description)
+                                {{ Str::limit($collection->description, 100) }}
+                            @else
+                                説明なし
+                            @endif
+                        </div>
+                    </div>
+                @endforeach
+                
+                @if($collections->count() === 0)
+                    <div class="text-center py-8 text-gray-500">
+                        利用可能なコレクションがありません
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
+
 @endpush

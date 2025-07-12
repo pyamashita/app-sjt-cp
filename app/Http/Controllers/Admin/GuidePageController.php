@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Collection;
 use App\Models\Competition;
 use App\Models\GuidePage;
 use App\Models\GuidePageSection;
@@ -47,17 +48,18 @@ class GuidePageController extends Controller
 
     public function show(GuidePage $guidePage)
     {
-        $guidePage->load(['competition', 'sections.groups.items.resource']);
+        $guidePage->load(['competition', 'sections.groups.items.resource', 'sections.groups.items.collection']);
         return view('admin.guide-pages.show', compact('guidePage'));
     }
 
     public function edit(GuidePage $guidePage)
     {
-        $guidePage->load(['competition', 'sections.groups.items.resource']);
+        $guidePage->load(['competition', 'sections.groups.items.resource', 'sections.groups.items.collection']);
         $competitions = Competition::all();
         $resources = Resource::where('is_public', true)->get();
+        $collections = Collection::all();
         
-        return view('admin.guide-pages.edit', compact('guidePage', 'competitions', 'resources'));
+        return view('admin.guide-pages.edit', compact('guidePage', 'competitions', 'resources', 'collections'));
     }
 
     public function update(Request $request, GuidePage $guidePage)
@@ -92,7 +94,7 @@ class GuidePageController extends Controller
 
     public function preview(GuidePage $guidePage)
     {
-        $guidePage->load(['competition', 'sections.groups.items.resource']);
+        $guidePage->load(['competition', 'sections.groups.items.resource', 'sections.groups.items.collection']);
         return view('guide.preview', compact('guidePage'));
     }
 
@@ -133,10 +135,13 @@ class GuidePageController extends Controller
     public function addItem(Request $request, GuidePageGroup $group)
     {
         $request->validate([
-            'type' => 'required|in:resource,link',
+            'type' => 'required|in:resource,link,text,collection',
             'title' => 'required|string|max:255',
             'url' => 'required_if:type,link|nullable|url',
             'resource_id' => 'required_if:type,resource|nullable|exists:resources,id',
+            'text_content' => 'required_if:type,text|nullable|string|max:255',
+            'show_copy_button' => 'boolean',
+            'collection_id' => 'required_if:type,collection|nullable|exists:collections,id',
             'open_in_new_tab' => 'boolean',
         ]);
 
@@ -145,13 +150,16 @@ class GuidePageController extends Controller
             'title' => $request->title,
             'url' => $request->url,
             'resource_id' => $request->resource_id,
+            'text_content' => $request->text_content,
+            'show_copy_button' => $request->boolean('show_copy_button', false),
+            'collection_id' => $request->collection_id,
             'open_in_new_tab' => $request->boolean('open_in_new_tab', true),
             'sort_order' => $group->items()->count(),
         ]);
 
         return response()->json([
             'success' => true,
-            'item' => $item->load('resource'),
+            'item' => $item->load(['resource', 'collection']),
         ]);
     }
 

@@ -33,6 +33,8 @@ return new class extends Migration
             'service_type' => 'websocket_message',
             'name' => 'メッセージ送受信用WebSocketサーバー',
             'config' => json_encode([
+                'server_address' => '',
+                'use_device_ip' => true,
                 'default_port' => 8080,
                 'timeout' => 10,
                 'retry_count' => 3,

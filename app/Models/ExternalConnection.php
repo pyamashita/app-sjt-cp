@@ -64,6 +64,8 @@ class ExternalConnection extends Model
         $config = self::getConfig(self::SERVICE_WEBSOCKET_MESSAGE);
         
         return $config ?: [
+            'server_address' => '',
+            'use_device_ip' => true,
             'default_port' => 8080,
             'timeout' => 10,
             'retry_count' => 3,

@@ -42,7 +42,10 @@ class WebSocketService
             $port = $port ?: $this->config['default_port'];
             $protocol = $this->config['protocol'];
             $path = $this->config['path'];
-            $url = "{$protocol}://{$deviceIp}:{$port}{$path}";
+            
+            // サーバーアドレス設定を確認
+            $serverAddress = $this->getServerAddress($deviceIp);
+            $url = "{$protocol}://{$serverAddress}:{$port}{$path}";
             $success = false;
             $error = null;
 
@@ -181,7 +184,10 @@ class WebSocketService
         try {
             $port = $port ?: $this->config['default_port'];
             $protocol = $this->config['protocol'];
-            $url = "{$protocol}://{$deviceIp}:{$port}/ping";
+            
+            // サーバーアドレス設定を確認
+            $serverAddress = $this->getServerAddress($deviceIp);
+            $url = "{$protocol}://{$serverAddress}:{$port}/ping";
             $connected = false;
 
             $this->connector->__invoke($url)
@@ -234,7 +240,10 @@ class WebSocketService
         try {
             $port = $port ?: $this->config['default_port'];
             $protocol = $this->config['protocol'] === 'wss' ? 'https' : 'http';
-            $url = "{$protocol}://{$deviceIp}:{$port}/api/message";
+            
+            // サーバーアドレス設定を確認
+            $serverAddress = $this->getServerAddress($deviceIp);
+            $url = "{$protocol}://{$serverAddress}:{$port}/api/message";
             
             $ch = curl_init();
             curl_setopt_array($ch, [
@@ -279,5 +288,22 @@ class WebSocketService
             
             return false;
         }
+    }
+
+    /**
+     * 使用するサーバーアドレスを取得
+     *
+     * @param string $deviceIp 端末のIPアドレス
+     * @return string 使用するサーバーアドレス
+     */
+    private function getServerAddress(string $deviceIp): string
+    {
+        // use_device_ip が true の場合、またはserver_addressが空の場合は端末IPを使用
+        if ($this->config['use_device_ip'] || empty($this->config['server_address'])) {
+            return $deviceIp;
+        }
+        
+        // 設定されたサーバーアドレスを使用
+        return $this->config['server_address'];
     }
 }

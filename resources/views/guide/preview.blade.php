@@ -119,36 +119,20 @@
                                                                     </div>
                                                                 @elseif($contents->count() > 0)
                                                                     <div class="overflow-x-auto border border-gray-200 rounded">
-                                                                        <table class="min-w-full divide-y divide-gray-200">
-                                                                            <thead class="bg-gray-50">
-                                                                                <tr>
-                                                                                    <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                                                        フィールド名
-                                                                                    </th>
-                                                                                    <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                                                        値
-                                                                                    </th>
-                                                                                    <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                                                        更新日時
-                                                                                    </th>
-                                                                                </tr>
-                                                                            </thead>
+                                                                        <table class="min-w-full">
                                                                             <tbody class="bg-white divide-y divide-gray-200">
                                                                                 @foreach($contents as $content)
                                                                                     <tr class="hover:bg-gray-50">
-                                                                                        <td class="px-3 py-2 text-sm font-medium text-gray-900">
+                                                                                        <td class="px-3 py-2 text-sm font-medium text-gray-900 w-1/3">
                                                                                             {{ $content->field->name }}
                                                                                             @if($content->field->is_required)
                                                                                                 <span class="text-red-500 ml-1">*</span>
                                                                                             @endif
                                                                                         </td>
-                                                                                        <td class="px-3 py-2 text-sm text-gray-900">
-                                                                                            <div class="max-w-xs break-words" title="{{ $content->value }}">
+                                                                                        <td class="px-3 py-2 text-sm text-gray-900 w-2/3">
+                                                                                            <div class="break-words" title="{{ $content->value }}">
                                                                                                 {{ $content->formatted_value }}
                                                                                             </div>
-                                                                                        </td>
-                                                                                        <td class="px-3 py-2 text-sm text-gray-500">
-                                                                                            {{ $content->updated_at->format('m/d H:i') }}
                                                                                         </td>
                                                                                     </tr>
                                                                                 @endforeach

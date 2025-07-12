@@ -116,7 +116,7 @@
                             <label class="block text-sm font-medium text-gray-700 mb-1">添付画像</label>
                             <div class="mt-2">
                                 @if($message->resource->is_image)
-                                    <img src="{{ asset('storage/' . $message->resource->file_path) }}" 
+                                    <img src="{{ route('admin.resources.serve', $message->resource) }}" 
                                          alt="{{ $message->resource->name }}"
                                          class="max-w-sm h-auto rounded border">
                                 @endif
@@ -207,7 +207,7 @@
                                         
                                         @if($messageDevice->error_message)
                                             <button type="button" 
-                                                    onclick="showErrorModal('{{ addslashes($messageDevice->error_message) }}')"
+                                                    onclick="showErrorModal({{ json_encode($messageDevice->error_message) }})"
                                                     class="ml-2 text-red-600 hover:text-red-900">
                                                 エラー詳細
                                             </button>
@@ -354,23 +354,25 @@
     </div>
 
     <!-- エラー詳細モーダル -->
-    <div id="error-modal" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onclick="closeErrorModal()"></div>
-            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900">エラー詳細</h3>
-                        <button type="button" onclick="closeErrorModal()" class="text-gray-400 hover:text-gray-600">
-                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="bg-red-50 rounded p-3">
-                        <p id="error-message" class="text-sm text-red-800"></p>
-                    </div>
+    <div id="error-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg w-full max-w-lg mx-4">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">エラー詳細</h3>
+                    <button type="button" onclick="closeErrorModal()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div class="bg-red-50 rounded p-4">
+                    <p id="error-message" class="text-sm text-red-800 whitespace-pre-wrap"></p>
+                </div>
+                <div class="mt-6 flex justify-end">
+                    <button type="button" onclick="closeErrorModal()" 
+                            class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700">
+                        閉じる
+                    </button>
                 </div>
             </div>
         </div>
@@ -378,12 +380,31 @@
 
     <script>
         function showErrorModal(message) {
-            document.getElementById('error-message').textContent = message;
-            document.getElementById('error-modal').classList.remove('hidden');
+            console.log('showErrorModal called with:', message);
+            const errorMessageElement = document.getElementById('error-message');
+            const errorModalElement = document.getElementById('error-modal');
+            
+            if (errorMessageElement && errorModalElement) {
+                errorMessageElement.textContent = message;
+                errorModalElement.classList.remove('hidden');
+                errorModalElement.style.display = 'flex';
+                errorModalElement.style.zIndex = '9999';
+                // bodyのスクロールを無効化
+                document.body.style.overflow = 'hidden';
+                console.log('Modal should be visible now');
+                console.log('Modal display:', errorModalElement.style.display);
+                console.log('Modal classes:', errorModalElement.className);
+            } else {
+                console.error('Modal elements not found');
+            }
         }
 
         function closeErrorModal() {
-            document.getElementById('error-modal').classList.add('hidden');
+            const errorModalElement = document.getElementById('error-modal');
+            errorModalElement.classList.add('hidden');
+            errorModalElement.style.display = 'none';
+            // bodyのスクロールを復元
+            document.body.style.overflow = 'auto';
         }
     </script>
 @endsection

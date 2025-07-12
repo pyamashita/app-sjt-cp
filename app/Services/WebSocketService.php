@@ -40,60 +40,62 @@ class WebSocketService
     {
         try {
             $port = $port ?: $this->config['default_port'];
-            $protocol = $this->config['protocol'];
-            $path = $this->config['path'];
-            
-            // サーバーアドレス設定を確認
             $serverAddress = $this->getServerAddress();
-            $url = "{$protocol}://{$serverAddress}:{$port}{$path}";
-            $success = false;
-            $error = null;
+            $httpProtocol = $this->config['protocol'] === 'wss' ? 'https' : 'http';
+            $sendUrl = "{$httpProtocol}://{$serverAddress}:{$port}/api/send-message";
 
-            Log::info("WebSocket送信開始", [
+            Log::info("HTTP APIでメッセージ送信開始", [
                 'device_ip' => $deviceIp,
                 'port' => $port,
-                'url' => $url,
+                'url' => $sendUrl,
                 'data' => $messageData
             ]);
 
-            // WebSocket接続とメッセージ送信
-            $this->connector->__invoke($url)
-                ->then(function (WebSocket $conn) use ($messageData, &$success) {
-                    // 接続成功、メッセージを送信
-                    $conn->send(json_encode($messageData));
-                    
-                    Log::info("WebSocketメッセージ送信完了", [
-                        'data' => $messageData
-                    ]);
-                    
-                    $success = true;
-                    
-                    // 送信後すぐに接続を閉じる
-                    $conn->close();
-                    
-                }, function (Exception $e) use (&$error) {
-                    // 接続失敗
-                    $error = $e;
-                    Log::error("WebSocket接続失敗", [
-                        'error' => $e->getMessage(),
-                        'trace' => $e->getTraceAsString()
-                    ]);
-                });
+            $ch = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_URL => $sendUrl,
+                CURLOPT_POST => true,
+                CURLOPT_POSTFIELDS => json_encode([
+                    'ip' => $deviceIp,
+                    'message' => $messageData
+                ]),
+                CURLOPT_HTTPHEADER => [
+                    'Content-Type: application/json',
+                    'Accept: application/json'
+                ],
+                CURLOPT_TIMEOUT => $this->config['timeout'],
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => false
+            ]);
 
-            // イベントループを短時間実行（最大5秒）
-            $this->runEventLoopWithTimeout(5.0);
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $error = curl_error($ch);
+            curl_close($ch);
 
             if ($error) {
-                throw $error;
+                throw new Exception("HTTP送信エラー: {$error}");
             }
 
-            return $success;
+            if ($httpCode >= 200 && $httpCode < 300) {
+                $responseData = json_decode($response, true);
+                Log::info("メッセージ送信成功", [
+                    'device_ip' => $deviceIp,
+                    'http_code' => $httpCode,
+                    'response' => $responseData
+                ]);
+                return true;
+            } else {
+                $responseData = json_decode($response, true);
+                $errorMsg = $responseData['error'] ?? 'HTTPコード ' . $httpCode;
+                throw new Exception("メッセージ送信失敗: {$errorMsg}");
+            }
 
         } catch (Exception $e) {
-            Log::error("WebSocket送信エラー", [
+            Log::error("メッセージ送信エラー", [
                 'device_ip' => $deviceIp,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'error' => $e->getMessage()
             ]);
             
             return false;

@@ -69,7 +69,11 @@ class MessageController extends Controller
         $resources = Resource::where('is_public', true)
             ->where('category', 'image')
             ->orderBy('name')
-            ->get();
+            ->get()
+            ->map(function ($resource) {
+                $resource->url = route('admin.resources.serve', $resource);
+                return $resource;
+            });
 
         return view('admin.messages.create', compact('devices', 'resources'));
     }
@@ -386,7 +390,10 @@ class MessageController extends Controller
     private function sendWebSocketMessage(Device $device, Message $message)
     {
         // メッセージデータを構築
-        $imageUrl = $message->resource ? asset('storage/' . $message->resource->file_path) : null;
+        $imageUrl = $message->resource ? config('app.api_domain', 'api.localhost') . '/resources/' . $message->resource->id . '/stream' : null;
+        if ($imageUrl) {
+            $imageUrl = 'http://' . $imageUrl;
+        }
         $messageData = $this->webSocketService->buildMessageData(
             $message->title ?? '',
             $message->content,
@@ -395,20 +402,11 @@ class MessageController extends Controller
         );
 
         try {
-            // まずWebSocketで送信を試行
+            // WebSocketで送信
             $success = $this->webSocketService->sendMessageToDevice($device->ip_address, $messageData);
             
             if (!$success) {
-                // WebSocketが失敗した場合、HTTPでフォールバック送信
-                Log::info("WebSocket送信失敗、HTTPでフォールバック送信を試行", [
-                    'device_ip' => $device->ip_address
-                ]);
-                
-                $success = $this->webSocketService->sendMessageViaHttp($device->ip_address, $messageData);
-            }
-
-            if (!$success) {
-                throw new \Exception("WebSocketとHTTPの両方で送信に失敗しました");
+                throw new \Exception("メッセージ送信に失敗しました");
             }
 
             Log::info("メッセージ送信成功", [

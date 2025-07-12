@@ -156,6 +156,86 @@ const httpServer = http.createServer((req, res) => {
             }
         });
 
+    } else if (parsedUrl.pathname === '/api/send-message' && req.method === 'POST') {
+        // 特定のIPアドレスのクライアントにメッセージを送信
+        let body = '';
+
+        req.on('data', chunk => {
+            body += chunk.toString();
+        });
+
+        req.on('end', () => {
+            try {
+                const requestData = JSON.parse(body);
+                const targetIp = requestData.ip;
+                const messageData = requestData.message;
+
+                if (!targetIp) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({
+                        success: false,
+                        error: 'IPアドレスが指定されていません'
+                    }));
+                    return;
+                }
+
+                if (!messageData) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({
+                        success: false,
+                        error: 'メッセージデータが指定されていません'
+                    }));
+                    return;
+                }
+
+                const client = connectedClients.get(targetIp);
+                
+                if (!client || client.ws.readyState !== WebSocket.OPEN) {
+                    console.log(`[${new Date().toLocaleString('ja-JP')}] メッセージ送信失敗: ${targetIp} (クライアント未接続)`);
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({
+                        success: false,
+                        error: '指定されたIPアドレスのクライアントが接続されていません',
+                        ip: targetIp,
+                        connected: false
+                    }));
+                    return;
+                }
+
+                // クライアントにメッセージを送信
+                try {
+                    client.ws.send(JSON.stringify(messageData));
+                    console.log(`[${new Date().toLocaleString('ja-JP')}] メッセージ送信成功: ${targetIp}`);
+                    console.log('送信データ:', messageData);
+
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({
+                        success: true,
+                        message: 'メッセージを送信しました',
+                        ip: targetIp,
+                        timestamp: new Date().toISOString()
+                    }));
+
+                } catch (wsError) {
+                    console.error(`[${new Date().toLocaleString('ja-JP')}] WebSocket送信エラー: ${targetIp}`, wsError.message);
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({
+                        success: false,
+                        error: 'WebSocket送信エラーが発生しました',
+                        detail: wsError.message
+                    }));
+                }
+
+            } catch (error) {
+                console.error('メッセージ送信リクエスト解析エラー:', error.message);
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    success: false,
+                    error: 'リクエスト解析エラー'
+                }));
+            }
+        });
+
     } else {
         res.writeHead(404, { 'Content-Type': 'text/plain' });
         res.end('Not Found');
@@ -322,6 +402,7 @@ httpServer.listen(PORT, HOST, () => {
     console.log(`📊 サーバーステータス: http://${HOST}:${PORT}/status`);
     console.log(`👥 接続クライアント一覧: http://${HOST}:${PORT}/api/clients`);
     console.log(`🔍 クライアント接続チェック: http://${HOST}:${PORT}/api/client-check`);
+    console.log(`📤 メッセージ送信: http://${HOST}:${PORT}/api/send-message`);
     console.log('=================================');
     console.log('SJT-CPからのメッセージ受信待機中...\n');
 });

@@ -3,6 +3,7 @@
 @section('title', 'メッセージ作成 - SJT-CP')
 
 @php
+    use Illuminate\Support\Facades\Storage;
     $pageTitle = 'メッセージ作成';
     $pageDescription = '端末にメッセージを送信します';
 @endphp
@@ -212,40 +213,93 @@
         </div>
     </form>
 
-    <!-- リソース選択モーダル -->
-    <div id="resource-modal" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onclick="closeResourceModal()"></div>
-            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
-                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900">画像を選択</h3>
-                        <button type="button" onclick="closeResourceModal()" class="text-gray-400 hover:text-gray-600">
-                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                        </button>
+    <!-- リソースエクスプローラーモーダル -->
+    <div id="resource-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg w-full max-w-4xl max-h-[80vh] flex flex-col">
+            <div class="p-4 border-b border-gray-200">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">画像を選択</h3>
+                    <button type="button" onclick="closeResourceModal()" class="text-gray-400 hover:text-gray-500">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <!-- 検索・フィルター -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div class="md:col-span-2">
+                        <input type="text" 
+                               id="resourceSearch" 
+                               placeholder="ファイル名で検索..." 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                               onkeyup="filterResources()">
                     </div>
-                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-96 overflow-y-auto">
-                        @foreach($resources as $resource)
-                            <div class="resource-item cursor-pointer border rounded p-2 hover:bg-gray-50" 
-                                 onclick="selectResource({{ $resource->id }}, '{{ $resource->name }}', '{{ asset('storage/' . $resource->file_path) }}')">
-                                @if($resource->is_image)
-                                    <img src="{{ asset('storage/' . $resource->file_path) }}" 
-                                         alt="{{ $resource->name }}"
-                                         class="w-full h-24 object-cover rounded mb-2">
-                                @else
-                                    <div class="w-full h-24 bg-gray-100 rounded mb-2 flex items-center justify-center">
-                                        <svg class="h-8 w-8 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
-                                        </svg>
-                                    </div>
-                                @endif
-                                <p class="text-sm text-gray-900 truncate">{{ $resource->name }}</p>
-                            </div>
-                        @endforeach
+                    <div>
+                        <select id="resourceDateFilter" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                                onchange="filterResources()">
+                            <option value="">すべての期間</option>
+                            <option value="today">今日</option>
+                            <option value="week">今週</option>
+                            <option value="month">今月</option>
+                            <option value="year">今年</option>
+                        </select>
                     </div>
+                </div>
+            </div>
+            
+            <!-- リソース一覧 -->
+            <div class="flex-1 overflow-y-auto p-4">
+                <div id="resourceList" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    @foreach($resources as $resource)
+                        <div class="resource-item border border-gray-200 rounded-lg p-3 hover:bg-gray-50 cursor-pointer transition-colors"
+                             data-resource-id="{{ $resource->id }}"
+                             data-resource-name="{{ $resource->name }}"
+                             data-resource-date="{{ $resource->created_at->format('Y-m-d') }}"
+                             onclick="selectModalResource({{ $resource->id }}, '{{ $resource->name }}', '{{ $resource->url }}')">
+                            @if($resource->is_image)
+                                <img src="{{ $resource->url }}" 
+                                     alt="{{ $resource->name }}"
+                                     class="w-full h-24 object-cover rounded mb-2">
+                            @else
+                                <div class="w-full h-24 bg-gray-100 rounded mb-2 flex items-center justify-center">
+                                    <svg class="h-8 w-8 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                            @endif
+                            <p class="text-sm text-gray-900 truncate">{{ $resource->name }}</p>
+                            <p class="text-xs text-gray-500">{{ $resource->created_at->format('Y/m/d') }}</p>
+                        </div>
+                    @endforeach
+                </div>
+                
+                <div id="noResourcesMessage" class="hidden text-center py-8">
+                    <svg class="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002 2z"></path>
+                    </svg>
+                    <p class="text-gray-500">該当する画像が見つかりません</p>
+                </div>
+            </div>
+            
+            <!-- フッター -->
+            <div class="p-4 border-t border-gray-200 flex justify-between items-center">
+                <div id="selectedResourceInfo" class="text-sm text-gray-600">
+                    画像を選択してください
+                </div>
+                <div class="flex space-x-3">
+                    <button type="button" onclick="closeResourceModal()" 
+                            class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+                        キャンセル
+                    </button>
+                    <button type="button" 
+                            id="confirmResourceButton"
+                            onclick="confirmResourceSelection()" 
+                            disabled
+                            class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                        選択
+                    </button>
                 </div>
             </div>
         </div>
@@ -318,26 +372,129 @@
             checkboxes.forEach(checkbox => checkbox.checked = false);
         }
 
+        // リソース選択モーダル関連の変数
+        let selectedResourceId = null;
+        let selectedResourceName = null;
+        let selectedResourceUrl = null;
+
         // リソース選択モーダル
         function openResourceModal() {
-            document.getElementById('resource-modal').classList.remove('hidden');
+            const modal = document.getElementById('resource-modal');
+            modal.classList.remove('hidden');
+            filterResources(); // 初期表示
+            // body のスクロールを無効化
+            document.body.style.overflow = 'hidden';
         }
 
         function closeResourceModal() {
-            document.getElementById('resource-modal').classList.add('hidden');
+            const modal = document.getElementById('resource-modal');
+            modal.classList.add('hidden');
+            // body のスクロールを復元
+            document.body.style.overflow = 'auto';
+            // 選択状態をリセット
+            document.querySelectorAll('.resource-item').forEach(item => {
+                item.classList.remove('border-blue-500', 'bg-blue-50');
+            });
+            selectedResourceId = null;
+            selectedResourceName = null;
+            selectedResourceUrl = null;
+            document.getElementById('confirmResourceButton').disabled = true;
+            document.getElementById('selectedResourceInfo').textContent = '画像を選択してください';
         }
 
-        function selectResource(id, name, url) {
-            document.getElementById('resource_id').value = id;
-            document.getElementById('selected-resource-name').textContent = name;
+        function selectModalResource(id, name, url) {
+            // 既存の選択をクリア
+            document.querySelectorAll('.resource-item').forEach(item => {
+                item.classList.remove('border-blue-500', 'bg-blue-50');
+            });
             
-            // プレビュー表示
-            const preview = document.getElementById('resource-preview');
-            const image = document.getElementById('resource-image');
-            image.src = url;
-            preview.style.display = 'block';
+            // 新しい選択を設定
+            const selectedItem = document.querySelector(`[data-resource-id="${id}"]`);
+            selectedItem.classList.add('border-blue-500', 'bg-blue-50');
             
-            closeResourceModal();
+            selectedResourceId = id;
+            selectedResourceName = name;
+            selectedResourceUrl = url;
+            
+            document.getElementById('confirmResourceButton').disabled = false;
+            document.getElementById('selectedResourceInfo').textContent = `選択中: ${name}`;
+        }
+
+        function confirmResourceSelection() {
+            if (selectedResourceId && selectedResourceName && selectedResourceUrl) {
+                document.getElementById('resource_id').value = selectedResourceId;
+                document.getElementById('selected-resource-name').textContent = selectedResourceName;
+                
+                // プレビュー表示
+                const preview = document.getElementById('resource-preview');
+                const image = document.getElementById('resource-image');
+                image.src = selectedResourceUrl;
+                preview.style.display = 'block';
+                
+                closeResourceModal();
+            }
+        }
+
+        function filterResources() {
+            const searchTerm = document.getElementById('resourceSearch').value.toLowerCase();
+            const dateFilter = document.getElementById('resourceDateFilter').value;
+            
+            const items = document.querySelectorAll('.resource-item');
+            let visibleCount = 0;
+            
+            items.forEach(item => {
+                const name = item.dataset.resourceName.toLowerCase();
+                const date = new Date(item.dataset.resourceDate);
+                
+                let showItem = true;
+                
+                // 名前フィルター
+                if (searchTerm && !name.includes(searchTerm)) {
+                    showItem = false;
+                }
+                
+                // 日付フィルター
+                if (dateFilter) {
+                    const now = new Date();
+                    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    
+                    switch(dateFilter) {
+                        case 'today':
+                            if (date < startOfDay) showItem = false;
+                            break;
+                        case 'week':
+                            const weekAgo = new Date(startOfDay);
+                            weekAgo.setDate(weekAgo.getDate() - 7);
+                            if (date < weekAgo) showItem = false;
+                            break;
+                        case 'month':
+                            const monthAgo = new Date(startOfDay);
+                            monthAgo.setMonth(monthAgo.getMonth() - 1);
+                            if (date < monthAgo) showItem = false;
+                            break;
+                        case 'year':
+                            const yearAgo = new Date(startOfDay);
+                            yearAgo.setFullYear(yearAgo.getFullYear() - 1);
+                            if (date < yearAgo) showItem = false;
+                            break;
+                    }
+                }
+                
+                if (showItem) {
+                    item.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            // 結果なしメッセージの表示/非表示
+            const noResultsMessage = document.getElementById('noResourcesMessage');
+            if (visibleCount === 0) {
+                noResultsMessage.classList.remove('hidden');
+            } else {
+                noResultsMessage.classList.add('hidden');
+            }
         }
 
         // 端末接続テスト

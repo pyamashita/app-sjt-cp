@@ -99,6 +99,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('resources/{resource}/download', [ResourceController::class, 'download'])->name('resources.download');
     Route::post('resources/{resource}/access-control', [ResourceController::class, 'addAccessControl'])->name('resources.access-control.add');
     Route::delete('resources/{resource}/access-control/{accessControl}', [ResourceController::class, 'removeAccessControl'])->name('resources.access-control.remove');
+    Route::get('resources/{resource}/serve', [ResourceController::class, 'serve'])->name('resources.serve');
     Route::resource('resources', ResourceController::class);
     
     // APIトークン管理

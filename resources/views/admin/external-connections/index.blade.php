@@ -8,15 +8,6 @@
 @endphp
 
 @section('content')
-    <div class="mb-6">
-        <div class="flex items-center gap-4 mb-4">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-900">{{ $pageTitle }}</h1>
-                <p class="mt-1 text-sm text-gray-600">{{ $pageDescription }}</p>
-            </div>
-        </div>
-    </div>
-
     <!-- 接続設定一覧 -->
     <div class="bg-white rounded-lg shadow overflow-hidden">
         @if($connections->count() > 0)
@@ -83,9 +74,9 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                     <div class="flex items-center space-x-2">
-                                        <a href="{{ route('admin.external-connections.edit', $connection) }}" 
+                                        <a href="{{ route('admin.external-connections.edit', $connection) }}"
                                            class="text-blue-600 hover:text-blue-900">設定</a>
-                                        
+
                                         @if($connection->service_type === 'websocket_message')
                                             <button type="button"
                                                     onclick="testConnection({{ $connection->id }}, this)"
@@ -112,7 +103,7 @@
             // テストボタンを無効化
             buttonElement.disabled = true;
             buttonElement.textContent = 'テスト中...';
-            
+
             fetch(`/admin/external-connections/${connectionId}/test`, {
                 method: 'POST',
                 headers: {

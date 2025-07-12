@@ -2,15 +2,15 @@
 
 /**
  * 端末用WebSocketサーバー (Node.js実装例)
- * 
+ *
  * このサーバーはSJT-CPからのメッセージを受信するための
  * 端末側WebSocketサーバーの実装例です。
- * 
+ *
  * 使用方法:
  * 1. Node.jsをインストール
  * 2. このディレクトリでパッケージをインストール: npm install ws
  * 3. このファイルを実行: node websocket-server.cjs
- * 
+ *
  * 注意: このファイルはCommonJS形式で記述されています
  */
 
@@ -19,32 +19,32 @@ const http = require('http');
 const url = require('url');
 
 // 設定
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 8081;
 const HOST = process.env.HOST || '0.0.0.0';
 
 // HTTPサーバー（フォールバック用）
 const httpServer = http.createServer((req, res) => {
     const parsedUrl = url.parse(req.url, true);
-    
+
     // CORSヘッダーを設定
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    
+
     if (req.method === 'OPTIONS') {
         res.writeHead(200);
         res.end();
         return;
     }
-    
+
     if (parsedUrl.pathname === '/api/message' && req.method === 'POST') {
         // HTTPでのメッセージ受信（フォールバック）
         let body = '';
-        
+
         req.on('data', chunk => {
             body += chunk.toString();
         });
-        
+
         req.on('end', () => {
             try {
                 const messageData = JSON.parse(body);
@@ -60,23 +60,23 @@ const httpServer = http.createServer((req, res) => {
                 }
                 console.log('受信時刻:', new Date().toLocaleString('ja-JP'));
                 console.log('========================\n');
-                
+
                 res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ 
-                    success: true, 
-                    message: 'メッセージを受信しました' 
+                res.end(JSON.stringify({
+                    success: true,
+                    message: 'メッセージを受信しました'
                 }));
-                
+
             } catch (error) {
                 console.error('HTTP メッセージ解析エラー:', error.message);
                 res.writeHead(400, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ 
-                    success: false, 
-                    error: 'メッセージ解析エラー' 
+                res.end(JSON.stringify({
+                    success: false,
+                    error: 'メッセージ解析エラー'
                 }));
             }
         });
-        
+
     } else if (parsedUrl.pathname === '/status') {
         // ステータス確認
         res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -86,7 +86,7 @@ const httpServer = http.createServer((req, res) => {
             websocket: wss ? 'active' : 'inactive',
             timestamp: new Date().toISOString()
         }));
-        
+
     } else {
         res.writeHead(404, { 'Content-Type': 'text/plain' });
         res.end('Not Found');
@@ -94,7 +94,7 @@ const httpServer = http.createServer((req, res) => {
 });
 
 // WebSocketサーバー
-const wss = new WebSocket.Server({ 
+const wss = new WebSocket.Server({
     server: httpServer,
     path: '/message'
 });
@@ -103,28 +103,28 @@ const wss = new WebSocket.Server({
 wss.on('connection', (ws, req) => {
     const clientIp = req.socket.remoteAddress;
     console.log(`\n[${new Date().toLocaleString('ja-JP')}] WebSocket接続: ${clientIp}`);
-    
+
     // 接続確認メッセージ
     ws.send(JSON.stringify({
         type: 'connection',
         message: 'WebSocket接続が確立されました',
         timestamp: new Date().toISOString()
     }));
-    
+
     // メッセージ受信
     ws.on('message', (data) => {
         try {
             const messageData = JSON.parse(data.toString());
-            
+
             if (messageData.type === 'ping') {
                 console.log(`[${new Date().toLocaleString('ja-JP')}] Ping受信: ${clientIp}`);
-                
+
                 // Pong応答
                 ws.send(JSON.stringify({
                     type: 'pong',
                     timestamp: new Date().toISOString()
                 }));
-                
+
             } else if (messageData.type === 'message') {
                 console.log('\n=== WebSocket メッセージ受信 ===');
                 console.log('送信者:', messageData.data?.sender || '不明');
@@ -139,25 +139,25 @@ wss.on('connection', (ws, req) => {
                 console.log('送信者IP:', clientIp);
                 console.log('受信時刻:', new Date().toLocaleString('ja-JP'));
                 console.log('===============================\n');
-                
+
                 // 受信確認応答
                 ws.send(JSON.stringify({
                     type: 'received',
                     message: 'メッセージを受信しました',
                     timestamp: new Date().toISOString()
                 }));
-                
+
                 // メッセージの内容に応じた処理をここに追加
                 // 例: 画面に表示、音声通知、ログ保存など
                 handleMessage(messageData);
-                
+
             } else {
                 console.log('不明なメッセージタイプ:', messageData.type);
             }
-            
+
         } catch (error) {
             console.error('WebSocket メッセージ解析エラー:', error.message);
-            
+
             ws.send(JSON.stringify({
                 type: 'error',
                 message: 'メッセージ解析エラー',
@@ -165,12 +165,12 @@ wss.on('connection', (ws, req) => {
             }));
         }
     });
-    
+
     // 接続エラー
     ws.on('error', (error) => {
         console.error(`WebSocketエラー (${clientIp}):`, error.message);
     });
-    
+
     // 接続切断
     ws.on('close', (code) => {
         console.log(`\n[${new Date().toLocaleString('ja-JP')}] WebSocket切断: ${clientIp} (コード: ${code})`);
@@ -181,15 +181,15 @@ wss.on('connection', (ws, req) => {
 function handleMessage(messageData) {
     // ここで実際のメッセージ処理を行います
     // 例:
-    
+
     // 1. 画面に通知表示
     if (messageData.data?.title || messageData.data?.content) {
         displayNotification(messageData.data.title, messageData.data.content);
     }
-    
+
     // 2. ログファイルに保存
     saveMessageLog(messageData);
-    
+
     // 3. 特定のキーワードに反応
     if (messageData.data?.content?.includes('緊急')) {
         handleEmergencyMessage(messageData);
@@ -209,7 +209,7 @@ function saveMessageLog(messageData) {
         timestamp: new Date().toISOString(),
         message: messageData
     };
-    
+
     try {
         // ログファイルに追記
         fs.appendFileSync('message.log', JSON.stringify(logEntry) + '\n');
@@ -240,11 +240,11 @@ httpServer.listen(PORT, HOST, () => {
 // グレースフルシャットダウン
 process.on('SIGINT', () => {
     console.log('\n\nサーバーを停止しています...');
-    
+
     wss.clients.forEach((ws) => {
         ws.close();
     });
-    
+
     httpServer.close(() => {
         console.log('サーバーが停止されました。');
         process.exit(0);

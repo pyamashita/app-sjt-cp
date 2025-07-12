@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ExternalConnection;
+use App\Services\WebSocketService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class ExternalConnectionController extends Controller
 {
@@ -36,10 +38,9 @@ class ExternalConnectionController extends Controller
      */
     public function update(Request $request, ExternalConnection $externalConnection)
     {
+        // 基本バリデーション（設定値のみ）
         $validated = $request->validate([
-            'name' => 'required|string|max:100',
             'is_active' => 'required|boolean',
-            'description' => 'nullable|string',
             'config' => 'required|array',
         ]);
 
@@ -72,10 +73,9 @@ class ExternalConnectionController extends Controller
             ]);
         }
 
+        // 設定値と有効状態のみを更新（name、description、service_typeは固定）
         $externalConnection->update([
-            'name' => $validated['name'],
             'is_active' => $validated['is_active'],
-            'description' => $validated['description'],
             'config' => $validated['config'],
             'updated_by' => Auth::id(),
         ]);
@@ -90,20 +90,44 @@ class ExternalConnectionController extends Controller
     public function test(ExternalConnection $externalConnection)
     {
         if ($externalConnection->service_type === ExternalConnection::SERVICE_WEBSOCKET_MESSAGE) {
-            // WebSocket接続テストの実装
-            // 実際のテストロジックはここに実装
-            $success = true; // 仮の結果
-            
-            if ($success) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'WebSocketサーバーへの接続テストに成功しました。'
+            Log::info("外部接続設定の接続テスト開始", [
+                'connection_id' => $externalConnection->id,
+                'connection_name' => $externalConnection->name,
+                'config' => $externalConnection->config
+            ]);
+
+            try {
+                $webSocketService = new WebSocketService();
+                // ダミーIPアドレスでテスト（実際にはサーバー設定のアドレスを使用）
+                $connected = $webSocketService->testConnection('test');
+                
+                Log::info("外部接続設定の接続テスト結果", [
+                    'connection_id' => $externalConnection->id,
+                    'connected' => $connected
                 ]);
-            } else {
+                
+                if ($connected) {
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'WebSocketサーバーへの接続テストに成功しました。'
+                    ]);
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'WebSocketサーバーへの接続テストに失敗しました。WebSocketサーバーが起動していない可能性があります。'
+                    ], 400);
+                }
+            } catch (\Exception $e) {
+                Log::error("外部接続設定の接続テストでエラー", [
+                    'connection_id' => $externalConnection->id,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+                
                 return response()->json([
                     'success' => false,
-                    'message' => 'WebSocketサーバーへの接続テストに失敗しました。'
-                ], 400);
+                    'message' => '接続テストでエラーが発生しました: ' . $e->getMessage()
+                ], 500);
             }
         }
 

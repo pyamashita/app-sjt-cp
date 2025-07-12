@@ -33,19 +33,17 @@
                 <h2 class="text-lg font-semibold text-gray-900 mb-4">基本情報</h2>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- サービス名 -->
+                    <!-- サービス名（固定表示） -->
                     <div>
-                        <label for="name" class="block text-sm font-medium text-gray-700 mb-1">
-                            サービス名 <span class="text-red-500">*</span>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            サービス名
                         </label>
-                        <input type="text" 
-                               name="name" 
-                               id="name"
-                               value="{{ old('name', $connection->name) }}"
-                               class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                        @error('name')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
+                        <div class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-gray-900">
+                            {{ $connection->name }}
+                        </div>
+                        <p class="mt-1 text-sm text-gray-500">※ サービス名はシステムで管理されています</p>
+                        <!-- 隠しフィールドで値を保持 -->
+                        <input type="hidden" name="name" value="{{ $connection->name }}">
                     </div>
 
                     <!-- 有効状態 -->
@@ -77,18 +75,30 @@
                     </div>
                 </div>
 
-                <!-- 説明 -->
+                <!-- サービスタイプ（固定表示） -->
                 <div class="mt-6">
-                    <label for="description" class="block text-sm font-medium text-gray-700 mb-1">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        サービスタイプ
+                    </label>
+                    <div class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-gray-900">
+                        {{ \App\Models\ExternalConnection::getServiceTypes()[$connection->service_type] ?? $connection->service_type }}
+                    </div>
+                    <p class="mt-1 text-sm text-gray-500">※ サービスタイプはシステムで管理されています</p>
+                    <!-- 隠しフィールドで値を保持 -->
+                    <input type="hidden" name="service_type" value="{{ $connection->service_type }}">
+                </div>
+
+                <!-- 説明（固定表示） -->
+                <div class="mt-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
                         説明
                     </label>
-                    <textarea name="description" 
-                              id="description" 
-                              rows="3"
-                              class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">{{ old('description', $connection->description) }}</textarea>
-                    @error('description')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
+                    <div class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-gray-900 min-h-[80px]">
+                        {{ $connection->description ?: '（説明なし）' }}
+                    </div>
+                    <p class="mt-1 text-sm text-gray-500">※ サービス説明はシステムで管理されています</p>
+                    <!-- 隠しフィールドで値を保持 -->
+                    <input type="hidden" name="description" value="{{ $connection->description }}">
                 </div>
             </div>
 

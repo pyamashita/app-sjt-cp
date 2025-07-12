@@ -17,6 +17,8 @@ use App\Http\Controllers\Admin\ApiTokenController;
 use App\Http\Controllers\Admin\GuidePageController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\CommitteeMemberController;
+use App\Http\Controllers\Admin\MessageController;
+use App\Http\Controllers\Admin\ExternalConnectionController;
 
 // 認証系ルート
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -93,6 +95,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('resources/{resource}/download', [ResourceController::class, 'download'])->name('resources.download');
     Route::post('resources/{resource}/access-control', [ResourceController::class, 'addAccessControl'])->name('resources.access-control.add');
     Route::delete('resources/{resource}/access-control/{accessControl}', [ResourceController::class, 'removeAccessControl'])->name('resources.access-control.remove');
+    Route::get('resources/{resource}/serve', [ResourceController::class, 'serve'])->name('resources.serve');
     Route::resource('resources', ResourceController::class);
     
     // APIトークン管理
@@ -129,6 +132,17 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     // 競技委員管理
     Route::get('committee-members/export', [CommitteeMemberController::class, 'export'])->name('committee-members.export');
     Route::resource('committee-members', CommitteeMemberController::class);
+    
+    // メッセージ管理
+    Route::post('messages/{message}/resend', [MessageController::class, 'resend'])->name('messages.resend');
+    Route::post('messages/{message}/resend-device/{device}', [MessageController::class, 'resendToDevice'])->name('messages.resend-device');
+    Route::post('messages/{message}/cancel', [MessageController::class, 'cancel'])->name('messages.cancel');
+    Route::post('devices/{device}/test-connection', [MessageController::class, 'testConnection'])->name('devices.test-connection');
+    Route::resource('messages', MessageController::class);
+    
+    // 外部接続設定
+    Route::post('external-connections/{externalConnection}/test', [ExternalConnectionController::class, 'test'])->name('external-connections.test');
+    Route::resource('external-connections', ExternalConnectionController::class)->only(['index', 'edit', 'update']);
 });
 
 // ルートアクセス時のリダイレクト

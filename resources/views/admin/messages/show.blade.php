@@ -48,6 +48,20 @@
                 </form>
             @endif
             
+            @if($message->status === 'scheduled')
+                <form method="POST" action="{{ route('admin.messages.cancel', $message) }}" class="inline">
+                    @csrf
+                    <button type="submit" 
+                            onclick="return confirm('この予約メッセージをキャンセルしますか？')"
+                            class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-yellow-600 hover:bg-yellow-700">
+                        <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        予約キャンセル
+                    </button>
+                </form>
+            @endif
+            
             @if($message->canDelete())
                 <form method="POST" action="{{ route('admin.messages.destroy', $message) }}" class="inline">
                     @csrf

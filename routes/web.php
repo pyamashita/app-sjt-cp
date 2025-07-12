@@ -161,6 +161,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     // メッセージ管理
     Route::post('messages/{message}/resend', [MessageController::class, 'resend'])->name('messages.resend');
     Route::post('messages/{message}/resend-device/{device}', [MessageController::class, 'resendToDevice'])->name('messages.resend-device');
+    Route::post('messages/{message}/cancel', [MessageController::class, 'cancel'])->name('messages.cancel');
     Route::post('devices/{device}/test-connection', [MessageController::class, 'testConnection'])->name('devices.test-connection');
     Route::resource('messages', MessageController::class);
 });

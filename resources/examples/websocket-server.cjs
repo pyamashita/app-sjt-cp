@@ -8,8 +8,10 @@
  * 
  * 使用方法:
  * 1. Node.jsをインストール
- * 2. wsパッケージをインストール: npm install ws
- * 3. このファイルを実行: node websocket-server.js
+ * 2. このディレクトリでパッケージをインストール: npm install ws
+ * 3. このファイルを実行: node websocket-server.cjs
+ * 
+ * 注意: このファイルはCommonJS形式で記述されています
  */
 
 const WebSocket = require('ws');
@@ -170,7 +172,7 @@ wss.on('connection', (ws, req) => {
     });
     
     // 接続切断
-    ws.on('close', (code, reason) => {
+    ws.on('close', (code) => {
         console.log(`\n[${new Date().toLocaleString('ja-JP')}] WebSocket切断: ${clientIp} (コード: ${code})`);
     });
 });
@@ -208,8 +210,12 @@ function saveMessageLog(messageData) {
         message: messageData
     };
     
-    // ログファイルに追記
-    fs.appendFileSync('message.log', JSON.stringify(logEntry) + '\n');
+    try {
+        // ログファイルに追記
+        fs.appendFileSync('message.log', JSON.stringify(logEntry) + '\n');
+    } catch (error) {
+        console.error('ログ保存エラー:', error.message);
+    }
 }
 
 // 緊急メッセージ処理（実装例）

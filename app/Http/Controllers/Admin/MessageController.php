@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Services\WebSocketService;
+use App\Jobs\SendScheduledMessage;
 
 class MessageController extends Controller
 {
@@ -120,10 +121,16 @@ class MessageController extends Controller
                 ]);
             }
 
-            // 即時送信の場合は送信処理をキューに追加
+            // 送信処理
             if ($validated['send_method'] === 'immediate') {
-                // TODO: 送信ジョブをキューに追加
+                // 即時送信
                 $this->sendMessage($message);
+            } else {
+                // 予約送信 - キューに登録
+                SendScheduledMessage::dispatch($message)
+                    ->delay($validated['scheduled_at']);
+                
+                $message->update(['status' => 'scheduled']);
             }
         });
 
@@ -197,9 +204,16 @@ class MessageController extends Controller
                 ]);
             }
 
-            // 即時送信の場合は送信処理をキューに追加
+            // 送信処理
             if ($validated['send_method'] === 'immediate') {
+                // 即時送信
                 $this->sendMessage($message);
+            } else {
+                // 予約送信 - キューに登録
+                SendScheduledMessage::dispatch($message)
+                    ->delay($validated['scheduled_at']);
+                
+                $message->update(['status' => 'scheduled']);
             }
         });
 
@@ -374,6 +388,23 @@ class MessageController extends Controller
             
             throw $e;
         }
+    }
+
+    /**
+     * 予約メッセージのキャンセル
+     */
+    public function cancel(Message $message)
+    {
+        // 予約済みメッセージのみキャンセル可能
+        if ($message->status !== 'scheduled') {
+            return redirect()->route('admin.messages.show', $message)
+                ->with('error', 'このメッセージはキャンセルできません。');
+        }
+
+        $message->update(['status' => 'cancelled']);
+
+        return redirect()->route('admin.messages.show', $message)
+            ->with('success', '予約メッセージをキャンセルしました。');
     }
 
     /**

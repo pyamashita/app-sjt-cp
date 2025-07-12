@@ -49,9 +49,13 @@ class Message extends Model
     {
         return [
             'draft' => '下書き',
+            'scheduled' => '予約済み',
+            'cancelled' => 'キャンセル済み',
             'pending' => '送信待ち',
             'sending' => '送信中',
+            'sent' => '送信済み',
             'completed' => '送信完了',
+            'partially_sent' => '一部送信済み',
             'failed' => '送信失敗',
         ];
     }

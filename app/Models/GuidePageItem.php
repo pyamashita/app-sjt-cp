@@ -47,14 +47,8 @@ class GuidePageItem extends Model
         }
         
         if ($this->type === 'collection' && $this->collection) {
-            $params = ['collection' => $this->collection->id];
-            
-            // エミュレート中の場合、選手IDを追加
-            if ($emulatePlayerId) {
-                $params['emulate_player_id'] = $emulatePlayerId;
-            }
-            
-            return route('guide.collection.view', $params);
+            // コレクションタイプの場合は、直接表示するため # を返す
+            return '#';
         }
         
         return $this->url ?? '#';

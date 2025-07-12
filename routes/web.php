@@ -24,6 +24,7 @@ use App\Http\Controllers\Admin\CollectionFieldController;
 use App\Http\Controllers\Admin\CollectionContentController;
 use App\Http\Controllers\Api\CollectionApiController;
 use App\Http\Controllers\GuideCollectionController;
+use App\Http\Controllers\PublicGuideController;
 
 // 認証系ルート
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -183,6 +184,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
 
 // ガイド用ルート
 Route::get('/guide/collection/{collection}', [GuideCollectionController::class, 'view'])->name('guide.collection.view');
+Route::get('/guide/{competitionId}', [PublicGuideController::class, 'show'])->name('guide.public');
 
 // ルートアクセス時のリダイレクト
 Route::get('/', function () {

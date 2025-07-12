@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ApiToken;
 use App\Models\Collection;
 use App\Models\CollectionAccessControl;
 use App\Models\Competition;
@@ -46,9 +47,6 @@ class CollectionController extends Controller
             'description' => ['nullable', 'string'],
             'is_competition_managed' => ['boolean'],
             'is_player_managed' => ['boolean'],
-            'access_controls' => ['array'],
-            'access_controls.*.ip_address' => ['required_with:access_controls', 'ip'],
-            'access_controls.*.description' => ['nullable', 'string', 'max:255'],
         ]);
 
         // 選手ごと管理の場合は大会ごと管理を強制ON
@@ -58,24 +56,16 @@ class CollectionController extends Controller
 
         $collection = Collection::create($validated);
 
-        // アクセス制限の登録
-        if (!empty($validated['access_controls'])) {
-            foreach ($validated['access_controls'] as $accessControl) {
-                if (!empty($accessControl['ip_address'])) {
-                    $collection->accessControls()->create($accessControl);
-                }
-            }
-        }
-
         return redirect()->route('admin.collections.index')
             ->with('success', 'コレクションを作成しました。');
     }
 
     public function show(Collection $collection)
     {
-        $collection->load(['contents', 'accessControls', 'data.content', 'data.competition', 'data.player']);
+        $collection->load(['contents', 'accessControls.apiToken', 'data.content', 'data.competition', 'data.player']);
+        $apiTokens = ApiToken::where('is_active', true)->orderBy('name')->get();
         
-        return view('admin.collections.show', compact('collection'));
+        return view('admin.collections.show', compact('collection', 'apiTokens'));
     }
 
     public function edit(Collection $collection)
@@ -100,9 +90,6 @@ class CollectionController extends Controller
             'description' => ['nullable', 'string'],
             'is_competition_managed' => ['boolean'],
             'is_player_managed' => ['boolean'],
-            'access_controls' => ['array'],
-            'access_controls.*.ip_address' => ['required_with:access_controls', 'ip'],
-            'access_controls.*.description' => ['nullable', 'string', 'max:255'],
         ]);
 
         // 選手ごと管理の場合は大会ごと管理を強制ON
@@ -111,16 +98,6 @@ class CollectionController extends Controller
         }
 
         $collection->update($validated);
-
-        // アクセス制限の更新
-        $collection->accessControls()->delete();
-        if (!empty($validated['access_controls'])) {
-            foreach ($validated['access_controls'] as $accessControl) {
-                if (!empty($accessControl['ip_address'])) {
-                    $collection->accessControls()->create($accessControl);
-                }
-            }
-        }
 
         return redirect()->route('admin.collections.index')
             ->with('success', 'コレクションを更新しました。');
@@ -137,13 +114,39 @@ class CollectionController extends Controller
     public function addAccessControl(Request $request, Collection $collection)
     {
         $validated = $request->validate([
-            'ip_address' => ['required', 'ip'],
-            'description' => ['nullable', 'string', 'max:255'],
+            'type' => 'required|string|in:ip_whitelist,api_token,token_required',
+            'value' => 'required|string',
+        ], [
+            'type.required' => 'タイプを選択してください。',
+            'type.in' => '有効なタイプを選択してください。',
+            'value.required' => '値を入力してください。',
         ]);
 
-        $collection->accessControls()->create($validated);
+        // APIトークンの場合、存在確認
+        if ($validated['type'] === 'api_token') {
+            $request->validate([
+                'value' => 'exists:api_tokens,id',
+            ], [
+                'value.exists' => '選択されたAPIトークンが見つかりません。',
+            ]);
+        }
 
-        return redirect()->back()->with('success', 'アクセス制限を追加しました。');
+        // IPアドレスの場合、形式確認
+        if ($validated['type'] === 'ip_whitelist') {
+            $request->validate([
+                'value' => 'ip',
+            ], [
+                'value.ip' => '有効なIPアドレスを入力してください。',
+            ]);
+        }
+
+        $collection->accessControls()->create([
+            'type' => $validated['type'],
+            'value' => $validated['value'],
+            'is_active' => true,
+        ]);
+
+        return back()->with('success', 'アクセス制御を追加しました。');
     }
 
     public function removeAccessControl(Collection $collection, CollectionAccessControl $accessControl)

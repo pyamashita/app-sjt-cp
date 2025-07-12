@@ -201,10 +201,13 @@
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    IPアドレス
+                                    タイプ
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    説明
+                                    値
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    状態
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     追加日
@@ -217,11 +220,27 @@
                         <tbody class="bg-white divide-y divide-gray-200">
                             @foreach($collection->accessControls as $accessControl)
                                 <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-4 text-sm font-medium text-gray-900">
-                                        {{ $accessControl->ip_address }}
+                                    <td class="px-6 py-4">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                            @if($accessControl->type === 'ip_whitelist') bg-blue-100 text-blue-800
+                                            @elseif($accessControl->type === 'api_token') bg-green-100 text-green-800
+                                            @else bg-purple-100 text-purple-800 @endif">
+                                            {{ $accessControl->type_display_name }}
+                                        </span>
                                     </td>
-                                    <td class="px-6 py-4 text-sm text-gray-500">
-                                        {{ $accessControl->description ?: '-' }}
+                                    <td class="px-6 py-4 text-sm text-gray-900">
+                                        {{ $accessControl->display_value }}
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        @if($accessControl->is_active)
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                有効
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                無効
+                                            </span>
+                                        @endif
                                     </td>
                                     <td class="px-6 py-4 text-sm text-gray-500">
                                         {{ $accessControl->created_at->format('Y/m/d H:i') }}
@@ -264,18 +283,45 @@
                 </div>
                 <div class="px-6 py-4 space-y-4">
                     <div>
-                        <label for="modal_ip_address" class="block text-sm font-medium text-gray-700 mb-1">
+                        <label for="access_type" class="block text-sm font-medium text-gray-700 mb-1">
+                            制限タイプ <span class="text-red-500">*</span>
+                        </label>
+                        <select name="type" id="access_type" required onchange="onAccessTypeChange()"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">選択してください</option>
+                            <option value="ip_whitelist">IP許可</option>
+                            <option value="api_token">APIトークン</option>
+                            <option value="token_required">トークン必須</option>
+                        </select>
+                    </div>
+                    
+                    <div id="ip_field" class="hidden">
+                        <label for="ip_address" class="block text-sm font-medium text-gray-700 mb-1">
                             IPアドレス <span class="text-red-500">*</span>
                         </label>
-                        <input type="text" name="ip_address" id="modal_ip_address" required
+                        <input type="text" name="value" id="ip_address"
                                placeholder="例: 192.168.1.100"
                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     </div>
-                    <div>
-                        <label for="modal_description" class="block text-sm font-medium text-gray-700 mb-1">説明</label>
-                        <input type="text" name="description" id="modal_description"
-                               placeholder="例: 管理者用PC"
+                    
+                    <div id="token_field" class="hidden">
+                        <label for="api_token" class="block text-sm font-medium text-gray-700 mb-1">
+                            APIトークン <span class="text-red-500">*</span>
+                        </label>
+                        <select name="value" id="api_token"
                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">選択してください</option>
+                            @foreach($apiTokens as $token)
+                                <option value="{{ $token->id }}">{{ $token->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    
+                    <div id="token_required_field" class="hidden">
+                        <div class="text-sm text-gray-600">
+                            任意のAPIトークンでのアクセスを許可します
+                        </div>
+                        <input type="hidden" name="value" id="token_required_value" value="any">
                     </div>
                 </div>
                 <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
@@ -517,14 +563,44 @@ function deleteContent(contentId) {
     });
 }
 
+function onAccessTypeChange() {
+    const type = document.getElementById('access_type').value;
+    const ipField = document.getElementById('ip_field');
+    const tokenField = document.getElementById('token_field');
+    const tokenRequiredField = document.getElementById('token_required_field');
+    
+    // すべて非表示にする
+    ipField.classList.add('hidden');
+    tokenField.classList.add('hidden');
+    tokenRequiredField.classList.add('hidden');
+    
+    // 必要なフィールドのみ表示
+    switch (type) {
+        case 'ip_whitelist':
+            ipField.classList.remove('hidden');
+            document.getElementById('ip_address').setAttribute('name', 'value');
+            break;
+        case 'api_token':
+            tokenField.classList.remove('hidden');
+            document.getElementById('api_token').setAttribute('name', 'value');
+            break;
+        case 'token_required':
+            tokenRequiredField.classList.remove('hidden');
+            document.getElementById('token_required_value').setAttribute('name', 'value');
+            break;
+    }
+}
+
 function showAddAccessControlModal() {
     document.getElementById('add-access-control-modal').classList.remove('hidden');
 }
 
 function hideAddAccessControlModal() {
     document.getElementById('add-access-control-modal').classList.add('hidden');
-    document.getElementById('modal_ip_address').value = '';
-    document.getElementById('modal_description').value = '';
+    document.getElementById('access_type').value = '';
+    document.getElementById('ip_address').value = '';
+    document.getElementById('api_token').value = '';
+    onAccessTypeChange(); // フィールドをリセット
 }
 
 // モーダルの外側をクリックしたときに閉じる

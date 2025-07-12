@@ -62,7 +62,7 @@ class CollectionController extends Controller
 
     public function show(Collection $collection)
     {
-        $collection->load(['contents', 'accessControls.apiToken', 'data.content', 'data.competition', 'data.player']);
+        $collection->load(['fields', 'accessControls.apiToken', 'contents.field', 'contents.competition', 'contents.player']);
         $apiTokens = ApiToken::where('is_active', true)->orderBy('name')->get();
         
         return view('admin.collections.show', compact('collection', 'apiTokens'));

@@ -4,23 +4,20 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CollectionContent extends Model
 {
     protected $fillable = [
         'collection_id',
-        'name',
-        'content_type',
-        'max_length',
-        'is_required',
-        'sort_order',
+        'field_id',
+        'value',
+        'competition_id',
+        'player_id',
     ];
 
     protected $casts = [
-        'is_required' => 'boolean',
-        'max_length' => 'integer',
-        'sort_order' => 'integer',
+        'competition_id' => 'integer',
+        'player_id' => 'integer',
     ];
 
     public function collection(): BelongsTo
@@ -28,63 +25,33 @@ class CollectionContent extends Model
         return $this->belongsTo(Collection::class);
     }
 
-    public function data(): HasMany
+    public function field(): BelongsTo
     {
-        return $this->hasMany(CollectionData::class, 'content_id');
+        return $this->belongsTo(CollectionField::class);
     }
 
-    public function getContentTypeDisplayNameAttribute(): string
+    public function competition(): BelongsTo
     {
-        return match ($this->content_type) {
-            'string' => '文字列',
-            'text' => 'テキスト',
-            'boolean' => '真偽値',
-            'resource' => 'リソース',
-            'date' => '日付',
-            'time' => '時刻',
-            default => $this->content_type,
+        return $this->belongsTo(Competition::class);
+    }
+
+    public function player(): BelongsTo
+    {
+        return $this->belongsTo(Player::class);
+    }
+
+    public function getFormattedValueAttribute(): string
+    {
+        if (is_null($this->value)) {
+            return '-';
+        }
+
+        return match ($this->field->content_type) {
+            'boolean' => $this->value ? 'はい' : 'いいえ',
+            'resource' => Resource::find($this->value)?->name ?? $this->value,
+            'date' => \Carbon\Carbon::parse($this->value)->format('Y/m/d'),
+            'time' => \Carbon\Carbon::parse($this->value)->format('H:i'),
+            default => $this->value,
         };
-    }
-
-    public function getValidationRulesAttribute(): array
-    {
-        $rules = [];
-        
-        if ($this->is_required) {
-            $rules[] = 'required';
-        }
-        
-        switch ($this->content_type) {
-            case 'string':
-                $rules[] = 'string';
-                if ($this->max_length) {
-                    $rules[] = "max:{$this->max_length}";
-                } else {
-                    $rules[] = 'max:255';
-                }
-                break;
-            case 'text':
-                $rules[] = 'string';
-                if ($this->max_length) {
-                    $rules[] = "max:{$this->max_length}";
-                } else {
-                    $rules[] = 'max:5000';
-                }
-                break;
-            case 'boolean':
-                $rules[] = 'boolean';
-                break;
-            case 'resource':
-                $rules[] = 'exists:resources,id';
-                break;
-            case 'date':
-                $rules[] = 'date';
-                break;
-            case 'time':
-                $rules[] = 'date_format:H:i';
-                break;
-        }
-        
-        return $rules;
     }
 }

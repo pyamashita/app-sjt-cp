@@ -7,8 +7,8 @@
     $pageDescription = 'コレクション詳細情報';
     $pageActions = [
         [
-            'label' => 'データ管理',
-            'url' => route('admin.collections.data.index', $collection),
+            'label' => 'コンテンツを管理',
+            'url' => route('admin.collections.contents.index', $collection),
             'type' => 'primary',
             'icon' => '<svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path></svg>'
         ],
@@ -75,31 +75,31 @@
                     
                     <div class="text-center p-4 border border-gray-200 rounded-lg">
                         <div class="text-2xl mb-2">
-                            <span class="text-blue-500">{{ $collection->contents->count() }}</span>
+                            <span class="text-blue-500">{{ $collection->fields->count() }}</span>
                         </div>
-                        <div class="text-sm font-medium text-gray-900">コンテンツ数</div>
+                        <div class="text-sm font-medium text-gray-900">フィールド数</div>
                         <div class="text-xs text-gray-500 mt-1">
-                            登録されているコンテンツ項目
+                            登録されているフィールド項目
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- コンテンツ一覧 -->
+        <!-- フィールド一覧 -->
         <div class="bg-white rounded-lg shadow overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-                <h3 class="text-lg font-medium text-gray-900">コンテンツ一覧</h3>
-                <button type="button" onclick="showAddContentModal()"
+                <h3 class="text-lg font-medium text-gray-900">フィールド一覧</h3>
+                <button type="button" onclick="showAddFieldModal()"
                         class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                     </svg>
-                    コンテンツを追加
+                    フィールドを追加
                 </button>
             </div>
             
-            @if($collection->contents->count() > 0)
+            @if($collection->fields->count() > 0)
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
@@ -114,7 +114,11 @@
                                     設定
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    データ数
+                                    @if($collection->is_player_managed)
+                                        進捗
+                                    @else
+                                        コンテンツ数
+                                    @endif
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     操作
@@ -122,11 +126,11 @@
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            @foreach($collection->contents as $content)
+                            @foreach($collection->fields as $field)
                                 <tr class="hover:bg-gray-50">
                                     <td class="px-6 py-4">
-                                        <div class="text-sm font-medium text-gray-900">{{ $content->name }}</div>
-                                        @if($content->is_required)
+                                        <div class="text-sm font-medium text-gray-900">{{ $field->name }}</div>
+                                        @if($field->is_required)
                                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 mt-1">
                                                 必須
                                             </span>
@@ -134,24 +138,34 @@
                                     </td>
                                     <td class="px-6 py-4">
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                            {{ $content->content_type_display_name }}
+                                            {{ $field->content_type_display_name }}
                                         </span>
-                                        @if($content->max_length)
+                                        @if($field->max_length)
                                             <div class="text-xs text-gray-500 mt-1">
-                                                最大{{ $content->max_length }}文字
+                                                最大{{ $field->max_length }}文字
                                             </div>
                                         @endif
                                     </td>
                                     <td class="px-6 py-4 text-sm text-gray-500">
-                                        表示順: {{ $content->sort_order }}
+                                        表示順: {{ $field->sort_order }}
                                     </td>
                                     <td class="px-6 py-4 text-sm text-gray-900">
-                                        {{ $content->data->count() }}件
+                                        @if($collection->is_player_managed)
+                                            @php $rate = $field->completion_rate; @endphp
+                                            <div class="flex items-center">
+                                                <span class="text-sm font-medium">{{ $rate['completed'] }}/{{ $rate['total'] }}</span>
+                                                <div class="ml-2 w-16 bg-gray-200 rounded-full h-2">
+                                                    <div class="bg-blue-600 h-2 rounded-full" style="width: {{ $rate['total'] > 0 ? ($rate['completed'] / $rate['total'] * 100) : 0 }}%"></div>
+                                                </div>
+                                            </div>
+                                        @else
+                                            {{ $field->contents->count() }}件
+                                        @endif
                                     </td>
                                     <td class="px-6 py-4 text-sm font-medium">
                                         <div class="flex space-x-2">
-                                            <button type="button" onclick="showEditContentModal({{ $content->id }})" class="text-green-600 hover:text-green-900">編集</button>
-                                            <button type="button" onclick="deleteContent({{ $content->id }})" class="text-red-600 hover:text-red-900">削除</button>
+                                            <button type="button" onclick="showEditFieldModal({{ $field->id }})" class="text-green-600 hover:text-green-900">編集</button>
+                                            <button type="button" onclick="deleteField({{ $field->id }})" class="text-red-600 hover:text-red-900">削除</button>
                                         </div>
                                     </td>
                                 </tr>
@@ -164,15 +178,15 @@
                     <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
-                    <h3 class="mt-2 text-sm font-medium text-gray-900">コンテンツがありません</h3>
-                    <p class="mt-1 text-sm text-gray-500">最初のコンテンツを追加しましょう。</p>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900">フィールドがありません</h3>
+                    <p class="mt-1 text-sm text-gray-500">最初のフィールドを追加しましょう。</p>
                     <div class="mt-6">
-                        <button type="button" onclick="showAddContentModal()"
+                        <button type="button" onclick="showAddFieldModal()"
                                 class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                             <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                             </svg>
-                            コンテンツを追加
+                            フィールドを追加
                         </button>
                     </div>
                 </div>
@@ -338,20 +352,20 @@
         </div>
     </div>
 
-    <!-- コンテンツ追加・編集モーダル -->
-    <div id="content-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
+    <!-- フィールド追加・編集モーダル -->
+    <div id="field-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
         <div class="bg-white rounded-lg w-full max-w-2xl mx-4">
-            <form id="content-form">
+            <form id="field-form">
                 @csrf
                 <div class="px-6 py-4 border-b border-gray-200">
-                    <h3 id="content-modal-title" class="text-lg font-medium text-gray-900">コンテンツを追加</h3>
+                    <h3 id="field-modal-title" class="text-lg font-medium text-gray-900">フィールドを追加</h3>
                 </div>
                 <div class="px-6 py-4 space-y-4">
                     <div>
-                        <label for="content_name" class="block text-sm font-medium text-gray-700 mb-1">
+                        <label for="field_name" class="block text-sm font-medium text-gray-700 mb-1">
                             名前 <span class="text-red-500">*</span>
                         </label>
-                        <input type="text" name="name" id="content_name" required
+                        <input type="text" name="name" id="field_name" required
                                placeholder="例: score"
                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                         <p class="mt-1 text-sm text-gray-500">半角英数字、アンダースコア(_)、ハイフン(-)のみ使用可能</p>

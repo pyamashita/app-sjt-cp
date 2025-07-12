@@ -22,19 +22,19 @@ class Collection extends Model
         'year' => 'integer',
     ];
 
+    public function fields(): HasMany
+    {
+        return $this->hasMany(CollectionField::class)->orderBy('sort_order');
+    }
+
     public function contents(): HasMany
     {
-        return $this->hasMany(CollectionContent::class)->orderBy('sort_order');
+        return $this->hasMany(CollectionContent::class);
     }
 
     public function accessControls(): HasMany
     {
         return $this->hasMany(CollectionAccessControl::class);
-    }
-
-    public function data(): HasMany
-    {
-        return $this->hasMany(CollectionData::class);
     }
 
     public function getDisplayNameAttribute($value): string

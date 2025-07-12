@@ -21,6 +21,7 @@ use App\Http\Controllers\Admin\MessageController;
 use App\Http\Controllers\Admin\ExternalConnectionController;
 use App\Http\Controllers\Admin\CollectionController;
 use App\Http\Controllers\Admin\CollectionContentController;
+use App\Http\Controllers\Admin\CollectionDataController;
 
 // 認証系ルート
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -146,6 +147,15 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::delete('collections/{collection}/contents/{content}', [CollectionContentController::class, 'destroy'])->name('collections.contents.destroy');
     Route::patch('collections/{collection}/contents/order', [CollectionContentController::class, 'updateOrder'])->name('collections.contents.order');
     Route::get('api/resources/search', [CollectionContentController::class, 'getResources'])->name('api.resources.search');
+    
+    // コレクション・データ管理
+    Route::get('collections/{collection}/data', [CollectionDataController::class, 'index'])->name('collections.data.index');
+    Route::get('collections/{collection}/data/create', [CollectionDataController::class, 'create'])->name('collections.data.create');
+    Route::post('collections/{collection}/data', [CollectionDataController::class, 'store'])->name('collections.data.store');
+    Route::get('collections/{collection}/data/edit', [CollectionDataController::class, 'edit'])->name('collections.data.edit');
+    Route::delete('collections/{collection}/data', [CollectionDataController::class, 'destroy'])->name('collections.data.destroy');
+    Route::get('api/collections/competitions', [CollectionDataController::class, 'getCompetitions'])->name('api.collections.competitions');
+    Route::get('api/collections/players', [CollectionDataController::class, 'getPlayers'])->name('api.collections.players');
     
     // メッセージ管理
     Route::post('messages/{message}/resend', [MessageController::class, 'resend'])->name('messages.resend');

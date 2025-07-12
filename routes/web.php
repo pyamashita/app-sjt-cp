@@ -20,6 +20,7 @@ use App\Http\Controllers\Admin\CommitteeMemberController;
 use App\Http\Controllers\Admin\MessageController;
 use App\Http\Controllers\Admin\ExternalConnectionController;
 use App\Http\Controllers\Admin\CollectionController;
+use App\Http\Controllers\Admin\CollectionContentController;
 
 // 認証系ルート
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -138,6 +139,13 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::post('collections/{collection}/access-control', [CollectionController::class, 'addAccessControl'])->name('collections.access-control.add');
     Route::delete('collections/{collection}/access-control/{accessControl}', [CollectionController::class, 'removeAccessControl'])->name('collections.access-control.remove');
     Route::resource('collections', CollectionController::class);
+    
+    // コレクション・コンテンツ管理
+    Route::post('collections/{collection}/contents', [CollectionContentController::class, 'store'])->name('collections.contents.store');
+    Route::put('collections/{collection}/contents/{content}', [CollectionContentController::class, 'update'])->name('collections.contents.update');
+    Route::delete('collections/{collection}/contents/{content}', [CollectionContentController::class, 'destroy'])->name('collections.contents.destroy');
+    Route::patch('collections/{collection}/contents/order', [CollectionContentController::class, 'updateOrder'])->name('collections.contents.order');
+    Route::get('api/resources/search', [CollectionContentController::class, 'getResources'])->name('api.resources.search');
     
     // メッセージ管理
     Route::post('messages/{message}/resend', [MessageController::class, 'resend'])->name('messages.resend');

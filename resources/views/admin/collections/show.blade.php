@@ -85,7 +85,7 @@
         <div class="bg-white rounded-lg shadow overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
                 <h3 class="text-lg font-medium text-gray-900">コンテンツ一覧</h3>
-                <button type="button" 
+                <button type="button" onclick="showAddContentModal()"
                         class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
@@ -145,8 +145,8 @@
                                     </td>
                                     <td class="px-6 py-4 text-sm font-medium">
                                         <div class="flex space-x-2">
-                                            <button type="button" class="text-green-600 hover:text-green-900">編集</button>
-                                            <button type="button" class="text-red-600 hover:text-red-900">削除</button>
+                                            <button type="button" onclick="showEditContentModal({{ $content->id }})" class="text-green-600 hover:text-green-900">編集</button>
+                                            <button type="button" onclick="deleteContent({{ $content->id }})" class="text-red-600 hover:text-red-900">削除</button>
                                         </div>
                                     </td>
                                 </tr>
@@ -162,7 +162,7 @@
                     <h3 class="mt-2 text-sm font-medium text-gray-900">コンテンツがありません</h3>
                     <p class="mt-1 text-sm text-gray-500">最初のコンテンツを追加しましょう。</p>
                     <div class="mt-6">
-                        <button type="button" 
+                        <button type="button" onclick="showAddContentModal()"
                                 class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                             <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
@@ -287,8 +287,231 @@
         </div>
     </div>
 
+    <!-- コンテンツ追加・編集モーダル -->
+    <div id="content-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg w-full max-w-2xl mx-4">
+            <form id="content-form">
+                @csrf
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 id="content-modal-title" class="text-lg font-medium text-gray-900">コンテンツを追加</h3>
+                </div>
+                <div class="px-6 py-4 space-y-4">
+                    <div>
+                        <label for="content_name" class="block text-sm font-medium text-gray-700 mb-1">
+                            名前 <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" name="name" id="content_name" required
+                               placeholder="例: score"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <p class="mt-1 text-sm text-gray-500">半角英数字、アンダースコア(_)、ハイフン(-)のみ使用可能</p>
+                        <div id="content_name_error" class="mt-1 text-sm text-red-600 hidden"></div>
+                    </div>
+
+                    <div>
+                        <label for="content_type" class="block text-sm font-medium text-gray-700 mb-1">
+                            コンテンツタイプ <span class="text-red-500">*</span>
+                        </label>
+                        <select name="content_type" id="content_type" required onchange="onContentTypeChange()"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">選択してください</option>
+                            <option value="string">文字列（最大255文字）</option>
+                            <option value="text">テキスト（最大5000文字）</option>
+                            <option value="boolean">真偽値（はい/いいえ）</option>
+                            <option value="resource">リソース</option>
+                            <option value="date">日付</option>
+                            <option value="time">時刻</option>
+                        </select>
+                        <div id="content_type_error" class="mt-1 text-sm text-red-600 hidden"></div>
+                    </div>
+
+                    <div id="max_length_field" class="hidden">
+                        <label for="max_length" class="block text-sm font-medium text-gray-700 mb-1">最大文字数</label>
+                        <input type="number" name="max_length" id="max_length" min="1" max="65535"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <p class="mt-1 text-sm text-gray-500">未設定の場合はデフォルト値が使用されます</p>
+                        <div id="max_length_error" class="mt-1 text-sm text-red-600 hidden"></div>
+                    </div>
+
+                    <div>
+                        <label for="sort_order" class="block text-sm font-medium text-gray-700 mb-1">表示順序</label>
+                        <input type="number" name="sort_order" id="sort_order" min="0"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <p class="mt-1 text-sm text-gray-500">未設定の場合は最後に追加されます</p>
+                        <div id="sort_order_error" class="mt-1 text-sm text-red-600 hidden"></div>
+                    </div>
+
+                    <div class="flex items-start">
+                        <div class="flex items-center h-5">
+                            <input type="checkbox" name="is_required" id="is_required" value="1"
+                                   class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                        </div>
+                        <div class="ml-3">
+                            <label for="is_required" class="text-sm font-medium text-gray-700">必須項目</label>
+                            <p class="text-sm text-gray-500">このコンテンツを必須入力項目にする</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+                    <button type="button" onclick="hideContentModal()" 
+                            class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                        キャンセル
+                    </button>
+                    <button type="submit" id="content-submit-btn"
+                            class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+                        追加
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 @push('scripts')
 <script>
+let editingContentId = null;
+const collectionId = {{ $collection->id }};
+
+function showAddContentModal() {
+    editingContentId = null;
+    document.getElementById('content-modal-title').textContent = 'コンテンツを追加';
+    document.getElementById('content-submit-btn').textContent = '追加';
+    resetContentForm();
+    document.getElementById('content-modal').classList.remove('hidden');
+}
+
+function showEditContentModal(contentId) {
+    editingContentId = contentId;
+    document.getElementById('content-modal-title').textContent = 'コンテンツを編集';
+    document.getElementById('content-submit-btn').textContent = '更新';
+    
+    // 既存データの取得と設定
+    const row = document.querySelector(`button[onclick="showEditContentModal(${contentId})"]`).closest('tr');
+    const cells = row.querySelectorAll('td');
+    
+    // データ抽出は簡略化、実際のデータは別途API等で取得
+    resetContentForm();
+    document.getElementById('content-modal').classList.remove('hidden');
+}
+
+function hideContentModal() {
+    document.getElementById('content-modal').classList.add('hidden');
+    resetContentForm();
+    editingContentId = null;
+}
+
+function resetContentForm() {
+    document.getElementById('content-form').reset();
+    document.getElementById('max_length_field').classList.add('hidden');
+    clearErrors();
+}
+
+function onContentTypeChange() {
+    const contentType = document.getElementById('content_type').value;
+    const maxLengthField = document.getElementById('max_length_field');
+    const maxLengthInput = document.getElementById('max_length');
+    
+    if (contentType === 'string' || contentType === 'text') {
+        maxLengthField.classList.remove('hidden');
+        if (contentType === 'string') {
+            maxLengthInput.placeholder = 'デフォルト: 255';
+            maxLengthInput.value = '';
+        } else {
+            maxLengthInput.placeholder = 'デフォルト: 5000';
+            maxLengthInput.value = '';
+        }
+    } else {
+        maxLengthField.classList.add('hidden');
+        maxLengthInput.value = '';
+    }
+}
+
+function clearErrors() {
+    const errorFields = ['content_name_error', 'content_type_error', 'max_length_error', 'sort_order_error'];
+    errorFields.forEach(fieldId => {
+        const element = document.getElementById(fieldId);
+        if (element) {
+            element.classList.add('hidden');
+            element.textContent = '';
+        }
+    });
+}
+
+function showError(fieldName, message) {
+    const errorElement = document.getElementById(fieldName + '_error');
+    if (errorElement) {
+        errorElement.textContent = message;
+        errorElement.classList.remove('hidden');
+    }
+}
+
+document.getElementById('content-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    clearErrors();
+    
+    const formData = new FormData(this);
+    const url = editingContentId 
+        ? `/admin/collections/${collectionId}/contents/${editingContentId}`
+        : `/admin/collections/${collectionId}/contents`;
+    
+    const method = editingContentId ? 'PUT' : 'POST';
+    
+    if (editingContentId) {
+        formData.append('_method', 'PUT');
+    }
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            hideContentModal();
+            location.reload(); // 簡単な実装として画面をリロード
+        } else {
+            if (data.errors) {
+                Object.keys(data.errors).forEach(field => {
+                    showError(field, data.errors[field][0]);
+                });
+            } else {
+                alert(data.message || 'エラーが発生しました。');
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('通信エラーが発生しました。');
+    });
+});
+
+function deleteContent(contentId) {
+    if (!confirm('このコンテンツを削除しますか？関連するデータも全て削除されます。')) {
+        return;
+    }
+    
+    fetch(`/admin/collections/${collectionId}/contents/${contentId}`, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.message || '削除に失敗しました。');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('通信エラーが発生しました。');
+    });
+}
+
 function showAddAccessControlModal() {
     document.getElementById('add-access-control-modal').classList.remove('hidden');
 }
@@ -303,6 +526,12 @@ function hideAddAccessControlModal() {
 document.getElementById('add-access-control-modal').addEventListener('click', function(e) {
     if (e.target === this) {
         hideAddAccessControlModal();
+    }
+});
+
+document.getElementById('content-modal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        hideContentModal();
     }
 });
 </script>

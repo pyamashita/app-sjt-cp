@@ -23,6 +23,7 @@ use App\Http\Controllers\Admin\CollectionController;
 use App\Http\Controllers\Admin\CollectionFieldController;
 use App\Http\Controllers\Admin\CollectionContentController;
 use App\Http\Controllers\Api\CollectionApiController;
+use App\Http\Controllers\GuideCollectionController;
 
 // 認証系ルート
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -179,6 +180,9 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::post('external-connections/{externalConnection}/test', [ExternalConnectionController::class, 'test'])->name('external-connections.test');
     Route::resource('external-connections', ExternalConnectionController::class)->only(['index', 'edit', 'update']);
 });
+
+// ガイド用ルート
+Route::get('/guide/collection/{collection}', [GuideCollectionController::class, 'view'])->name('guide.collection.view');
 
 // ルートアクセス時のリダイレクト
 Route::get('/', function () {

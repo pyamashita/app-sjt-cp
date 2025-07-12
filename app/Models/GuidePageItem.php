@@ -40,14 +40,21 @@ class GuidePageItem extends Model
         return $this->belongsTo(Collection::class);
     }
 
-    public function getDisplayUrl(): string
+    public function getDisplayUrl($emulatePlayerId = null): string
     {
         if ($this->type === 'resource' && $this->resource) {
             return \App\Helpers\ApiHelper::url('resources/' . $this->resource->id . '/download');
         }
         
         if ($this->type === 'collection' && $this->collection) {
-            return route('guide.collection.view', ['collection' => $this->collection->id]);
+            $params = ['collection' => $this->collection->id];
+            
+            // エミュレート中の場合、選手IDを追加
+            if ($emulatePlayerId) {
+                $params['emulate_player_id'] = $emulatePlayerId;
+            }
+            
+            return route('guide.collection.view', $params);
         }
         
         return $this->url ?? '#';

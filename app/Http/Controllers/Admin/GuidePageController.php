@@ -9,6 +9,7 @@ use App\Models\GuidePage;
 use App\Models\GuidePageSection;
 use App\Models\GuidePageGroup;
 use App\Models\GuidePageItem;
+use App\Models\Player;
 use App\Models\Resource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -92,10 +93,49 @@ class GuidePageController extends Controller
             ->with('success', 'ガイドページを有効化しました。');
     }
 
-    public function preview(GuidePage $guidePage)
+    public function preview(Request $request, GuidePage $guidePage)
     {
         $guidePage->load(['competition', 'sections.groups.items.resource', 'sections.groups.items.collection']);
-        return view('guide.preview', compact('guidePage'));
+        
+        // 選手エミュレート用のデータ取得
+        $emulatePlayerId = $request->get('emulate_player_id');
+        $emulatePlayer = null;
+        
+        if ($emulatePlayerId) {
+            $emulatePlayer = Player::select('players.*', 'competition_players.player_number')
+                ->leftJoin('competition_players', function ($join) use ($guidePage) {
+                    $join->on('players.id', '=', 'competition_players.player_id')
+                         ->where('competition_players.competition_id', '=', $guidePage->competition_id);
+                })
+                ->where('players.id', $emulatePlayerId)
+                ->first();
+        }
+        
+        // 選手管理されているコレクションがあるかチェック
+        $hasPlayerManagedCollections = false;
+        foreach ($guidePage->sections as $section) {
+            foreach ($section->groups as $group) {
+                foreach ($group->items as $item) {
+                    if ($item->type === 'collection' && $item->collection && $item->collection->is_player_managed) {
+                        $hasPlayerManagedCollections = true;
+                        break 3;
+                    }
+                }
+            }
+        }
+        
+        // エミュレート用の選手一覧（大会に登録されている選手のみ）
+        $availablePlayers = collect();
+        if ($hasPlayerManagedCollections) {
+            $availablePlayers = Player::select('players.*', 'competition_players.player_number')
+                ->join('competition_players', 'players.id', '=', 'competition_players.player_id')
+                ->where('competition_players.competition_id', $guidePage->competition_id)
+                ->orderBy('competition_players.player_number')
+                ->orderBy('players.name')
+                ->get();
+        }
+        
+        return view('guide.preview', compact('guidePage', 'emulatePlayer', 'hasPlayerManagedCollections', 'availablePlayers'));
     }
 
     public function addSection(Request $request, GuidePage $guidePage)

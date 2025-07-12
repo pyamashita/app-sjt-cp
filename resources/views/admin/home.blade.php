@@ -136,7 +136,7 @@
                     </div>
                     <div class="ml-4">
                         <h3 class="text-lg font-semibold text-gray-900">リソース管理</h3>
-                        <p class="text-sm text-gray-600">ファイル管理とAPI制御</p>
+                        <p class="text-sm text-gray-600">ファイル管理とガイドページ</p>
                     </div>
                 </div>
                 
@@ -145,10 +145,6 @@
                     <a href="{{ route('admin.resources.index') }}" 
                        class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-800 rounded-md transition-colors duration-200">
                         リソース一覧
-                    </a>
-                    <a href="{{ route('admin.api-tokens.index') }}" 
-                       class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-800 rounded-md transition-colors duration-200">
-                        APIトークン管理
                     </a>
                     <a href="{{ route('admin.guide-pages.index') }}" 
                        class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-800 rounded-md transition-colors duration-200">
@@ -184,6 +180,33 @@
                     <a href="{{ route('admin.messages.create') }}" 
                        class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-cyan-50 hover:text-cyan-800 rounded-md transition-colors duration-200">
                         新規メッセージ
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- API管理 -->
+        <div class="bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-all duration-300">
+            <div class="p-6">
+                <div class="flex items-center mb-4">
+                    <div class="flex-shrink-0">
+                        <div class="h-12 w-12 bg-indigo-100 rounded-lg flex items-center justify-center">
+                            <svg class="h-6 w-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-lg font-semibold text-gray-900">API管理</h3>
+                        <p class="text-sm text-gray-600">APIアクセス制御とトークン管理</p>
+                    </div>
+                </div>
+                
+                <!-- サブメニュー -->
+                <div class="space-y-2">
+                    <a href="{{ route('admin.api-tokens.index') }}" 
+                       class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-800 rounded-md transition-colors duration-200">
+                        APIトークン管理
                     </a>
                 </div>
             </div>

@@ -286,9 +286,11 @@
                                 onchange="filterResources()">
                             <option value="">すべてのタイプ</option>
                             <option value="application/pdf">PDF</option>
-                            <option value="image">画像</option>
-                            <option value="text">テキスト</option>
-                            <option value="application">アプリケーション</option>
+                            <option value="image/">画像</option>
+                            <option value="text/">テキスト</option>
+                            <option value="application/">アプリケーション</option>
+                            <option value="video/">動画</option>
+                            <option value="audio/">音声</option>
                         </select>
                     </div>
                     <div>
@@ -450,9 +452,7 @@ function filterResources() {
         
         // タイプフィルター
         if (typeFilter) {
-            if (typeFilter === 'image' && !type.includes('image')) {
-                showItem = false;
-            } else if (typeFilter !== 'image' && !type.includes(typeFilter)) {
+            if (!type.startsWith(typeFilter)) {
                 showItem = false;
             }
         }

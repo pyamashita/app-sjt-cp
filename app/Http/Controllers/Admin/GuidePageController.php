@@ -57,7 +57,7 @@ class GuidePageController extends Controller
     {
         $guidePage->load(['competition', 'sections.groups.items.resource', 'sections.groups.items.collection']);
         $competitions = Competition::all();
-        $resources = Resource::where('is_public', true)->get();
+        $resources = Resource::all(); // 一時的にすべてのリソースを表示
         $collections = Collection::all();
         
         return view('admin.guide-pages.edit', compact('guidePage', 'competitions', 'resources', 'collections'));

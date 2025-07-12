@@ -182,6 +182,12 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::resource('external-connections', ExternalConnectionController::class)->only(['index', 'edit', 'update']);
 });
 
+// フロントページルート（認証必須）
+Route::middleware('auth')->prefix('frontend')->name('frontend.')->group(function () {
+    Route::get('/', [App\Http\Controllers\Frontend\HomeController::class, 'index'])->name('home');
+    Route::get('/welcome', [App\Http\Controllers\Frontend\HomeController::class, 'welcome'])->name('welcome');
+});
+
 // ガイド用ルート
 Route::get('/guide/collection/{collection}', [GuideCollectionController::class, 'view'])->name('guide.collection.view');
 Route::get('/guide/{competitionId}', [PublicGuideController::class, 'show'])->name('guide.public');

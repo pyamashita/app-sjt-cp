@@ -19,7 +19,7 @@ return new class extends Migration
             $table->timestamps();
             
             // 複合ユニークキー（同じ大会に同じ競技委員は重複登録不可）
-            $table->unique(['competition_id', 'committee_member_id']);
+            $table->unique(['competition_id', 'committee_member_id'], 'comp_committee_unique');
             
             // インデックス
             $table->index(['competition_id', 'role']);

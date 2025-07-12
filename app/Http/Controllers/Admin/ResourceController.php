@@ -317,4 +317,27 @@ class ResourceController extends Controller
             ->header('Content-Type', 'text/csv; charset=UTF-8')
             ->header('Content-Disposition', 'attachment; filename="' . $filename . '"; filename*=UTF-8\'\'' . $encodedFilename);
     }
+
+    /**
+     * Serve resource file directly.
+     */
+    public function serve(Resource $resource)
+    {
+        if (!$resource->file_path || !Storage::disk('public')->exists($resource->file_path)) {
+            abort(404, 'ファイルが見つかりません。');
+        }
+
+        // 画像ファイルのみ許可
+        if (!$resource->is_image) {
+            abort(403, 'このファイルは表示できません。');
+        }
+
+        $filePath = Storage::disk('public')->path($resource->file_path);
+        $mimeType = $resource->mime_type;
+
+        return response()->file($filePath, [
+            'Content-Type' => $mimeType,
+            'Cache-Control' => 'public, max-age=3600',
+        ]);
+    }
 }

@@ -52,6 +52,8 @@ class CollectionField extends Model
         
         if ($this->is_required) {
             $rules[] = 'required';
+        } else {
+            $rules[] = 'nullable';
         }
         
         switch ($this->content_type) {

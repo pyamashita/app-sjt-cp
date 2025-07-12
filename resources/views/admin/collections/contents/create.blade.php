@@ -63,7 +63,7 @@
                                         <option value="">選択してください</option>
                                         @foreach($players as $p)
                                             <option value="{{ $p->id }}" {{ (old('player_id', $player?->id) == $p->id) ? 'selected' : '' }}>
-                                                {{ $p->name }}
+                                                @if($p->player_number){{ $p->player_number }} - @endif{{ $p->name }}
                                             </option>
                                         @endforeach
                                     </select>
@@ -89,7 +89,7 @@
                                     {{ $competition->name }}
                                 @endif
                                 @if($player)
-                                    {{ $competition ? ' - ' : '' }}{{ $player->name }}
+                                    {{ $competition ? ' - ' : '' }}@if($player->player_number){{ $player->player_number }} - @endif{{ $player->name }}
                                 @endif
                             </div>
                         </div>
@@ -229,7 +229,43 @@
 <script>
 function onCompetitionChange() {
     const competitionId = document.getElementById('competition_id').value;
-    // 大会が変更されたら選手選択をリセット（大会所属選手のみ表示する場合）
+    const playerSelect = document.getElementById('player_id');
+    
+    // 選手選択をリセット
+    playerSelect.value = '';
+    
+    if (competitionId) {
+        // 大会に所属する選手一覧を取得
+        fetch(`/admin/api/collections/players?competition_id=${competitionId}`)
+            .then(response => response.json())
+            .then(data => {
+                // 選手選択肢を更新
+                playerSelect.innerHTML = '<option value="">選択してください</option>';
+                data.players.forEach(player => {
+                    const option = document.createElement('option');
+                    option.value = player.id;
+                    option.textContent = player.player_number ? `${player.player_number} - ${player.name}` : player.name;
+                    playerSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('選手一覧の取得に失敗しました。');
+            });
+    } else {
+        // 大会が選択されていない場合は全選手を表示
+        fetch(`/admin/api/collections/players`)
+            .then(response => response.json())
+            .then(data => {
+                playerSelect.innerHTML = '<option value="">選択してください</option>';
+                data.players.forEach(player => {
+                    const option = document.createElement('option');
+                    option.value = player.id;
+                    option.textContent = player.name;
+                    playerSelect.appendChild(option);
+                });
+            });
+    }
 }
 
 function showCompetitionModal() {

@@ -45,7 +45,19 @@ class CollectionContentController extends Controller
         $playerId = $request->player_id;
         
         $competition = $competitionId ? Competition::find($competitionId) : null;
-        $player = $playerId ? Player::find($playerId) : null;
+        
+        // 選手データの取得（選手番号も含める）
+        if ($playerId && $competitionId) {
+            $player = Player::select('players.*', 'competition_players.player_number')
+                ->leftJoin('competition_players', function ($join) use ($competitionId) {
+                    $join->on('players.id', '=', 'competition_players.player_id')
+                         ->where('competition_players.competition_id', '=', $competitionId);
+                })
+                ->where('players.id', $playerId)
+                ->first();
+        } else {
+            $player = $playerId ? Player::find($playerId) : null;
+        }
 
         // 既存データの取得
         $existingData = CollectionContent::where('collection_id', $collection->id)
@@ -57,7 +69,21 @@ class CollectionContentController extends Controller
 
         // 選択可能なデータ
         $competitions = Competition::orderBy('name')->get();
-        $players = Player::orderBy('name')->get();
+        
+        // 選手データの取得（大会が指定されている場合は選手番号も含める）
+        if ($competitionId) {
+            $players = Player::select('players.*', 'competition_players.player_number')
+                ->leftJoin('competition_players', function ($join) use ($competitionId) {
+                    $join->on('players.id', '=', 'competition_players.player_id')
+                         ->where('competition_players.competition_id', '=', $competitionId);
+                })
+                ->orderBy('competition_players.player_number')
+                ->orderBy('players.name')
+                ->get();
+        } else {
+            $players = Player::orderBy('name')->get();
+        }
+        
         $resources = Resource::orderBy('original_name')->get();
 
         return view('admin.collections.contents.create', compact(
@@ -190,32 +216,34 @@ class CollectionContentController extends Controller
 
     public function getPlayers(Request $request)
     {
-        $query = Player::query();
-        
+        if ($request->filled('competition_id')) {
+            // 大会に登録されている選手を選手番号付きで取得
+            $players = Player::select('players.*', 'competition_players.player_number')
+                ->join('competition_players', 'players.id', '=', 'competition_players.player_id')
+                ->where('competition_players.competition_id', $request->competition_id)
+                ->orderBy('competition_players.player_number')
+                ->orderBy('players.name')
+                ->get();
+        } else {
+            // 全選手を取得
+            $players = Player::orderBy('name')->get();
+        }
+
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('name_kana', 'like', "%{$search}%");
+            $players = $players->filter(function ($player) use ($search) {
+                return stripos($player->name, $search) !== false || 
+                       stripos($player->name_kana ?? '', $search) !== false;
             });
         }
-
-        if ($request->filled('competition_id')) {
-            // 大会に登録されている選手のみ
-            $query->whereHas('competitionPlayers', function ($q) use ($request) {
-                $q->where('competition_id', $request->competition_id);
-            });
-        }
-
-        $players = $query->orderBy('name')->get();
 
         return response()->json([
             'players' => $players->map(function ($player) {
                 return [
                     'id' => $player->id,
                     'name' => $player->name,
-                    'name_kana' => $player->name_kana,
-                    'number' => $player->number,
+                    'name_kana' => $player->name_kana ?? '',
+                    'player_number' => $player->player_number ?? null,
                 ];
             })
         ]);

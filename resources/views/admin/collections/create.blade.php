@@ -88,42 +88,24 @@
             </div>
         </div>
         
-        <!-- アクセス制限 -->
+        <!-- アクセス制限について -->
         <div class="bg-white rounded-lg shadow p-6">
             <h3 class="text-lg font-medium text-gray-900 mb-4">アクセス制限</h3>
-            <p class="text-sm text-gray-600 mb-4">
-                IPアドレス制限を設定しない場合、すべてのIPアドレスからアクセス可能になります
-            </p>
-            
-            <div id="access-controls">
-                <div class="access-control-item border border-gray-200 rounded-md p-4 mb-4">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">IPアドレス</label>
-                            <input type="text" name="access_controls[0][ip_address]" 
-                                   placeholder="例: 192.168.1.100"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">説明</label>
-                            <input type="text" name="access_controls[0][description]" 
-                                   placeholder="例: 管理者用PC"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <div class="bg-blue-50 border border-blue-200 rounded-md p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-blue-800">アクセス制限について</h3>
+                        <div class="mt-2 text-sm text-blue-700">
+                            <p>アクセス制限（IP許可、APIトークン、トークン必須）は、コレクション作成後に詳細画面で設定できます。</p>
                         </div>
                     </div>
-                    <button type="button" class="mt-2 text-red-600 hover:text-red-700 text-sm" onclick="removeAccessControl(this)">
-                        削除
-                    </button>
                 </div>
             </div>
-            
-            <button type="button" id="add-access-control" 
-                    class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                </svg>
-                アクセス制限を追加
-            </button>
         </div>
         
         <!-- アクション -->

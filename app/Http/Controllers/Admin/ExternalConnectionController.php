@@ -46,7 +46,7 @@ class ExternalConnectionController extends Controller
         // WebSocket設定の詳細バリデーション
         if ($externalConnection->service_type === ExternalConnection::SERVICE_WEBSOCKET_MESSAGE) {
             $request->validate([
-                'config.use_device_ip' => 'required|boolean',
+                'config.use_localhost' => 'required|boolean',
                 'config.server_address' => 'nullable|string|max:255',
                 'config.default_port' => 'required|integer|min:1|max:65535',
                 'config.timeout' => 'required|integer|min:1|max:300',

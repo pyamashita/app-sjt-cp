@@ -97,45 +97,45 @@
                 <div>
                     <h2 class="text-lg font-semibold text-gray-900 mb-4">WebSocket設定</h2>
                     
-                    <!-- サーバーアドレス設定 -->
+                    <!-- WebSocketサーバーアドレス設定 -->
                     <div class="mb-6">
-                        <h3 class="text-md font-medium text-gray-900 mb-3">サーバーアドレス設定</h3>
+                        <h3 class="text-md font-medium text-gray-900 mb-3">WebSocketサーバーアドレス</h3>
                         
                         <div class="space-y-4">
-                            <!-- 端末IPアドレス使用フラグ -->
+                            <!-- サーバー場所選択 -->
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-3">
-                                    接続先 <span class="text-red-500">*</span>
+                                    WebSocketサーバーの場所 <span class="text-red-500">*</span>
                                 </label>
                                 <div class="space-y-2">
                                     <label class="flex items-center">
                                         <input type="radio" 
-                                               name="config[use_device_ip]" 
+                                               name="config[use_localhost]" 
                                                value="1"
-                                               {{ old('config.use_device_ip', $connection->config['use_device_ip'] ?? true) ? 'checked' : '' }}
+                                               {{ old('config.use_localhost', $connection->config['use_localhost'] ?? true) ? 'checked' : '' }}
                                                onchange="toggleServerAddress()"
                                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300">
-                                        <span class="ml-2 text-sm text-gray-900">端末のIPアドレスを使用（推奨）</span>
+                                        <span class="ml-2 text-sm text-gray-900">localhostを使用（SJT-CPと同じサーバー）</span>
                                     </label>
                                     <label class="flex items-center">
                                         <input type="radio" 
-                                               name="config[use_device_ip]" 
+                                               name="config[use_localhost]" 
                                                value="0"
-                                               {{ !old('config.use_device_ip', $connection->config['use_device_ip'] ?? true) ? 'checked' : '' }}
+                                               {{ !old('config.use_localhost', $connection->config['use_localhost'] ?? true) ? 'checked' : '' }}
                                                onchange="toggleServerAddress()"
                                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300">
-                                        <span class="ml-2 text-sm text-gray-900">固定サーバーアドレスを使用</span>
+                                        <span class="ml-2 text-sm text-gray-900">指定したアドレスを使用（別サーバー）</span>
                                     </label>
                                 </div>
-                                @error('config.use_device_ip')
+                                @error('config.use_localhost')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
                             
-                            <!-- サーバーアドレス -->
+                            <!-- カスタムサーバーアドレス -->
                             <div id="server-address-field" style="display: none;">
                                 <label for="server_address" class="block text-sm font-medium text-gray-700 mb-1">
-                                    固定サーバーアドレス
+                                    WebSocketサーバーアドレス
                                 </label>
                                 <input type="text" 
                                        name="config[server_address]" 
@@ -144,7 +144,7 @@
                                        placeholder="例: 192.168.1.100 または websocket.example.com"
                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                 <p class="mt-1 text-sm text-gray-500">
-                                    全ての端末が同一のWebSocketサーバーに接続する場合に指定してください
+                                    別サーバーでWebSocketサーバーを起動した場合のIPアドレスまたはドメイン名
                                 </p>
                                 @error('config.server_address')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -281,10 +281,10 @@
     <script>
         // サーバーアドレス設定の表示切替
         function toggleServerAddress() {
-            const useDeviceIp = document.querySelector('input[name="config[use_device_ip]"]:checked').value;
+            const useLocalhost = document.querySelector('input[name="config[use_localhost]"]:checked').value;
             const serverAddressField = document.getElementById('server-address-field');
             
-            if (useDeviceIp === '0') {
+            if (useLocalhost === '0') {
                 serverAddressField.style.display = 'block';
             } else {
                 serverAddressField.style.display = 'none';

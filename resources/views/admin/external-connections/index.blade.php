@@ -65,9 +65,9 @@
                                 <td class="px-6 py-4">
                                     <div class="text-sm text-gray-900">
                                         @if($connection->service_type === 'websocket_message')
-                                            <div>接続先: {{ ($connection->config['use_device_ip'] ?? true) ? '端末IPアドレス' : '固定サーバー' }}</div>
-                                            @if(!($connection->config['use_device_ip'] ?? true) && !empty($connection->config['server_address']))
-                                                <div>サーバーアドレス: {{ $connection->config['server_address'] }}</div>
+                                            <div>サーバー: {{ ($connection->config['use_localhost'] ?? true) ? 'localhost' : 'カスタムアドレス' }}</div>
+                                            @if(!($connection->config['use_localhost'] ?? true) && !empty($connection->config['server_address']))
+                                                <div>アドレス: {{ $connection->config['server_address'] }}</div>
                                             @endif
                                             <div>プロトコル: {{ $connection->config['protocol'] ?? 'ws' }}</div>
                                             <div>デフォルトポート: {{ $connection->config['default_port'] ?? '8080' }}</div>

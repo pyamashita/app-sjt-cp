@@ -44,7 +44,7 @@ class WebSocketService
             $path = $this->config['path'];
             
             // サーバーアドレス設定を確認
-            $serverAddress = $this->getServerAddress($deviceIp);
+            $serverAddress = $this->getServerAddress();
             $url = "{$protocol}://{$serverAddress}:{$port}{$path}";
             $success = false;
             $error = null;
@@ -186,7 +186,7 @@ class WebSocketService
             $protocol = $this->config['protocol'];
             
             // サーバーアドレス設定を確認
-            $serverAddress = $this->getServerAddress($deviceIp);
+            $serverAddress = $this->getServerAddress();
             $url = "{$protocol}://{$serverAddress}:{$port}/ping";
             $connected = false;
 
@@ -242,7 +242,7 @@ class WebSocketService
             $protocol = $this->config['protocol'] === 'wss' ? 'https' : 'http';
             
             // サーバーアドレス設定を確認
-            $serverAddress = $this->getServerAddress($deviceIp);
+            $serverAddress = $this->getServerAddress();
             $url = "{$protocol}://{$serverAddress}:{$port}/api/message";
             
             $ch = curl_init();
@@ -293,17 +293,16 @@ class WebSocketService
     /**
      * 使用するサーバーアドレスを取得
      *
-     * @param string $deviceIp 端末のIPアドレス
      * @return string 使用するサーバーアドレス
      */
-    private function getServerAddress(string $deviceIp): string
+    private function getServerAddress(): string
     {
-        // use_device_ip が true の場合、またはserver_addressが空の場合は端末IPを使用
-        if ($this->config['use_device_ip'] || empty($this->config['server_address'])) {
-            return $deviceIp;
+        // use_localhost が true の場合はlocalhost使用
+        if ($this->config['use_localhost']) {
+            return 'localhost';
         }
         
-        // 設定されたサーバーアドレスを使用
-        return $this->config['server_address'];
+        // カスタムサーバーアドレスを使用
+        return $this->config['server_address'] ?: 'localhost';
     }
 }

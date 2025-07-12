@@ -33,8 +33,8 @@ return new class extends Migration
             'service_type' => 'websocket_message',
             'name' => 'メッセージ送受信用WebSocketサーバー',
             'config' => json_encode([
+                'use_localhost' => true,
                 'server_address' => '',
-                'use_device_ip' => true,
                 'default_port' => 8080,
                 'timeout' => 10,
                 'retry_count' => 3,
@@ -43,7 +43,7 @@ return new class extends Migration
                 'path' => '/message'
             ]),
             'is_active' => true,
-            'description' => '端末へのメッセージ送信に使用するWebSocketサーバーの設定',
+            'description' => 'WebSocketサーバーへの接続設定（localhost または 指定アドレス）',
             'created_at' => now(),
             'updated_at' => now(),
         ]);

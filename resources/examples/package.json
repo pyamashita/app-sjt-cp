@@ -1,0 +1,19 @@
+{
+  "name": "sjt-cp-websocket-client",
+  "version": "1.0.0",
+  "description": "SJT-CP WebSocket端末側サーバー実装例",
+  "main": "websocket-server.cjs",
+  "scripts": {
+    "start": "node websocket-server.cjs",
+    "dev": "node websocket-server.cjs"
+  },
+  "keywords": ["websocket", "sjt-cp", "message"],
+  "author": "SJT-CP",
+  "license": "MIT",
+  "dependencies": {
+    "ws": "^8.14.2"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

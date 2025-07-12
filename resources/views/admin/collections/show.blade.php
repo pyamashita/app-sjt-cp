@@ -650,4 +650,129 @@ document.getElementById('field-modal').addEventListener('click', function(e) {
 });
 </script>
 @endpush
+
+<!-- データ分析セクション -->
+<div class="bg-white rounded-lg shadow overflow-hidden mt-6">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-medium text-gray-900">データ分析</h3>
+    </div>
+    <div class="px-6 py-4">
+        <!-- 概要統計 -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="text-center p-4 border border-gray-200 rounded-lg">
+                <div class="text-2xl font-bold text-blue-600">{{ $analytics['total_records'] }}</div>
+                <div class="text-sm text-gray-500">総レコード数</div>
+            </div>
+            <div class="text-center p-4 border border-gray-200 rounded-lg">
+                <div class="text-2xl font-bold text-green-600">{{ $analytics['completion_rate'] }}%</div>
+                <div class="text-sm text-gray-500">完了率</div>
+            </div>
+            <div class="text-center p-4 border border-gray-200 rounded-lg">
+                <div class="text-2xl font-bold text-purple-600">{{ count($collection->fields) }}</div>
+                <div class="text-sm text-gray-500">フィールド数</div>
+            </div>
+            <div class="text-center p-4 border border-gray-200 rounded-lg">
+                <div class="text-2xl font-bold text-orange-600">{{ $collection->contents()->count() }}</div>
+                <div class="text-sm text-gray-500">総コンテンツ数</div>
+            </div>
+        </div>
+
+        <!-- フィールド統計 -->
+        @if(count($analytics['field_stats']) > 0)
+        <div class="mb-6">
+            <h4 class="text-md font-medium text-gray-900 mb-3">フィールド別統計</h4>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">フィールド名</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">タイプ</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">コンテンツ数</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">完了率</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        @foreach($analytics['field_stats'] as $stat)
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $stat['field_name'] }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $stat['field_type'] }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $stat['content_count'] }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <div class="flex items-center">
+                                    <div class="w-16 bg-gray-200 rounded-full h-2 mr-2">
+                                        <div class="bg-blue-600 h-2 rounded-full" style="width: {{ $stat['completion_rate'] }}%"></div>
+                                    </div>
+                                    <span>{{ $stat['completion_rate'] }}%</span>
+                                </div>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @endif
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- 最近のアクティビティ -->
+            @if(count($analytics['recent_activity']) > 0)
+            <div>
+                <h4 class="text-md font-medium text-gray-900 mb-3">最近のアクティビティ</h4>
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <div class="space-y-2">
+                        @foreach($analytics['recent_activity'] as $activity)
+                        <div class="text-sm">
+                            <span class="font-medium">{{ $activity['field_name'] }}</span>
+                            @if($activity['competition_name'] || $activity['player_name'])
+                                <span class="text-gray-500">
+                                    -
+                                    @if($activity['competition_name']){{ $activity['competition_name'] }}@endif
+                                    @if($activity['player_name']){{ $activity['competition_name'] ? ' / ' : '' }}{{ $activity['player_name'] }}@endif
+                                </span>
+                            @endif
+                            <span class="text-gray-400 float-right">{{ $activity['updated_at'] }}</span>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            <!-- 大会別統計 -->
+            @if($collection->is_competition_managed && count($analytics['competition_stats']) > 0)
+            <div>
+                <h4 class="text-md font-medium text-gray-900 mb-3">大会別統計（上位10件）</h4>
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <div class="space-y-2">
+                        @foreach($analytics['competition_stats'] as $stat)
+                        <div class="flex justify-between text-sm">
+                            <span>{{ $stat['competition_name'] }}</span>
+                            <span class="font-medium">{{ $stat['content_count'] }} 件</span>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            <!-- 選手別統計 -->
+            @if($collection->is_player_managed && count($analytics['player_stats']) > 0)
+            <div>
+                <h4 class="text-md font-medium text-gray-900 mb-3">選手別統計（上位10件）</h4>
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <div class="space-y-2">
+                        @foreach($analytics['player_stats'] as $stat)
+                        <div class="flex justify-between text-sm">
+                            <span>{{ $stat['player_name'] }}</span>
+                            <span class="font-medium">{{ $stat['content_count'] }} 件</span>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+            @endif
+        </div>
+    </div>
+</div>
+
 @endsection

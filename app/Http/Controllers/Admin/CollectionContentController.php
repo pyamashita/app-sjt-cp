@@ -248,4 +248,88 @@ class CollectionContentController extends Controller
             })
         ]);
     }
+
+    public function export(Collection $collection, Request $request)
+    {
+        $query = CollectionContent::with(['field', 'competition', 'player'])
+            ->where('collection_id', $collection->id);
+
+        // フィルタ適用
+        if ($request->filled('competition_id')) {
+            $query->where('competition_id', $request->competition_id);
+        }
+
+        if ($request->filled('player_id')) {
+            $query->where('player_id', $request->player_id);
+        }
+
+        $contents = $query->orderBy('created_at', 'desc')->get();
+
+        // CSVデータを準備
+        $csvData = [];
+        
+        // ヘッダー行
+        $headers = ['ID'];
+        if ($collection->is_competition_managed) {
+            $headers[] = '大会名';
+        }
+        if ($collection->is_player_managed) {
+            $headers[] = '選手番号';
+            $headers[] = '選手名';
+        }
+        $headers = array_merge($headers, ['フィールド名', 'フィールドタイプ', '値', '作成日時', '更新日時']);
+        $csvData[] = $headers;
+
+        // データ行
+        foreach ($contents as $content) {
+            $row = [$content->id];
+            
+            if ($collection->is_competition_managed) {
+                $row[] = $content->competition ? $content->competition->name : '';
+            }
+            
+            if ($collection->is_player_managed) {
+                // 選手番号を取得
+                $playerNumber = '';
+                if ($content->player && $content->competition) {
+                    $competitionPlayer = \App\Models\CompetitionPlayer::where('competition_id', $content->competition_id)
+                        ->where('player_id', $content->player_id)
+                        ->first();
+                    $playerNumber = $competitionPlayer ? $competitionPlayer->player_number : '';
+                }
+                $row[] = $playerNumber;
+                $row[] = $content->player ? $content->player->name : '';
+            }
+            
+            $row[] = $content->field->name;
+            $row[] = $content->field->content_type_display_name;
+            $row[] = $content->formatted_value;
+            $row[] = $content->created_at->format('Y-m-d H:i:s');
+            $row[] = $content->updated_at->format('Y-m-d H:i:s');
+            
+            $csvData[] = $row;
+        }
+
+        // CSVファイルを生成
+        $csv = '';
+        foreach ($csvData as $row) {
+            $csv .= implode(',', array_map(function($field) {
+                // フィールドに特殊文字が含まれる場合はダブルクォートで囲む
+                if (strpos($field, ',') !== false || strpos($field, "\n") !== false || strpos($field, '"') !== false) {
+                    $field = '"' . str_replace('"', '""', $field) . '"';
+                }
+                return $field;
+            }, $row)) . "\n";
+        }
+
+        // BOMを追加してExcelで正しく文字化けせずに開けるようにする
+        $csv = "\xEF\xBB\xBF" . $csv;
+
+        $filename = "collection_{$collection->name}_contents_" . date('Y-m-d_H-i-s') . '.csv';
+        $encodedFilename = rawurlencode($filename);
+
+        return response($csv)
+            ->header('Content-Type', 'text/csv; charset=UTF-8')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"; filename*=UTF-8\'\'' . $encodedFilename);
+    }
 }

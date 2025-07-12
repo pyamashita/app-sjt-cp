@@ -340,4 +340,34 @@ class ResourceController extends Controller
             'Cache-Control' => 'public, max-age=3600',
         ]);
     }
+
+    /**
+     * Search resources for API.
+     */
+    public function searchApi(Request $request)
+    {
+        $query = Resource::query();
+        
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('original_name', 'like', "%{$search}%");
+            });
+        }
+
+        $resources = $query->orderBy('original_name')->limit(50)->get();
+
+        return response()->json([
+            'resources' => $resources->map(function ($resource) {
+                return [
+                    'id' => $resource->id,
+                    'name' => $resource->name,
+                    'original_name' => $resource->original_name,
+                    'file_type' => $resource->file_extension,
+                    'file_size_formatted' => $resource->formatted_size,
+                ];
+            })
+        ]);
+    }
 }

@@ -22,6 +22,7 @@ use App\Http\Controllers\Admin\ExternalConnectionController;
 use App\Http\Controllers\Admin\CollectionController;
 use App\Http\Controllers\Admin\CollectionFieldController;
 use App\Http\Controllers\Admin\CollectionContentController;
+use App\Http\Controllers\Api\CollectionApiController;
 
 // 認証系ルート
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -153,8 +154,19 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::post('collections/{collection}/contents', [CollectionContentController::class, 'store'])->name('collections.contents.store');
     Route::get('collections/{collection}/contents/edit', [CollectionContentController::class, 'edit'])->name('collections.contents.edit');
     Route::delete('collections/{collection}/contents', [CollectionContentController::class, 'destroy'])->name('collections.contents.destroy');
+    Route::get('collections/{collection}/contents/export', [CollectionContentController::class, 'export'])->name('collections.contents.export');
     Route::get('api/collections/competitions', [CollectionContentController::class, 'getCompetitions'])->name('api.collections.competitions');
     Route::get('api/collections/players', [CollectionContentController::class, 'getPlayers'])->name('api.collections.players');
+    Route::get('api/resources', [ResourceController::class, 'searchApi'])->name('api.resources.search');
+    
+    // Collection API endpoints
+    Route::prefix('api/v1/collections')->name('api.v1.collections.')->group(function () {
+        Route::get('/', [CollectionApiController::class, 'index'])->name('index');
+        Route::get('{collection}', [CollectionApiController::class, 'show'])->name('show');
+        Route::get('{collection}/contents', [CollectionApiController::class, 'contents'])->name('contents');
+        Route::get('{collection}/content', [CollectionApiController::class, 'getContent'])->name('content.get');
+        Route::post('{collection}/content', [CollectionApiController::class, 'storeContent'])->name('content.store');
+    });
     
     // メッセージ管理
     Route::post('messages/{message}/resend', [MessageController::class, 'resend'])->name('messages.resend');

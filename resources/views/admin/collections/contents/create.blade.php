@@ -268,17 +268,11 @@ function onCompetitionChange() {
     }
 }
 
-function showCompetitionModal() {
-    alert('大会検索モーダル（今後実装）');
-}
-
-function showPlayerModal() {
-    alert('選手検索モーダル（今後実装）');
-}
-
-function showResourceModal(fieldName) {
-    alert('リソース検索モーダル（今後実装）');
-}
+// 検索モーダル関数は components/search-modals.blade.php で定義
 </script>
 @endpush
+
+<!-- 検索モーダルを追加 -->
+@include('components.search-modals')
+
 @endsection

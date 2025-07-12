@@ -7,6 +7,12 @@
     $pageDescription = 'コレクションコンテンツの一覧・管理';
     $pageActions = [
         [
+            'label' => 'CSVエクスポート',
+            'url' => route('admin.collections.contents.export', array_merge(['collection' => $collection], request()->only(['competition_id', 'player_id']))),
+            'type' => 'secondary',
+            'icon' => '<svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path></svg>'
+        ],
+        [
             'label' => 'コンテンツ入力',
             'url' => route('admin.collections.contents.create', $collection),
             'type' => 'primary',

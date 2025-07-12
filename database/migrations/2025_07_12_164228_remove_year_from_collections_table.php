@@ -12,8 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('collections', function (Blueprint $table) {
-            $table->dropColumn('year');
-            $table->dropIndex(['year']); // インデックスも削除
+            if (Schema::hasColumn('collections', 'year')) {
+                $table->dropIndex(['year']); // インデックスを先に削除
+                $table->dropColumn('year');
+            }
         });
     }
 
@@ -23,8 +25,10 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('collections', function (Blueprint $table) {
-            $table->year('year')->nullable()->comment('大会年度');
-            $table->index(['year']);
+            if (!Schema::hasColumn('collections', 'year')) {
+                $table->year('year')->nullable()->comment('大会年度');
+                $table->index(['year']);
+            }
         });
     }
 };

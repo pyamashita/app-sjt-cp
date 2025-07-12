@@ -26,25 +26,11 @@
                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
             </div>
             
-            @if(count($years) > 0)
-            <div class="w-48">
-                <label for="year" class="block text-sm font-medium text-gray-700 mb-1">大会年度</label>
-                <select name="year" id="year" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                    <option value="">すべての年度</option>
-                    @foreach($years as $year)
-                        <option value="{{ $year }}" {{ request('year') == $year ? 'selected' : '' }}>
-                            {{ $year }}年
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-            @endif
-            
             <div class="flex items-end">
                 <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
                     検索
                 </button>
-                @if(request()->hasAny(['search', 'year']))
+                @if(request()->hasAny(['search']))
                     <a href="{{ route('admin.collections.index') }}" class="ml-2 px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
                         クリア
                     </a>
@@ -65,9 +51,6 @@
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 管理設定
-                            </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                大会年度
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 アクセス制限
@@ -116,13 +99,6 @@
                                             </span>
                                         @endif
                                     </div>
-                                </td>
-                                <td class="px-6 py-4 text-sm text-gray-900">
-                                    @if($collection->year)
-                                        {{ $collection->year }}年
-                                    @else
-                                        <span class="text-gray-400">-</span>
-                                    @endif
                                 </td>
                                 <td class="px-6 py-4">
                                     @if($collection->accessControls->count() > 0)

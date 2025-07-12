@@ -16,11 +16,6 @@ class CollectionController extends Controller
     {
         $query = Collection::with(['accessControls']);
         
-        // 年度フィルタ
-        if ($request->filled('year')) {
-            $query->byYear($request->year);
-        }
-        
         // 検索
         if ($request->filled('search')) {
             $search = $request->search;
@@ -33,10 +28,7 @@ class CollectionController extends Controller
         
         $collections = $query->orderBy('created_at', 'desc')->paginate(20);
         
-        // 年度リスト（フィルタ用）
-        $years = Collection::distinct()->pluck('year')->filter()->sort()->values();
-        
-        return view('admin.collections.index', compact('collections', 'years'));
+        return view('admin.collections.index', compact('collections'));
     }
 
     public function create()
@@ -52,7 +44,6 @@ class CollectionController extends Controller
             'name' => ['required', 'string', 'max:255', 'unique:collections,name', 'regex:/^[a-zA-Z0-9_-]+$/'],
             'display_name' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'year' => ['nullable', 'integer', 'min:1900', 'max:' . (date('Y') + 10)],
             'is_competition_managed' => ['boolean'],
             'is_player_managed' => ['boolean'],
             'access_controls' => ['array'],
@@ -107,7 +98,6 @@ class CollectionController extends Controller
             ],
             'display_name' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'year' => ['nullable', 'integer', 'min:1900', 'max:' . (date('Y') + 10)],
             'is_competition_managed' => ['boolean'],
             'is_player_managed' => ['boolean'],
             'access_controls' => ['array'],

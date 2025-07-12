@@ -34,7 +34,6 @@
                 ['label' => 'コレクション名', 'value' => $collection->name],
                 ['label' => '表示名', 'value' => $collection->display_name],
                 ['label' => '備考', 'value' => $collection->description ?: '-'],
-                ['label' => '大会年度', 'value' => $collection->year ? $collection->year . '年' : '-'],
                 ['label' => '作成日', 'value' => $collection->created_at->format('Y年m月d日 H:i')],
                 ['label' => '最終更新', 'value' => $collection->updated_at->format('Y年m月d日 H:i')]
             ]" />

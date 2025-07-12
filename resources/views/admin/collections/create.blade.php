@@ -54,15 +54,6 @@
                     @enderror
                 </div>
                 
-                <div>
-                    <label for="year" class="block text-sm font-medium text-gray-700 mb-1">大会年度</label>
-                    <input type="number" name="year" id="year" value="{{ old('year', date('Y')) }}"
-                           min="1900" max="{{ date('Y') + 10 }}"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('year') border-red-500 @enderror">
-                    @error('year')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
             </div>
         </div>
         

@@ -77,31 +77,56 @@
                             </div>
 
                             <!-- グループ内のコンテンツ -->
-                            <div class="px-6 py-4">
-                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    @foreach($group['items'] as $item)
-                                        <div class="border border-gray-200 rounded-lg p-4">
-                                            <div class="flex justify-between items-start mb-2">
-                                                <h5 class="text-sm font-medium text-gray-900">{{ $item->field->name }}</h5>
-                                                <span class="text-xs text-gray-500">{{ $item->field->content_type_display_name }}</span>
-                                            </div>
-                                            <div class="text-sm text-gray-700 mb-2">
-                                                <div class="break-words" title="{{ $item->value }}">
-                                                    {{ $item->formatted_value }}
-                                                </div>
-                                            </div>
-                                            <div class="text-xs text-gray-500">
-                                                {{ $item->updated_at->format('Y/m/d H:i') }}
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                    
-                                    @if($group['items']->count() === 0)
-                                        <div class="col-span-full text-center py-4">
-                                            <p class="text-sm text-gray-500">このグループにはコンテンツがありません</p>
-                                        </div>
-                                    @endif
-                                </div>
+                            <div class="overflow-x-auto">
+                                @if($group['items']->count() > 0)
+                                    <table class="min-w-full divide-y divide-gray-200">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    フィールド名
+                                                </th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    タイプ
+                                                </th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    値
+                                                </th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    更新日時
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="bg-white divide-y divide-gray-200">
+                                            @foreach($group['items'] as $item)
+                                                <tr class="hover:bg-gray-50">
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                        {{ $item->field->name }}
+                                                        @if($item->field->is_required)
+                                                            <span class="text-red-500 ml-1">*</span>
+                                                        @endif
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap">
+                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                            {{ $item->field->content_type_display_name }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-6 py-4 text-sm text-gray-900">
+                                                        <div class="max-w-xs break-words" title="{{ $item->value }}">
+                                                            {{ $item->formatted_value }}
+                                                        </div>
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                        {{ $item->updated_at->format('Y/m/d H:i') }}
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                @else
+                                    <div class="text-center py-8">
+                                        <p class="text-sm text-gray-500">このグループにはコンテンツがありません</p>
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     @endforeach

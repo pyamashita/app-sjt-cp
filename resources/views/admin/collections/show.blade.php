@@ -651,6 +651,186 @@ document.getElementById('field-modal').addEventListener('click', function(e) {
 </script>
 @endpush
 
+<!-- API利用方法 -->
+<div class="bg-white rounded-lg shadow overflow-hidden mt-6">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-medium text-gray-900">API利用方法</h3>
+    </div>
+    <div class="px-6 py-4">
+        <div class="mb-6">
+            <h4 class="text-md font-medium text-gray-900 mb-3">エンドポイント</h4>
+            <div class="bg-gray-100 rounded-lg p-4 mb-4">
+                <p class="text-sm font-mono mb-2">{{ url('/') }}/api/v1/collections/{{ $collection->id }}</p>
+            </div>
+        </div>
+
+        <div class="mb-6">
+            <h4 class="text-md font-medium text-gray-900 mb-3">利用可能なメソッド</h4>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">メソッド</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">エンドポイント</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">説明</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-green-600">GET</td>
+                            <td class="px-6 py-4 text-sm font-mono">/api/v1/collections</td>
+                            <td class="px-6 py-4 text-sm text-gray-500">コレクション一覧を取得</td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-green-600">GET</td>
+                            <td class="px-6 py-4 text-sm font-mono">/api/v1/collections/{{ $collection->id }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-500">このコレクションの詳細を取得</td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-green-600">GET</td>
+                            <td class="px-6 py-4 text-sm font-mono">/api/v1/collections/{{ $collection->id }}/contents</td>
+                            <td class="px-6 py-4 text-sm text-gray-500">コンテンツ一覧を取得（ページング対応）</td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-green-600">GET</td>
+                            <td class="px-6 py-4 text-sm font-mono">/api/v1/collections/{{ $collection->id }}/content</td>
+                            <td class="px-6 py-4 text-sm text-gray-500">特定コンテキストのコンテンツを取得</td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-blue-600">POST</td>
+                            <td class="px-6 py-4 text-sm font-mono">/api/v1/collections/{{ $collection->id }}/content</td>
+                            <td class="px-6 py-4 text-sm text-gray-500">コンテンツを作成・更新</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="mb-6">
+            <h4 class="text-md font-medium text-gray-900 mb-3">認証方法</h4>
+            <div class="bg-gray-50 rounded-lg p-4">
+                <p class="text-sm text-gray-700 mb-2">アクセス制御設定に応じて、以下の方法で認証が必要です：</p>
+                <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
+                    <li><strong>IP許可:</strong> 登録されたIPアドレスからのアクセスのみ許可</li>
+                    <li><strong>APIトークン:</strong> AuthorizationヘッダーまたはURLパラメータでトークンを指定</li>
+                    <li><strong>トークン必須:</strong> 有効なAPIトークンが必須</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="mb-6">
+            <h4 class="text-md font-medium text-gray-900 mb-3">リクエスト例</h4>
+            
+            <!-- コレクション詳細取得 -->
+            <div class="mb-4">
+                <h5 class="text-sm font-medium text-gray-700 mb-2">1. コレクション詳細を取得</h5>
+                <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                    <pre class="text-sm text-gray-100"><code>curl -X GET {{ url('/') }}/api/v1/collections/{{ $collection->id }} \
+  -H "Authorization: Bearer YOUR_API_TOKEN"</code></pre>
+                </div>
+            </div>
+
+            <!-- コンテンツ一覧取得 -->
+            <div class="mb-4">
+                <h5 class="text-sm font-medium text-gray-700 mb-2">2. コンテンツ一覧を取得（フィルタ付き）</h5>
+                <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                    <pre class="text-sm text-gray-100"><code>curl -X GET "{{ url('/') }}/api/v1/collections/{{ $collection->id }}/contents?@if($collection->is_competition_managed)competition_id=1&@endif
+@if($collection->is_player_managed)player_id=1&@endif
+per_page=50" \
+  -H "Authorization: Bearer YOUR_API_TOKEN"</code></pre>
+                </div>
+            </div>
+
+            <!-- 特定コンテキストのコンテンツ取得 -->
+            <div class="mb-4">
+                <h5 class="text-sm font-medium text-gray-700 mb-2">3. 特定コンテキストのコンテンツを取得</h5>
+                <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                    <pre class="text-sm text-gray-100"><code>curl -X GET "{{ url('/') }}/api/v1/collections/{{ $collection->id }}/content?@if($collection->is_competition_managed)competition_id=1@if($collection->is_player_managed)&@endif
+@endif
+@if($collection->is_player_managed)player_id=1@endif" \
+  -H "Authorization: Bearer YOUR_API_TOKEN"</code></pre>
+                </div>
+            </div>
+
+            <!-- コンテンツ作成・更新 -->
+            <div class="mb-4">
+                <h5 class="text-sm font-medium text-gray-700 mb-2">4. コンテンツを作成・更新</h5>
+                <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                    <pre class="text-sm text-gray-100"><code>curl -X POST {{ url('/') }}/api/v1/collections/{{ $collection->id }}/content \
+  -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    @if($collection->is_competition_managed)"competition_id": 1,
+    @endif
+@if($collection->is_player_managed)"player_id": 1,
+    @endif
+"contents": [
+@foreach($collection->fields->take(2) as $index => $field)
+      {
+        "field_id": {{ $field->id }},
+        "value": @if($field->content_type === 'string')"サンプル値"@elseif($field->content_type === 'boolean')true@elseif($field->content_type === 'date')"2024-01-01"@else"value"@endif
+
+      }@if(!$loop->last),@endif
+
+@endforeach
+    ]
+  }'</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-6">
+            <h4 class="text-md font-medium text-gray-900 mb-3">レスポンス例</h4>
+            <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                <pre class="text-sm text-gray-100"><code>{
+  "success": true,
+  "data": {
+    "id": {{ $collection->id }},
+    "name": "{{ $collection->name }}",
+    "display_name": "{{ $collection->display_name }}",
+    "description": {{ $collection->description ? '"' . $collection->description . '"' : 'null' }},
+    "is_competition_managed": {{ $collection->is_competition_managed ? 'true' : 'false' }},
+    "is_player_managed": {{ $collection->is_player_managed ? 'true' : 'false' }},
+    "fields": [
+@foreach($collection->fields->take(2) as $index => $field)
+      {
+        "id": {{ $field->id }},
+        "name": "{{ $field->name }}",
+        "content_type": "{{ $field->content_type }}",
+        "is_required": {{ $field->is_required ? 'true' : 'false' }},
+        "sort_order": {{ $field->sort_order }}
+      }@if(!$loop->last),@endif
+
+@endforeach
+    ]
+  }
+}</code></pre>
+            </div>
+        </div>
+
+        <div class="bg-yellow-50 border border-yellow-200 rounded-md p-4">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-yellow-800">注意事項</h3>
+                    <div class="mt-2 text-sm text-yellow-700">
+                        <ul class="list-disc list-inside space-y-1">
+                            <li>APIトークンは安全に管理してください</li>
+                            <li>レート制限が適用される場合があります</li>
+                            <li>大量のデータを扱う場合はページングを使用してください</li>
+                            <li>本番環境では必ずHTTPSを使用してください</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- データ分析セクション -->
 <div class="bg-white rounded-lg shadow overflow-hidden mt-6">
     <div class="px-6 py-4 border-b border-gray-200">

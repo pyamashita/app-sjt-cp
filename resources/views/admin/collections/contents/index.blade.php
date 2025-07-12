@@ -55,9 +55,9 @@
             
             <div class="text-center p-4 border border-gray-200 rounded-lg">
                 <div class="text-2xl mb-2">
-                    <span class="text-blue-500">{{ $contents->total() }}</span>
+                    <span class="text-blue-500">{{ isset($groupedContents) ? $groupedContents->count() : 0 }}</span>
                 </div>
-                <div class="text-sm font-medium text-gray-900">コンテンツ件数</div>
+                <div class="text-sm font-medium text-gray-900">グループ数</div>
             </div>
         </div>
     </div>
@@ -108,78 +108,72 @@
 
     <!-- コンテンツ一覧 -->
     <div class="bg-white rounded-lg shadow overflow-hidden">
-        @if($contents->count() > 0)
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            @if($collection->is_competition_managed)
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    大会
-                                </th>
-                            @endif
-                            @if($collection->is_player_managed)
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    選手
-                                </th>
-                            @endif
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                フィールド
-                            </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                値
-                            </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                更新日
-                            </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                操作
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        @foreach($contents as $item)
-                            <tr class="hover:bg-gray-50">
-                                @if($collection->is_competition_managed)
-                                    <td class="px-6 py-4 text-sm text-gray-900">
-                                        {{ $item->competition ? $item->competition->name : '-' }}
-                                    </td>
-                                @endif
+        @if(isset($groupedContents) && $groupedContents->count() > 0)
+            @foreach($groupedContents as $group)
+                <!-- グループヘッダー -->
+                <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h4 class="text-lg font-medium text-gray-900">
                                 @if($collection->is_player_managed)
-                                    <td class="px-6 py-4 text-sm text-gray-900">
-                                        {{ $item->player ? $item->player->name : '-' }}
-                                    </td>
+                                    {{ $group['key'] }}
+                                    @if($group['player'] && $group['competition'])
+                                        <span class="text-sm text-gray-500 ml-2">
+                                            @php
+                                                $competitionPlayer = \App\Models\CompetitionPlayer::where('competition_id', $group['competition']->id)
+                                                    ->where('player_id', $group['player']->id)
+                                                    ->first();
+                                            @endphp
+                                            @if($competitionPlayer && $competitionPlayer->player_number)
+                                                ({{ $competitionPlayer->player_number }})
+                                            @endif
+                                        </span>
+                                    @endif
+                                @else
+                                    {{ $group['key'] }}
                                 @endif
-                                <td class="px-6 py-4">
-                                    <div class="text-sm font-medium text-gray-900">{{ $item->field->name }}</div>
-                                    <div class="text-sm text-gray-500">{{ $item->field->content_type_display_name }}</div>
-                                </td>
-                                <td class="px-6 py-4 text-sm text-gray-900">
-                                    <div class="max-w-xs truncate" title="{{ $item->value }}">
+                            </h4>
+                            @if($group['competition'])
+                                <p class="text-sm text-gray-500">{{ $group['competition']->name }}</p>
+                            @endif
+                        </div>
+                        <div class="flex space-x-2">
+                            <a href="{{ route('admin.collections.contents.create', array_merge(['collection' => $collection], $group['competition'] ? ['competition_id' => $group['competition']->id] : [], $group['player'] ? ['player_id' => $group['player']->id] : [])) }}" 
+                               class="text-green-600 hover:text-green-900 text-sm font-medium">編集</a>
+                            <button type="button" onclick="deleteContent('{{ $group['competition'] ? $group['competition']->id : '' }}', '{{ $group['player'] ? $group['player']->id : '' }}')" 
+                                    class="text-red-600 hover:text-red-900 text-sm font-medium">削除</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- グループ内のコンテンツ -->
+                <div class="px-6 py-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        @foreach($group['items'] as $item)
+                            <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                                <div class="flex justify-between items-start mb-2">
+                                    <h5 class="text-sm font-medium text-gray-900">{{ $item->field->name }}</h5>
+                                    <span class="text-xs text-gray-500">{{ $item->field->content_type_display_name }}</span>
+                                </div>
+                                <div class="text-sm text-gray-700 mb-2">
+                                    <div class="break-words" title="{{ $item->value }}">
                                         {{ $item->formatted_value }}
                                     </div>
-                                </td>
-                                <td class="px-6 py-4 text-sm text-gray-500">
+                                </div>
+                                <div class="text-xs text-gray-500">
                                     {{ $item->updated_at->format('Y/m/d H:i') }}
-                                </td>
-                                <td class="px-6 py-4 text-sm font-medium">
-                                    <div class="flex space-x-2">
-                                        <a href="{{ route('admin.collections.contents.create', array_merge(['collection' => $collection], request()->only(['competition_id', 'player_id']))) }}" 
-                                           class="text-green-600 hover:text-green-900">編集</a>
-                                        <button type="button" onclick="deleteContent('{{ $item->competition_id }}', '{{ $item->player_id }}')" 
-                                                class="text-red-600 hover:text-red-900">削除</button>
-                                    </div>
-                                </td>
-                            </tr>
+                                </div>
+                            </div>
                         @endforeach
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- ページネーション -->
-            <div class="px-6 py-4 border-t border-gray-200">
-                {{ $contents->withQueryString()->links() }}
-            </div>
+                        
+                        @if($group['items']->count() === 0)
+                            <div class="col-span-full text-center py-4">
+                                <p class="text-sm text-gray-500">このグループにはコンテンツがありません</p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            @endforeach
         @else
             <div class="text-center py-12">
                 <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

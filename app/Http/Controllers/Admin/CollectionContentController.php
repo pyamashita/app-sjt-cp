@@ -27,13 +27,66 @@ class CollectionContentController extends Controller
             $query->where('player_id', $request->player_id);
         }
 
-        $contents = $query->orderBy('created_at', 'desc')->paginate(20);
+        $contents = $query->orderBy('created_at', 'desc')->get();
+
+        // コンテンツをグループ化
+        $groupedContents = [];
+        
+        if ($collection->is_player_managed) {
+            // 選手でグループ化
+            $groupedContents = $contents->groupBy(function ($item) {
+                return $item->competition_id . '-' . $item->player_id;
+            })->map(function ($group) {
+                $first = $group->first();
+                return [
+                    'key' => $first->player ? $first->player->name : '未設定',
+                    'competition' => $first->competition,
+                    'player' => $first->player,
+                    'items' => $group,
+                    'updated_at' => $group->max('updated_at')
+                ];
+            })->sortByDesc('updated_at')->values();
+        } else {
+            // 表示順1のフィールドでグループ化
+            $firstField = $collection->fields()->where('sort_order', 1)->first();
+            
+            if ($firstField) {
+                // まず全コンテキストを取得
+                $contexts = $contents->map(function ($item) {
+                    return $item->competition_id . '-' . $item->player_id;
+                })->unique();
+                
+                foreach ($contexts as $context) {
+                    list($compId, $playerId) = explode('-', $context);
+                    $compId = $compId ?: null;
+                    $playerId = $playerId ?: null;
+                    
+                    $contextContents = $contents->filter(function ($item) use ($compId, $playerId) {
+                        return $item->competition_id == $compId && $item->player_id == $playerId;
+                    });
+                    
+                    $firstFieldContent = $contextContents->where('field_id', $firstField->id)->first();
+                    $keyValue = $firstFieldContent ? $firstFieldContent->formatted_value : '未設定';
+                    
+                    $groupedContents[] = [
+                        'key' => $keyValue,
+                        'competition' => $contextContents->first()->competition,
+                        'player' => null,
+                        'items' => $contextContents,
+                        'updated_at' => $contextContents->max('updated_at')
+                    ];
+                }
+                
+                // 更新日時で並び替え
+                $groupedContents = collect($groupedContents)->sortByDesc('updated_at')->values();
+            }
+        }
 
         // フィルタ用データ
         $competitions = Competition::orderBy('name')->get();
         $players = Player::orderBy('name')->get();
 
-        return view('admin.collections.contents.index', compact('collection', 'contents', 'competitions', 'players'));
+        return view('admin.collections.contents.index', compact('collection', 'groupedContents', 'competitions', 'players'));
     }
 
     public function create(Collection $collection, Request $request)

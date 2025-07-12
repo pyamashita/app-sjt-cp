@@ -311,13 +311,14 @@
             <div class="flex-1 overflow-y-auto p-4">
                 <div id="resourceList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     @foreach($resources as $resource)
-                        <div class="resource-item border border-gray-200 rounded-lg p-3 hover:bg-gray-50 cursor-pointer transition-colors"
+                        <div class="resource-item border border-gray-200 rounded-lg p-3 transition-colors {{ $resource->is_public ? 'hover:bg-gray-50 cursor-pointer' : 'bg-gray-100 cursor-not-allowed opacity-60' }}"
                              data-resource-id="{{ $resource->id }}"
                              data-resource-name="{{ $resource->name }}"
                              data-resource-type="{{ $resource->mime_type }}"
                              data-resource-ext="{{ pathinfo($resource->original_name, PATHINFO_EXTENSION) }}"
                              data-resource-date="{{ $resource->created_at->format('Y-m-d') }}"
-                             onclick="selectResource({{ $resource->id }}, '{{ $resource->name }}')">
+                             data-resource-public="{{ $resource->is_public ? 'true' : 'false' }}"
+                             onclick="{{ $resource->is_public ? "selectResource({$resource->id}, '{$resource->name}')" : "showNotPublicAlert()" }}">
                             <div class="flex items-start space-x-3">
                                 <div class="flex-shrink-0">
                                     @php
@@ -335,9 +336,16 @@
                                     </svg>
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <p class="text-sm font-medium text-gray-900 truncate">{{ $resource->name }}</p>
-                                    <p class="text-xs text-gray-500">{{ $resource->original_name }}</p>
-                                    <div class="flex items-center mt-1 text-xs text-gray-400">
+                                    <div class="flex items-center gap-2">
+                                        <p class="text-sm font-medium {{ $resource->is_public ? 'text-gray-900' : 'text-gray-500' }} truncate">{{ $resource->name }}</p>
+                                        @if(!$resource->is_public)
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">
+                                                非公開
+                                            </span>
+                                        @endif
+                                    </div>
+                                    <p class="text-xs {{ $resource->is_public ? 'text-gray-500' : 'text-gray-400' }}">{{ $resource->original_name }}</p>
+                                    <div class="flex items-center mt-1 text-xs {{ $resource->is_public ? 'text-gray-400' : 'text-gray-300' }}">
                                         <span>{{ $resource->formatted_size }}</span>
                                         <span class="mx-1">•</span>
                                         <span>{{ $resource->created_at->format('Y/m/d') }}</span>
@@ -705,6 +713,11 @@ function deleteItem(itemId) {
             location.reload();
         }
     });
+}
+
+// 非公開リソース選択時のアラート
+function showNotPublicAlert() {
+    alert('このリソースは公開されていないため、ガイドページで使用できません。\nリソース管理で公開設定を変更してください。');
 }
 
 // テキスト文字数カウント

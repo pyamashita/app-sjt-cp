@@ -106,6 +106,48 @@
                 @enderror
             </div>
 
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- カテゴリ -->
+                <div class="form-group">
+                    <label for="category" class="block text-sm font-medium text-gray-700 mb-2">
+                        カテゴリ <span class="text-red-500">*</span>
+                    </label>
+                    <select id="category" 
+                            name="category" 
+                            class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('category') border-red-500 @enderror"
+                            required>
+                        <option value="">カテゴリを選択してください</option>
+                        @foreach($categories as $key => $name)
+                            <option value="{{ $key }}" {{ old('category', $permission->category) === $key ? 'selected' : '' }}>
+                                {{ $name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <p class="help-text">権限管理画面でのグループ分け</p>
+                    @error('category')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- 表示順序 -->
+                <div class="form-group">
+                    <label for="sort_order" class="block text-sm font-medium text-gray-700 mb-2">
+                        表示順序
+                    </label>
+                    <input type="number" 
+                           id="sort_order" 
+                           name="sort_order" 
+                           value="{{ old('sort_order', $permission->sort_order) }}"
+                           min="0"
+                           class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('sort_order') border-red-500 @enderror"
+                           placeholder="0">
+                    <p class="help-text">カテゴリ内での表示順序（小さい数字ほど上に表示）</p>
+                    @error('sort_order')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+
             <!-- 機能説明 -->
             <div class="form-group">
                 <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
@@ -155,43 +197,18 @@
             </div>
 
             <!-- ボタン -->
-            <div class="flex items-center justify-between pt-6 border-t border-gray-200">
-                <div>
-                    @if($permission->roles()->exists())
-                        <p class="text-sm text-amber-600 flex items-center">
-                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-                            </svg>
-                            この権限は {{ $permission->roles->count() }} 個のロールで使用中です
-                        </p>
-                    @else
-                        <form action="{{ route('admin.permissions.destroy', $permission) }}" method="POST" class="inline" onsubmit="return confirm('この権限を削除してもよろしいですか？')">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" 
-                                    class="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                </svg>
-                                削除
-                            </button>
-                        </form>
-                    @endif
-                </div>
-                
-                <div class="flex space-x-3">
-                    <a href="{{ route('admin.permissions.index') }}" 
-                       class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all duration-200">
-                        キャンセル
-                    </a>
-                    <button type="submit" 
-                            class="inline-flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                        権限を更新
-                    </button>
-                </div>
+            <div class="flex items-center justify-end space-x-3 pt-6 border-t border-gray-200">
+                <a href="{{ route('admin.permissions.index') }}" 
+                   class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all duration-200">
+                    キャンセル
+                </a>
+                <button type="submit" 
+                        class="inline-flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    権限を更新
+                </button>
             </div>
         </form>
     </div>
@@ -220,6 +237,62 @@
         </div>
     @endif
 
+    <!-- 削除セクション -->
+    <div class="bg-red-50 border border-red-200 rounded-xl p-6">
+        <div class="flex items-start">
+            <div class="flex-shrink-0">
+                <svg class="h-6 w-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                </svg>
+            </div>
+            <div class="ml-4 flex-1">
+                <h3 class="text-lg font-medium text-red-800">危険な操作</h3>
+                <div class="mt-2 text-sm text-red-700">
+                    <p class="mb-4">この権限設定を完全に削除します。この操作は取り消せません。</p>
+                    
+                    @if($permission->roles()->exists())
+                        <div class="bg-red-100 border border-red-300 rounded p-3 mb-4">
+                            <p class="text-sm text-red-800 font-medium">
+                                <svg class="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                </svg>
+                                削除できません
+                            </p>
+                            <p class="text-sm text-red-700 mt-1">
+                                この権限は現在 {{ $permission->roles->count() }} 個のロール（{{ $permission->roles->pluck('display_name')->join('、') }}）で使用されています。<br>
+                                削除するには、まず全てのロールからこの権限を削除してください。
+                            </p>
+                        </div>
+                    @else
+                        <div class="bg-yellow-100 border border-yellow-300 rounded p-3 mb-4">
+                            <p class="text-sm text-yellow-800">
+                                <strong>削除の影響:</strong>
+                            </p>
+                            <ul class="text-sm text-yellow-700 mt-1 list-disc list-inside">
+                                <li>権限設定が永久に失われます</li>
+                                <li>関連するアクセス制御が無効になります</li>
+                                <li>この操作は取り消せません</li>
+                            </ul>
+                        </div>
+                        
+                        <form action="{{ route('admin.permissions.destroy', $permission) }}" method="POST" class="inline" id="delete-form">
+                            @csrf
+                            @method('DELETE')
+                            <button type="button" 
+                                    onclick="confirmDelete()"
+                                    class="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                                この権限設定を削除する
+                            </button>
+                        </form>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- ヒント -->
     <div class="bg-blue-50 border-l-4 border-blue-400 p-6 rounded-r-lg">
         <div class="flex">
@@ -235,11 +308,23 @@
                         <li>URLパターンを変更すると、アクセス制御の範囲が変わります</li>
                         <li>権限名を変更する場合は、既存のロール設定に影響がないか確認してください</li>
                         <li>権限を無効にすると、その権限が割り当てられたユーザーもアクセスできなくなります</li>
-                        <li>使用中の権限は削除できません</li>
+                        <li>カテゴリを変更すると、権限管理画面での表示グループが変わります</li>
                     </ul>
                 </div>
             </div>
         </div>
     </div>
+
+    @push('scripts')
+    <script>
+    function confirmDelete() {
+        if (confirm('本当にこの権限設定を削除しますか？\n\n権限名: {{ $permission->display_name }}\nURL: {{ $permission->url }}\n\nこの操作は取り消せません。')) {
+            if (confirm('最終確認：権限設定「{{ $permission->display_name }}」を完全に削除しますか？')) {
+                document.getElementById('delete-form').submit();
+            }
+        }
+    }
+    </script>
+    @endpush
 </div>
 @endsection

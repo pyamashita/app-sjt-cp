@@ -59,8 +59,8 @@
                                 機能
                             </th>
                             @foreach($roles as $role)
-                                <th class="border border-gray-300 px-2 py-3 text-center font-medium text-gray-900 min-w-[120px]">
-                                    <div class="flex flex-col items-center">
+                                <th class="border border-gray-300 px-2 py-4 text-center font-medium text-gray-900 min-w-[140px] h-24">
+                                    <div class="flex flex-col items-center justify-center h-full">
                                         <span class="font-semibold">{{ $role->display_name }}</span>
                                         <span class="text-xs text-gray-500 mt-1">{{ $role->name }}</span>
                                         <button type="button" 
@@ -79,30 +79,14 @@
                     </thead>
                     <tbody>
                         @php
-                            $permissionGroups = [
-                                'admin' => $permissions->filter(function($p) { return str_starts_with($p->url, '/sjt-cp-admin'); })->sortBy('url'),
-                                'dashboard' => $permissions->filter(function($p) { return str_starts_with($p->url, '/dashboard'); })->sortBy('url'),
-                                'auth' => $permissions->filter(function($p) { return in_array($p->url, ['/login', '/logout']); })->sortBy('url'),
-                            ];
+                            $permissionGroups = $permissions->groupBy('category');
                         @endphp
 
                         @foreach($permissionGroups as $category => $categoryPermissions)
                             @if($categoryPermissions->count() > 0)
                                 <tr class="bg-blue-50">
                                     <td colspan="{{ count($roles) + 1 }}" class="border border-gray-300 px-4 py-2 font-semibold text-blue-900">
-                                        @switch($category)
-                                            @case('admin')
-                                                管理画面
-                                                @break
-                                            @case('dashboard')
-                                                ダッシュボード
-                                                @break
-                                            @case('auth')
-                                                認証
-                                                @break
-                                            @default
-                                                その他
-                                        @endswitch
+                                        {{ $categoryPermissions->first()->category_display_name ?? $category }}
                                     </td>
                                 </tr>
 

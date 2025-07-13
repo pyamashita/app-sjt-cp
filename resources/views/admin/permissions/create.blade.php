@@ -103,6 +103,48 @@
                 @enderror
             </div>
 
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- カテゴリ -->
+                <div class="form-group">
+                    <label for="category" class="block text-sm font-medium text-gray-700 mb-2">
+                        カテゴリ <span class="text-red-500">*</span>
+                    </label>
+                    <select id="category" 
+                            name="category" 
+                            class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('category') border-red-500 @enderror"
+                            required>
+                        <option value="">カテゴリを選択してください</option>
+                        @foreach($categories as $key => $name)
+                            <option value="{{ $key }}" {{ old('category') === $key ? 'selected' : '' }}>
+                                {{ $name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <p class="help-text">権限管理画面でのグループ分け</p>
+                    @error('category')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- 表示順序 -->
+                <div class="form-group">
+                    <label for="sort_order" class="block text-sm font-medium text-gray-700 mb-2">
+                        表示順序
+                    </label>
+                    <input type="number" 
+                           id="sort_order" 
+                           name="sort_order" 
+                           value="{{ old('sort_order', 0) }}"
+                           min="0"
+                           class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('sort_order') border-red-500 @enderror"
+                           placeholder="0">
+                    <p class="help-text">カテゴリ内での表示順序（小さい数字ほど上に表示）</p>
+                    @error('sort_order')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+
             <!-- 機能説明 -->
             <div class="form-group">
                 <label for="description" class="block text-sm font-medium text-gray-700 mb-2">

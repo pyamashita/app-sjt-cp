@@ -11,6 +11,8 @@ class Permission extends Model
         'name',
         'display_name',
         'url',
+        'category',
+        'sort_order',
         'description',
         'remarks',
         'is_active',
@@ -45,11 +47,35 @@ class Permission extends Model
     }
 
     /**
-     * URL順で並び替え
+     * カテゴリと順序で並び替え
      */
     public function scopeOrdered($query)
     {
-        return $query->orderBy('url')->orderBy('name');
+        return $query->orderBy('category')->orderBy('sort_order')->orderBy('name');
+    }
+
+    /**
+     * 利用可能なカテゴリを取得
+     */
+    public static function getCategories(): array
+    {
+        return [
+            'admin' => '管理画面',
+            'dashboard' => 'ダッシュボード',
+            'auth' => '認証',
+            'api' => 'API',
+            'guide' => 'ガイド',
+            'other' => 'その他'
+        ];
+    }
+
+    /**
+     * カテゴリの表示名を取得
+     */
+    public function getCategoryDisplayNameAttribute(): string
+    {
+        $categories = static::getCategories();
+        return $categories[$this->category] ?? $this->category;
     }
 
     /**

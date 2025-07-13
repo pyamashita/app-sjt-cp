@@ -97,7 +97,8 @@ class PermissionController extends Controller
      */
     public function create(): View
     {
-        return view('admin.permissions.create');
+        $categories = Permission::getCategories();
+        return view('admin.permissions.create', compact('categories'));
     }
 
     /**
@@ -109,6 +110,8 @@ class PermissionController extends Controller
             'name' => 'required|string|max:255|unique:permissions,name',
             'display_name' => 'required|string|max:255',
             'url' => 'required|string|max:255',
+            'category' => 'required|string|in:' . implode(',', array_keys(Permission::getCategories())),
+            'sort_order' => 'nullable|integer|min:0',
             'description' => 'nullable|string',
             'remarks' => 'nullable|string',
             'is_active' => 'boolean'
@@ -118,6 +121,8 @@ class PermissionController extends Controller
             'name' => $request->name,
             'display_name' => $request->display_name,
             'url' => $request->url,
+            'category' => $request->category,
+            'sort_order' => $request->input('sort_order', 0),
             'description' => $request->description,
             'remarks' => $request->remarks,
             'is_active' => $request->boolean('is_active', true)
@@ -133,7 +138,8 @@ class PermissionController extends Controller
      */
     public function edit(Permission $permission): View
     {
-        return view('admin.permissions.edit', compact('permission'));
+        $categories = Permission::getCategories();
+        return view('admin.permissions.edit', compact('permission', 'categories'));
     }
 
     /**
@@ -145,6 +151,8 @@ class PermissionController extends Controller
             'name' => 'required|string|max:255|unique:permissions,name,' . $permission->id,
             'display_name' => 'required|string|max:255',
             'url' => 'required|string|max:255',
+            'category' => 'required|string|in:' . implode(',', array_keys(Permission::getCategories())),
+            'sort_order' => 'nullable|integer|min:0',
             'description' => 'nullable|string',
             'remarks' => 'nullable|string',
             'is_active' => 'boolean'
@@ -154,6 +162,8 @@ class PermissionController extends Controller
             'name' => $request->name,
             'display_name' => $request->display_name,
             'url' => $request->url,
+            'category' => $request->category,
+            'sort_order' => $request->input('sort_order', 0),
             'description' => $request->description,
             'remarks' => $request->remarks,
             'is_active' => $request->boolean('is_active', true)
@@ -173,14 +183,15 @@ class PermissionController extends Controller
         if ($permission->roles()->exists()) {
             return redirect()
                 ->route('admin.permissions.index')
-                ->with('error', 'この権限は使用中のため削除できません。');
+                ->with('error', 'この権限は使用中のため削除できません。先にロールから権限を削除してください。');
         }
 
+        $permissionName = $permission->display_name;
         $permission->delete();
 
         return redirect()
             ->route('admin.permissions.index')
-            ->with('success', '権限を削除しました。');
+            ->with('success', "権限「{$permissionName}」を削除しました。");
     }
 
     /**

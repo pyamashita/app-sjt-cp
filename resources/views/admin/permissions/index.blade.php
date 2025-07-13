@@ -27,6 +27,13 @@
                 <p class="text-gray-600 mt-1">各ロールに対して機能ごとのアクセス権限を設定できます</p>
             </div>
             <div class="flex space-x-3">
+                <a href="{{ route('admin.permissions.create') }}" 
+                   class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    新規権限作成
+                </a>
                 <button type="button" onclick="setDefaults()" 
                         class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -93,15 +100,26 @@
                                 @foreach($categoryPermissions as $permission)
                                     <tr class="hover:bg-gray-50">
                                         <td class="border border-gray-300 px-4 py-3">
-                                            <div>
-                                                <div class="font-medium text-gray-900">{{ $permission->display_name }}</div>
-                                                <div class="text-sm text-blue-600 mt-1 font-mono">{{ $permission->url }}</div>
-                                                @if($permission->description)
-                                                    <div class="text-sm text-gray-600 mt-1">{{ $permission->description }}</div>
-                                                @endif
-                                                @if($permission->remarks)
-                                                    <div class="text-xs text-gray-500 mt-1">{{ $permission->remarks }}</div>
-                                                @endif
+                                            <div class="flex items-start justify-between">
+                                                <div class="flex-1">
+                                                    <div class="font-medium text-gray-900">{{ $permission->display_name }}</div>
+                                                    <div class="text-sm text-blue-600 mt-1 font-mono">{{ $permission->url }}</div>
+                                                    @if($permission->description)
+                                                        <div class="text-sm text-gray-600 mt-1">{{ $permission->description }}</div>
+                                                    @endif
+                                                    @if($permission->remarks)
+                                                        <div class="text-xs text-gray-500 mt-1">{{ $permission->remarks }}</div>
+                                                    @endif
+                                                </div>
+                                                <div class="flex space-x-1 ml-2">
+                                                    <a href="{{ route('admin.permissions.edit', $permission) }}" 
+                                                       class="inline-flex items-center p-1 text-gray-400 hover:text-blue-600 transition-colors duration-200"
+                                                       title="編集">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                        </svg>
+                                                    </a>
+                                                </div>
                                             </div>
                                         </td>
                                         @foreach($roles as $role)

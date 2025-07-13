@@ -183,6 +183,11 @@ Route::middleware(['auth', 'url.permission'])->prefix('sjt-cp-admin')->name('adm
     
     // 権限管理
     Route::get('system/permissions', [App\Http\Controllers\Admin\PermissionController::class, 'index'])->name('permissions.index');
+    Route::get('system/permissions/create', [App\Http\Controllers\Admin\PermissionController::class, 'create'])->name('permissions.create');
+    Route::post('system/permissions', [App\Http\Controllers\Admin\PermissionController::class, 'store'])->name('permissions.store');
+    Route::get('system/permissions/{permission}/edit', [App\Http\Controllers\Admin\PermissionController::class, 'edit'])->name('permissions.edit');
+    Route::put('system/permissions/{permission}', [App\Http\Controllers\Admin\PermissionController::class, 'updatePermission'])->name('permissions.update-permission');
+    Route::delete('system/permissions/{permission}', [App\Http\Controllers\Admin\PermissionController::class, 'destroy'])->name('permissions.destroy');
     Route::put('system/permissions', [App\Http\Controllers\Admin\PermissionController::class, 'update'])->name('permissions.update');
     Route::post('system/permissions/set-defaults', [App\Http\Controllers\Admin\PermissionController::class, 'setDefaults'])->name('permissions.set-defaults');
     Route::post('system/permissions/reset-role/{role}', [App\Http\Controllers\Admin\PermissionController::class, 'resetRole'])->name('permissions.reset-role');

@@ -8,6 +8,7 @@ use App\Models\Permission;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use Illuminate\Http\JsonResponse;
 
 class PermissionController extends Controller
 {
@@ -92,9 +93,100 @@ class PermissionController extends Controller
     }
 
     /**
+     * 権限の新規作成フォーム
+     */
+    public function create(): View
+    {
+        return view('admin.permissions.create');
+    }
+
+    /**
+     * 権限を作成
+     */
+    public function store(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'name' => 'required|string|max:255|unique:permissions,name',
+            'display_name' => 'required|string|max:255',
+            'url' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'remarks' => 'nullable|string',
+            'is_active' => 'boolean'
+        ]);
+
+        Permission::create([
+            'name' => $request->name,
+            'display_name' => $request->display_name,
+            'url' => $request->url,
+            'description' => $request->description,
+            'remarks' => $request->remarks,
+            'is_active' => $request->boolean('is_active', true)
+        ]);
+
+        return redirect()
+            ->route('admin.permissions.index')
+            ->with('success', '権限を作成しました。');
+    }
+
+    /**
+     * 権限の編集フォーム
+     */
+    public function edit(Permission $permission): View
+    {
+        return view('admin.permissions.edit', compact('permission'));
+    }
+
+    /**
+     * 権限を更新
+     */
+    public function updatePermission(Request $request, Permission $permission): RedirectResponse
+    {
+        $request->validate([
+            'name' => 'required|string|max:255|unique:permissions,name,' . $permission->id,
+            'display_name' => 'required|string|max:255',
+            'url' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'remarks' => 'nullable|string',
+            'is_active' => 'boolean'
+        ]);
+
+        $permission->update([
+            'name' => $request->name,
+            'display_name' => $request->display_name,
+            'url' => $request->url,
+            'description' => $request->description,
+            'remarks' => $request->remarks,
+            'is_active' => $request->boolean('is_active', true)
+        ]);
+
+        return redirect()
+            ->route('admin.permissions.index')
+            ->with('success', '権限を更新しました。');
+    }
+
+    /**
+     * 権限を削除
+     */
+    public function destroy(Permission $permission): RedirectResponse
+    {
+        // 権限が使用されているかチェック
+        if ($permission->roles()->exists()) {
+            return redirect()
+                ->route('admin.permissions.index')
+                ->with('error', 'この権限は使用中のため削除できません。');
+        }
+
+        $permission->delete();
+
+        return redirect()
+            ->route('admin.permissions.index')
+            ->with('success', '権限を削除しました。');
+    }
+
+    /**
      * デフォルト権限を設定
      */
-    public function setDefaults(): \Illuminate\Http\JsonResponse
+    public function setDefaults(): JsonResponse
     {
         $adminRole = Role::findByName('admin');
         $committeeRole = Role::findByName('committee');
@@ -106,31 +198,28 @@ class PermissionController extends Controller
             $adminRole->syncPermissions($allPermissions);
         }
 
+        // 競技委員：ダッシュボードのみ、ガイド管理は可能
         if ($committeeRole) {
-            $committeePermissions = Permission::active()
-                ->whereIn('name', [
-                    'admin_access',
-                    'competition_management',
-                    'player_management',
-                    'device_management',
-                    'resource_management',
-                    'guide_management',
-                    'message_management'
-                ])
-                ->pluck('id')
-                ->toArray();
+            $committeePermissions = Permission::whereIn('name', [
+                'dashboard_access',
+                'dashboard_home',
+                'dashboard_welcome',
+                'guide_management',
+                'login_access',
+                'logout_access'
+            ])->pluck('id')->toArray();
             $committeeRole->syncPermissions($committeePermissions);
         }
 
+        // 補佐員：ダッシュボードのみ
         if ($assistantRole) {
-            $assistantPermissions = Permission::active()
-                ->whereIn('name', [
-                    'admin_access',
-                    'player_management',
-                    'device_management'
-                ])
-                ->pluck('id')
-                ->toArray();
+            $assistantPermissions = Permission::whereIn('name', [
+                'dashboard_access',
+                'dashboard_home',
+                'dashboard_welcome',
+                'login_access',
+                'logout_access'
+            ])->pluck('id')->toArray();
             $assistantRole->syncPermissions($assistantPermissions);
         }
 

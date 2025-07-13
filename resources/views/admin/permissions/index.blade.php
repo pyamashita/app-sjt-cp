@@ -64,42 +64,43 @@
                     <tbody>
                         @php
                             $permissionGroups = [
-                                '' => $permissions->where('category', '')->sortBy('sort_order'),
-                                'system' => $permissions->where('category', 'system')->sortBy('sort_order'),
-                                'management' => $permissions->where('category', 'management')->sortBy('sort_order'),
-                                'operation' => $permissions->where('category', 'operation')->sortBy('sort_order'),
+                                'admin' => $permissions->filter(function($p) { return str_starts_with($p->url, '/sjt-cp-admin'); })->sortBy('url'),
+                                'dashboard' => $permissions->filter(function($p) { return str_starts_with($p->url, '/dashboard'); })->sortBy('url'),
+                                'auth' => $permissions->filter(function($p) { return in_array($p->url, ['/login', '/logout']); })->sortBy('url'),
                             ];
                         @endphp
 
                         @foreach($permissionGroups as $category => $categoryPermissions)
                             @if($categoryPermissions->count() > 0)
-                                @if($category)
-                                    <tr class="bg-blue-50">
-                                        <td colspan="{{ count($roles) + 1 }}" class="border border-gray-300 px-4 py-2 font-semibold text-blue-900">
-                                            @switch($category)
-                                                @case('system')
-                                                    システム管理
-                                                    @break
-                                                @case('management')
-                                                    データ管理
-                                                    @break
-                                                @case('operation')
-                                                    運営操作
-                                                    @break
-                                                @default
-                                                    基本機能
-                                            @endswitch
-                                        </td>
-                                    </tr>
-                                @endif
+                                <tr class="bg-blue-50">
+                                    <td colspan="{{ count($roles) + 1 }}" class="border border-gray-300 px-4 py-2 font-semibold text-blue-900">
+                                        @switch($category)
+                                            @case('admin')
+                                                管理画面
+                                                @break
+                                            @case('dashboard')
+                                                ダッシュボード
+                                                @break
+                                            @case('auth')
+                                                認証
+                                                @break
+                                            @default
+                                                その他
+                                        @endswitch
+                                    </td>
+                                </tr>
 
                                 @foreach($categoryPermissions as $permission)
                                     <tr class="hover:bg-gray-50">
                                         <td class="border border-gray-300 px-4 py-3">
                                             <div>
                                                 <div class="font-medium text-gray-900">{{ $permission->display_name }}</div>
+                                                <div class="text-sm text-blue-600 mt-1 font-mono">{{ $permission->url }}</div>
                                                 @if($permission->description)
                                                     <div class="text-sm text-gray-600 mt-1">{{ $permission->description }}</div>
+                                                @endif
+                                                @if($permission->remarks)
+                                                    <div class="text-xs text-gray-500 mt-1">{{ $permission->remarks }}</div>
                                                 @endif
                                             </div>
                                         </td>
@@ -175,8 +176,9 @@
             <div>
                 <h3 class="font-medium text-blue-800 mb-2">注意事項</h3>
                 <ul class="space-y-1 text-sm text-blue-700">
-                    <li>• 管理画面ログインが無効な場合、フロント画面にリダイレクトされます</li>
+                    <li>• URLベースの権限システムを使用しています</li>
                     <li>• 権限変更は即座に反映されます</li>
+                    <li>• ワイルドカード(*) により配下のページも含まれます</li>
                     <li>• システム管理権限は慎重に設定してください</li>
                 </ul>
             </div>

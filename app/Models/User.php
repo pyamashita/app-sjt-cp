@@ -152,4 +152,15 @@ class User extends Authenticatable
     {
         return $this->hasPermission('admin_access');
     }
+
+    /**
+     * 指定されたURLにアクセスできるかチェック
+     *
+     * @param string $url
+     * @return bool
+     */
+    public function canAccessUrl(string $url): bool
+    {
+        return $this->role && $this->role->hasUrlPermission($url);
+    }
 }

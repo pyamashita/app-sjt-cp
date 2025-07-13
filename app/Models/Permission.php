@@ -10,9 +10,9 @@ class Permission extends Model
     protected $fillable = [
         'name',
         'display_name',
+        'url',
         'description',
-        'category',
-        'sort_order',
+        'remarks',
         'is_active',
     ];
 
@@ -45,22 +45,58 @@ class Permission extends Model
     }
 
     /**
-     * ソート順で並び替え
+     * URL順で並び替え
      */
     public function scopeOrdered($query)
     {
-        return $query->orderBy('sort_order')->orderBy('name');
+        return $query->orderBy('url')->orderBy('name');
     }
 
     /**
-     * カテゴリ別にグループ化して取得
+     * URLパターンによる検索
      */
-    public static function getByCategory(): array
+    public static function findByUrl(string $url): ?Permission
     {
-        return static::active()
-            ->ordered()
-            ->get()
-            ->groupBy('category')
-            ->toArray();
+        return static::where('url', $url)->where('is_active', true)->first();
+    }
+
+    /**
+     * URLパターンマッチング（ワイルドカード対応）
+     */
+    public static function findByUrlPattern(string $currentUrl): ?Permission
+    {
+        $permissions = static::active()->get();
+        
+        foreach ($permissions as $permission) {
+            if (static::urlMatches($permission->url, $currentUrl)) {
+                return $permission;
+            }
+        }
+        
+        return null;
+    }
+
+    /**
+     * URLパターンマッチング
+     */
+    private static function urlMatches(string $pattern, string $url): bool
+    {
+        // 完全一致
+        if ($pattern === $url) {
+            return true;
+        }
+        
+        // ワイルドカード対応（* を使用）
+        if (str_contains($pattern, '*')) {
+            $pattern = str_replace('*', '.*', preg_quote($pattern, '/'));
+            return preg_match('/^' . $pattern . '$/', $url);
+        }
+        
+        // プレフィックスマッチ（パターンがスラッシュで終わる場合）
+        if (str_ends_with($pattern, '/') && str_starts_with($url, $pattern)) {
+            return true;
+        }
+        
+        return false;
     }
 }

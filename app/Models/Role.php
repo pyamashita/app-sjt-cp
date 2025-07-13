@@ -44,12 +44,30 @@ class Role extends Model
     }
 
     /**
-     * 権限を持っているかチェック
+     * 権限を持っているかチェック（名前ベース）
      */
     public function hasPermission(string $permissionName): bool
     {
         return $this->permissions()
             ->where('name', $permissionName)
+            ->where('is_active', true)
+            ->exists();
+    }
+
+    /**
+     * URLに対する権限を持っているかチェック
+     */
+    public function hasUrlPermission(string $url): bool
+    {
+        $permission = Permission::findByUrlPattern($url);
+        
+        if (!$permission) {
+            // 権限設定がないURLは全てアクセス可能
+            return true;
+        }
+        
+        return $this->permissions()
+            ->where('id', $permission->id)
             ->where('is_active', true)
             ->exists();
     }

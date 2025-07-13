@@ -35,8 +35,8 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
 Route::post('/register', [RegisterController::class, 'register']);
 
-// 管理画面ルート（認証必須 + 管理画面アクセス権限必須）
-Route::middleware(['auth', 'permission:admin_access'])->prefix('sjt-cp-admin')->name('admin.')->group(function () {
+// 管理画面ルート（認証必須 + URL権限チェック）
+Route::middleware(['auth', 'url.permission'])->prefix('sjt-cp-admin')->name('admin.')->group(function () {
     // ダッシュボード
     Route::get('/', [HomeController::class, 'index'])->name('home');
     Route::get('/dashboard', [HomeController::class, 'index'])->name('dashboard');
@@ -181,18 +181,16 @@ Route::middleware(['auth', 'permission:admin_access'])->prefix('sjt-cp-admin')->
     Route::post('external-connections/{externalConnection}/test', [ExternalConnectionController::class, 'test'])->name('external-connections.test');
     Route::resource('external-connections', ExternalConnectionController::class)->only(['index', 'edit', 'update']);
     
-    // 権限管理（システム管理権限必須）
-    Route::middleware('permission:system_management')->group(function () {
-        Route::get('permissions', [App\Http\Controllers\Admin\PermissionController::class, 'index'])->name('permissions.index');
-        Route::put('permissions', [App\Http\Controllers\Admin\PermissionController::class, 'update'])->name('permissions.update');
-        Route::post('permissions/set-defaults', [App\Http\Controllers\Admin\PermissionController::class, 'setDefaults'])->name('permissions.set-defaults');
-        Route::post('permissions/reset-role/{role}', [App\Http\Controllers\Admin\PermissionController::class, 'resetRole'])->name('permissions.reset-role');
-        Route::get('api/permissions', [App\Http\Controllers\Admin\PermissionController::class, 'getPermissions'])->name('api.permissions');
-    });
+    // 権限管理
+    Route::get('system/permissions', [App\Http\Controllers\Admin\PermissionController::class, 'index'])->name('permissions.index');
+    Route::put('system/permissions', [App\Http\Controllers\Admin\PermissionController::class, 'update'])->name('permissions.update');
+    Route::post('system/permissions/set-defaults', [App\Http\Controllers\Admin\PermissionController::class, 'setDefaults'])->name('permissions.set-defaults');
+    Route::post('system/permissions/reset-role/{role}', [App\Http\Controllers\Admin\PermissionController::class, 'resetRole'])->name('permissions.reset-role');
+    Route::get('system/api/permissions', [App\Http\Controllers\Admin\PermissionController::class, 'getPermissions'])->name('api.permissions');
 });
 
-// フロントページルート（認証必須）
-Route::middleware('auth')->prefix('dashboard')->name('frontend.')->group(function () {
+// フロントページルート（認証必須 + URL権限チェック）
+Route::middleware(['auth', 'url.permission'])->prefix('dashboard')->name('frontend.')->group(function () {
     Route::get('/', [App\Http\Controllers\Frontend\HomeController::class, 'index'])->name('home');
     Route::get('/welcome', [App\Http\Controllers\Frontend\HomeController::class, 'welcome'])->name('welcome');
 });

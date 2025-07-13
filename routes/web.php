@@ -194,6 +194,20 @@ Route::middleware(['auth', 'url.permission'])->prefix('sjt-cp-admin')->name('adm
     Route::post('system/permissions/reset-role/{role}', [App\Http\Controllers\Admin\PermissionController::class, 'resetRole'])->name('permissions.reset-role');
     Route::get('system/api/permissions', [App\Http\Controllers\Admin\PermissionController::class, 'getPermissions'])->name('api.permissions');
     Route::get('system/api/permissions/presets', [App\Http\Controllers\Admin\PermissionController::class, 'getPresets'])->name('api.permissions.presets');
+    
+    // デバッグ用：URLパターンマッチングテスト
+    Route::get('system/debug/url-matching', function() {
+        if (!app()->environment('local')) {
+            abort(404);
+        }
+        
+        $pattern = request('pattern', '/sjt-cp-admin/guide-pages*');
+        $url = request('url', '/sjt-cp-admin/guide-pages/create');
+        
+        $result = \App\Models\Permission::testUrlMatching($pattern, $url);
+        
+        return response()->json($result);
+    })->name('debug.url-matching');
 });
 
 // フロントページルート（認証必須 + URL権限チェック）

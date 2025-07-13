@@ -25,6 +25,16 @@ class CheckUrlPermission
         // 現在のURL（ドメインを除く）を取得
         $currentUrl = $request->getPathInfo();
         
+        // デバッグ用ログ（ローカル環境のみ）
+        if (app()->environment('local')) {
+            \Log::info('URL Permission Check', [
+                'user_id' => $user->id,
+                'user_role' => $user->role->name ?? 'no_role',
+                'current_url' => $currentUrl,
+                'method' => $request->method()
+            ]);
+        }
+        
         // URL権限をチェック
         if (!$user->canAccessUrl($currentUrl)) {
             // 権限がない場合はエラーメッセージとともにリダイレクト

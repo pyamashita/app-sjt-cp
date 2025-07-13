@@ -103,6 +103,25 @@ class Permission extends Model
     }
 
     /**
+     * URLパターンマッチングのテスト用メソッド
+     */
+    public static function testUrlMatching(string $pattern, string $url): array
+    {
+        $result = static::urlMatches($pattern, $url);
+        
+        return [
+            'pattern' => $pattern,
+            'url' => $url,
+            'matches' => $result,
+            'debug' => [
+                'exact_match' => $pattern === $url,
+                'has_wildcard' => str_contains($pattern, '*'),
+                'prefix_match' => str_ends_with($pattern, '/') && str_starts_with($url, $pattern)
+            ]
+        ];
+    }
+
+    /**
      * URLパターンマッチング
      */
     private static function urlMatches(string $pattern, string $url): bool
@@ -114,8 +133,14 @@ class Permission extends Model
         
         // ワイルドカード対応（* を使用）
         if (str_contains($pattern, '*')) {
-            $pattern = str_replace('*', '.*', preg_quote($pattern, '/'));
-            return preg_match('/^' . $pattern . '$/', $url);
+            // ワイルドカードを一時的な文字列に置換
+            $escapedPattern = str_replace('*', '__WILDCARD__', $pattern);
+            // 正規表現用にエスケープ
+            $escapedPattern = preg_quote($escapedPattern, '/');
+            // ワイルドカードを正規表現の .* に戻す
+            $escapedPattern = str_replace('__WILDCARD__', '.*', $escapedPattern);
+            
+            return preg_match('/^' . $escapedPattern . '$/', $url) === 1;
         }
         
         // プレフィックスマッチ（パターンがスラッシュで終わる場合）

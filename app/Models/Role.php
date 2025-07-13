@@ -49,8 +49,8 @@ class Role extends Model
     public function hasPermission(string $permissionName): bool
     {
         return $this->permissions()
-            ->where('name', $permissionName)
-            ->where('is_active', true)
+            ->where('permissions.name', $permissionName)
+            ->where('permissions.is_active', true)
             ->exists();
     }
 
@@ -67,8 +67,8 @@ class Role extends Model
         }
         
         return $this->permissions()
-            ->where('id', $permission->id)
-            ->where('is_active', true)
+            ->where('permissions.id', $permission->id)
+            ->where('permissions.is_active', true)
             ->exists();
     }
 
@@ -78,8 +78,8 @@ class Role extends Model
     public function hasAnyPermission(array $permissions): bool
     {
         return $this->permissions()
-            ->whereIn('name', $permissions)
-            ->where('is_active', true)
+            ->whereIn('permissions.name', $permissions)
+            ->where('permissions.is_active', true)
             ->exists();
     }
 

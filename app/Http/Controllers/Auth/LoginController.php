@@ -53,7 +53,15 @@ class LoginController extends Controller
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             \Log::info('Login successful', ['user_id' => Auth::id()]);
             $request->session()->regenerate();
-            return redirect()->intended('/admin');
+            
+            $user = Auth::user();
+            
+            // 管理者の場合は管理画面へ、それ以外はダッシュボードへ
+            if ($user && $user->hasRole('admin')) {
+                return redirect()->intended(route('admin.home'));
+            }
+            
+            return redirect()->intended(route('frontend.home'));
         }
 
         \Log::warning('Login failed', [

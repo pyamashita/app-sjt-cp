@@ -192,7 +192,7 @@ Route::middleware(['auth', 'permission:admin_access'])->prefix('sjt-cp-admin')->
 });
 
 // フロントページルート（認証必須）
-Route::middleware('auth')->prefix('frontend')->name('frontend.')->group(function () {
+Route::middleware('auth')->prefix('dashboard')->name('frontend.')->group(function () {
     Route::get('/', [App\Http\Controllers\Frontend\HomeController::class, 'index'])->name('home');
     Route::get('/welcome', [App\Http\Controllers\Frontend\HomeController::class, 'welcome'])->name('welcome');
 });
@@ -208,5 +208,12 @@ Route::get('/admin', function () {
 
 // ルートアクセス時のリダイレクト（認証必須）
 Route::get('/', function () {
+    $user = auth()->user();
+    
+    // 管理者の場合は管理画面へ、それ以外はダッシュボードへ
+    if ($user && $user->hasRole('admin')) {
+        return redirect()->route('admin.home');
+    }
+    
     return redirect()->route('frontend.home');
 })->middleware('auth');

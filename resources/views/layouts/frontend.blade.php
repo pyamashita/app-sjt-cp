@@ -19,7 +19,7 @@
                         <img src="{{ asset('images/SJT_LOGO.svg') }}" alt="SJT Logo" class="h-10 w-10 mr-3 group-hover:scale-105 transition-transform">
                         <div>
                             <h1 class="text-xl font-bold text-gray-900 hidden sm:block">SJT-CP</h1>
-                            <p class="text-xs text-gray-500 hidden sm:block">Frontend Dashboard</p>
+                            <p class="text-xs text-gray-500 hidden sm:block">Dashboard</p>
                         </div>
                     </a>
                 </div>

@@ -192,40 +192,153 @@ class PermissionController extends Controller
         $committeeRole = Role::findByName('committee');
         $assistantRole = Role::findByName('assistant');
 
+        $assignedPermissions = [];
+
         // 管理者には全ての権限を付与
         if ($adminRole) {
-            $allPermissions = Permission::pluck('id')->toArray();
+            $allPermissions = Permission::active()->pluck('id')->toArray();
             $adminRole->syncPermissions($allPermissions);
+            $assignedPermissions['管理者'] = count($allPermissions);
         }
 
-        // 競技委員：ダッシュボードのみ、ガイド管理は可能
+        // 競技委員：ダッシュボード + ガイド管理 + 認証
         if ($committeeRole) {
-            $committeePermissions = Permission::whereIn('name', [
-                'dashboard_access',
-                'dashboard_home',
-                'dashboard_welcome',
-                'guide_management',
-                'login_access',
-                'logout_access'
-            ])->pluck('id')->toArray();
+            $committeePermissions = Permission::active()
+                ->where(function($query) {
+                    $query->where('url', 'like', '/dashboard%')
+                          ->orWhere('url', 'like', '/sjt-cp-admin/guides%')
+                          ->orWhereIn('name', ['login_access', 'logout_access']);
+                })
+                ->pluck('id')->toArray();
             $committeeRole->syncPermissions($committeePermissions);
+            $assignedPermissions['競技委員'] = count($committeePermissions);
         }
 
-        // 補佐員：ダッシュボードのみ
+        // 補佐員：ダッシュボードのみ + 認証
         if ($assistantRole) {
-            $assistantPermissions = Permission::whereIn('name', [
-                'dashboard_access',
-                'dashboard_home',
-                'dashboard_welcome',
-                'login_access',
-                'logout_access'
-            ])->pluck('id')->toArray();
+            $assistantPermissions = Permission::active()
+                ->where(function($query) {
+                    $query->where('url', 'like', '/dashboard%')
+                          ->orWhereIn('name', ['login_access', 'logout_access']);
+                })
+                ->pluck('id')->toArray();
             $assistantRole->syncPermissions($assistantPermissions);
+            $assignedPermissions['補佐員'] = count($assistantPermissions);
+        }
+
+        // 結果の詳細を作成
+        $details = [];
+        foreach ($assignedPermissions as $roleName => $count) {
+            $details[] = "{$roleName}: {$count}個の権限";
         }
 
         return response()->json([
             'success' => true,
-            'message' => 'デフォルト権限を設定しました。'
+            'message' => 'デフォルト権限を設定しました。',
+            'details' => $details
         ]);
+    }
+
+    /**
+     * 特定のロールのデフォルト権限を設定
+     */
+    public function setRoleDefaults(Request $request, Role $role): JsonResponse
+    {
+        $request->validate([
+            'preset' => 'required|in:admin,committee,assistant,custom',
+            'permissions' => 'array|exists:permissions,id'
+        ]);
+
+        $preset = $request->input('preset');
+        
+        switch ($preset) {
+            case 'admin':
+                // 管理者：全権限
+                $permissions = Permission::active()->pluck('id')->toArray();
+                break;
+                
+            case 'committee':
+                // 競技委員：ダッシュボード + ガイド管理
+                $permissions = Permission::active()
+                    ->where(function($query) {
+                        $query->where('url', 'like', '/dashboard%')
+                              ->orWhere('url', 'like', '/sjt-cp-admin/guides%')
+                              ->orWhereIn('name', ['login_access', 'logout_access']);
+                    })
+                    ->pluck('id')->toArray();
+                break;
+                
+            case 'assistant':
+                // 補佐員：ダッシュボードのみ
+                $permissions = Permission::active()
+                    ->where(function($query) {
+                        $query->where('url', 'like', '/dashboard%')
+                              ->orWhereIn('name', ['login_access', 'logout_access']);
+                    })
+                    ->pluck('id')->toArray();
+                break;
+                
+            case 'custom':
+                // カスタム：指定された権限
+                $permissions = $request->input('permissions', []);
+                break;
+                
+            default:
+                $permissions = [];
+        }
+
+        $role->syncPermissions($permissions);
+
+        return response()->json([
+            'success' => true,
+            'message' => "{$role->display_name}のデフォルト権限を設定しました（{$preset}プリセット、{count($permissions)}個の権限）。"
+        ]);
+    }
+
+    /**
+     * 権限のプリセット一覧を取得
+     */
+    public function getPresets(): JsonResponse
+    {
+        $presets = [
+            'admin' => [
+                'name' => '管理者',
+                'description' => '全ての機能にアクセス可能',
+                'permissions_count' => Permission::active()->count(),
+                'permissions' => Permission::active()->get(['id', 'display_name', 'url'])
+            ],
+            'committee' => [
+                'name' => '競技委員',
+                'description' => 'ダッシュボードとガイド管理にアクセス可能',
+                'permissions_count' => Permission::active()
+                    ->where(function($query) {
+                        $query->where('url', 'like', '/dashboard%')
+                              ->orWhere('url', 'like', '/sjt-cp-admin/guides%')
+                              ->orWhereIn('name', ['login_access', 'logout_access']);
+                    })->count(),
+                'permissions' => Permission::active()
+                    ->where(function($query) {
+                        $query->where('url', 'like', '/dashboard%')
+                              ->orWhere('url', 'like', '/sjt-cp-admin/guides%')
+                              ->orWhereIn('name', ['login_access', 'logout_access']);
+                    })->get(['id', 'display_name', 'url'])
+            ],
+            'assistant' => [
+                'name' => '補佐員',
+                'description' => 'ダッシュボードのみアクセス可能',
+                'permissions_count' => Permission::active()
+                    ->where(function($query) {
+                        $query->where('url', 'like', '/dashboard%')
+                              ->orWhereIn('name', ['login_access', 'logout_access']);
+                    })->count(),
+                'permissions' => Permission::active()
+                    ->where(function($query) {
+                        $query->where('url', 'like', '/dashboard%')
+                              ->orWhereIn('name', ['login_access', 'logout_access']);
+                    })->get(['id', 'display_name', 'url'])
+            ]
+        ];
+
+        return response()->json($presets);
     }
 }

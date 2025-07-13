@@ -190,8 +190,10 @@ Route::middleware(['auth', 'url.permission'])->prefix('sjt-cp-admin')->name('adm
     Route::delete('system/permissions/{permission}', [App\Http\Controllers\Admin\PermissionController::class, 'destroy'])->name('permissions.destroy');
     Route::put('system/permissions', [App\Http\Controllers\Admin\PermissionController::class, 'update'])->name('permissions.update');
     Route::post('system/permissions/set-defaults', [App\Http\Controllers\Admin\PermissionController::class, 'setDefaults'])->name('permissions.set-defaults');
+    Route::post('system/permissions/role/{role}/set-defaults', [App\Http\Controllers\Admin\PermissionController::class, 'setRoleDefaults'])->name('permissions.role-defaults');
     Route::post('system/permissions/reset-role/{role}', [App\Http\Controllers\Admin\PermissionController::class, 'resetRole'])->name('permissions.reset-role');
     Route::get('system/api/permissions', [App\Http\Controllers\Admin\PermissionController::class, 'getPermissions'])->name('api.permissions');
+    Route::get('system/api/permissions/presets', [App\Http\Controllers\Admin\PermissionController::class, 'getPresets'])->name('api.permissions.presets');
 });
 
 // フロントページルート（認証必須 + URL権限チェック）

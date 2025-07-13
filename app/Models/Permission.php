@@ -88,18 +88,50 @@ class Permission extends Model
 
     /**
      * URLパターンマッチング（ワイルドカード対応）
+     * 最も具体的な（最長の）URLパターンを優先
      */
     public static function findByUrlPattern(string $currentUrl): ?Permission
     {
         $permissions = static::active()->get();
+        $matchedPermissions = [];
         
+        // マッチする全ての権限を収集
         foreach ($permissions as $permission) {
             if (static::urlMatches($permission->url, $currentUrl)) {
-                return $permission;
+                $matchedPermissions[] = $permission;
             }
         }
         
-        return null;
+        if (empty($matchedPermissions)) {
+            return null;
+        }
+        
+        // 最も具体的な権限を選択（URLパターンの長さで判定）
+        usort($matchedPermissions, function ($a, $b) {
+            // 完全一致を最優先
+            if ($a->url === $b->url) {
+                return 0;
+            }
+            
+            // ワイルドカードなしの完全一致を優先
+            $aHasWildcard = str_contains($a->url, '*');
+            $bHasWildcard = str_contains($b->url, '*');
+            
+            if (!$aHasWildcard && $bHasWildcard) {
+                return -1;
+            }
+            if ($aHasWildcard && !$bHasWildcard) {
+                return 1;
+            }
+            
+            // 両方ともワイルドカードありの場合、より長い（具体的な）パターンを優先
+            $aLength = strlen(str_replace('*', '', $a->url));
+            $bLength = strlen(str_replace('*', '', $b->url));
+            
+            return $bLength <=> $aLength; // 降順（長い方が先）
+        });
+        
+        return $matchedPermissions[0];
     }
 
     /**

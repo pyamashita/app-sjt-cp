@@ -12,6 +12,16 @@
     color: #6b7280;
     margin-top: 0.25rem;
 }
+.suggestion-item.active {
+    background-color: #dbeafe !important;
+}
+.suggestion-item:hover {
+    background-color: #f0f9ff;
+}
+#url-autocomplete {
+    border: 1px solid #d1d5db;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
 </style>
 @endpush
 
@@ -82,15 +92,23 @@
                 <label for="url" class="block text-sm font-medium text-gray-700 mb-2">
                     URL <span class="text-red-500">*</span>
                 </label>
-                <input type="text" 
-                       id="url" 
-                       name="url" 
-                       value="{{ old('url') }}"
-                       class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('url') border-red-500 @enderror"
-                       placeholder="例: /sjt-cp-admin/new-feature*"
-                       required>
+                <div class="relative">
+                    <input type="text" 
+                           id="url" 
+                           name="url" 
+                           value="{{ old('url') }}"
+                           class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('url') border-red-500 @enderror"
+                           placeholder="例: /sjt-cp-admin/new-feature*"
+                           autocomplete="off"
+                           required>
+                    
+                    <!-- オートコンプリート結果表示エリア -->
+                    <div id="url-autocomplete" 
+                         class="absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 max-h-60 overflow-y-auto hidden">
+                    </div>
+                </div>
                 <div class="help-text">
-                    <p>アクセス制御対象のURLパターン</p>
+                    <p>アクセス制御対象のURLパターン（入力中に利用可能なルートが表示されます）</p>
                     <p class="mt-1"><strong>例:</strong></p>
                     <ul class="list-disc list-inside ml-4 space-y-1">
                         <li><code>/sjt-cp-admin/users*</code> - /sjt-cp-admin/users 配下の全ページ</li>
@@ -233,3 +251,248 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const urlInput = document.getElementById('url');
+    const autocompleteContainer = document.getElementById('url-autocomplete');
+    let routes = [];
+    let routePatterns = [];
+    let debounceTimer = null;
+
+    // ルート情報を取得
+    Promise.all([
+        fetch('{{ route("admin.api.routes") }}', {
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            },
+        }).then(response => response.json()),
+        fetch('{{ route("admin.api.route-patterns") }}', {
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            },
+        }).then(response => response.json())
+    ])
+    .then(([routesData, patternsData]) => {
+        routes = routesData;
+        routePatterns = patternsData;
+        console.log('Routes loaded:', routes.length);
+        console.log('Patterns loaded:', routePatterns.length);
+    })
+    .catch(error => {
+        console.error('Error loading routes:', error);
+    });
+
+    // 入力イベントの処理
+    urlInput.addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            const query = this.value.trim();
+            if (query.length < 1) {
+                hideAutocomplete();
+                return;
+            }
+            showSuggestions(query);
+        }, 300);
+    });
+
+    // フォーカス時に候補を表示
+    urlInput.addEventListener('focus', function() {
+        if (this.value.trim().length > 0) {
+            showSuggestions(this.value.trim());
+        }
+    });
+
+    // 外部クリックで非表示
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('#url') && !e.target.closest('#url-autocomplete')) {
+            hideAutocomplete();
+        }
+    });
+
+    // キーボードナビゲーション
+    urlInput.addEventListener('keydown', function(e) {
+        const suggestions = autocompleteContainer.querySelectorAll('.suggestion-item');
+        const activeSuggestion = autocompleteContainer.querySelector('.suggestion-item.active');
+        
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (activeSuggestion) {
+                activeSuggestion.classList.remove('active');
+                const next = activeSuggestion.nextElementSibling;
+                if (next) {
+                    next.classList.add('active');
+                } else {
+                    suggestions[0]?.classList.add('active');
+                }
+            } else {
+                suggestions[0]?.classList.add('active');
+            }
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (activeSuggestion) {
+                activeSuggestion.classList.remove('active');
+                const prev = activeSuggestion.previousElementSibling;
+                if (prev) {
+                    prev.classList.add('active');
+                } else {
+                    suggestions[suggestions.length - 1]?.classList.add('active');
+                }
+            } else {
+                suggestions[suggestions.length - 1]?.classList.add('active');
+            }
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (activeSuggestion) {
+                const url = activeSuggestion.querySelector('.suggestion-url').textContent;
+                urlInput.value = url;
+                hideAutocomplete();
+            }
+        } else if (e.key === 'Escape') {
+            hideAutocomplete();
+        }
+    });
+
+    function showSuggestions(query) {
+        const suggestions = getSuggestions(query);
+        
+        if (suggestions.length === 0) {
+            hideAutocomplete();
+            return;
+        }
+
+        let html = '';
+        
+        // 完全一致のルート
+        const exactMatches = suggestions.filter(s => s.type === 'exact');
+        if (exactMatches.length > 0) {
+            html += '<div class="px-3 py-2 bg-gray-50 text-xs font-semibold text-gray-600 border-b">完全一致</div>';
+            exactMatches.forEach(suggestion => {
+                html += createSuggestionHtml(suggestion);
+            });
+        }
+
+        // パターンマッチ
+        const patternMatches = suggestions.filter(s => s.type === 'pattern');
+        if (patternMatches.length > 0) {
+            html += '<div class="px-3 py-2 bg-gray-50 text-xs font-semibold text-gray-600 border-b">パターンマッチ</div>';
+            patternMatches.forEach(suggestion => {
+                html += createSuggestionHtml(suggestion);
+            });
+        }
+
+        // 部分一致のルート
+        const partialMatches = suggestions.filter(s => s.type === 'partial');
+        if (partialMatches.length > 0) {
+            html += '<div class="px-3 py-2 bg-gray-50 text-xs font-semibold text-gray-600 border-b">部分一致</div>';
+            partialMatches.forEach(suggestion => {
+                html += createSuggestionHtml(suggestion);
+            });
+        }
+
+        autocompleteContainer.innerHTML = html;
+        autocompleteContainer.classList.remove('hidden');
+
+        // クリックイベントを追加
+        autocompleteContainer.querySelectorAll('.suggestion-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const url = this.querySelector('.suggestion-url').textContent;
+                urlInput.value = url;
+                hideAutocomplete();
+            });
+        });
+    }
+
+    function getSuggestions(query) {
+        const suggestions = [];
+        const queryLower = query.toLowerCase();
+
+        // 完全一致
+        routes.forEach(route => {
+            if (route.uri.toLowerCase() === queryLower) {
+                suggestions.push({
+                    type: 'exact',
+                    url: route.uri,
+                    methods: route.methods,
+                    name: route.name,
+                    priority: 1
+                });
+            }
+        });
+
+        // パターン候補
+        if (query.length > 2) {
+            routePatterns.forEach(pattern => {
+                if (pattern.pattern && pattern.pattern.toLowerCase().includes(queryLower)) {
+                    suggestions.push({
+                        type: 'pattern',
+                        url: pattern.pattern,
+                        methods: pattern.methods,
+                        name: pattern.name,
+                        priority: 2
+                    });
+                }
+            });
+        }
+
+        // 部分一致
+        routes.forEach(route => {
+            if (route.uri.toLowerCase().includes(queryLower) && route.uri.toLowerCase() !== queryLower) {
+                suggestions.push({
+                    type: 'partial',
+                    url: route.uri,
+                    methods: route.methods,
+                    name: route.name,
+                    priority: 3
+                });
+            }
+        });
+
+        // 重複削除と優先順位でソート
+        const uniqueSuggestions = suggestions.filter((suggestion, index, self) => 
+            index === self.findIndex(s => s.url === suggestion.url)
+        );
+
+        return uniqueSuggestions
+            .sort((a, b) => a.priority - b.priority)
+            .slice(0, 15); // 最大15件
+    }
+
+    function createSuggestionHtml(suggestion) {
+        const methodBadges = suggestion.methods
+            .filter(method => method !== 'HEAD')
+            .map(method => {
+                const color = method === 'GET' ? 'bg-green-100 text-green-800' :
+                             method === 'POST' ? 'bg-blue-100 text-blue-800' :
+                             method === 'PUT' ? 'bg-yellow-100 text-yellow-800' :
+                             method === 'DELETE' ? 'bg-red-100 text-red-800' :
+                             'bg-gray-100 text-gray-800';
+                return `<span class="inline-block px-2 py-1 text-xs font-medium rounded ${color}">${method}</span>`;
+            })
+            .join(' ');
+
+        return `
+            <div class="suggestion-item px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1">
+                        <div class="suggestion-url font-mono text-sm text-blue-600">${suggestion.url}</div>
+                        ${suggestion.name ? `<div class="text-xs text-gray-500 mt-1">${suggestion.name}</div>` : ''}
+                    </div>
+                    <div class="flex space-x-1 ml-2">
+                        ${methodBadges}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function hideAutocomplete() {
+        autocompleteContainer.classList.add('hidden');
+        autocompleteContainer.querySelectorAll('.suggestion-item').forEach(item => {
+            item.classList.remove('active');
+        });
+    }
+});
+</script>
+@endpush

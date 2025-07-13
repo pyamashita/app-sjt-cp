@@ -194,6 +194,8 @@ Route::middleware(['auth', 'url.permission'])->prefix('sjt-cp-admin')->name('adm
     Route::post('system/permissions/reset-role/{role}', [App\Http\Controllers\Admin\PermissionController::class, 'resetRole'])->name('permissions.reset-role');
     Route::get('system/api/permissions', [App\Http\Controllers\Admin\PermissionController::class, 'getPermissions'])->name('api.permissions');
     Route::get('system/api/permissions/presets', [App\Http\Controllers\Admin\PermissionController::class, 'getPresets'])->name('api.permissions.presets');
+    Route::get('system/api/routes', [App\Http\Controllers\Admin\PermissionController::class, 'getRoutes'])->name('api.routes');
+    Route::get('system/api/route-patterns', [App\Http\Controllers\Admin\PermissionController::class, 'getRoutePatterns'])->name('api.route-patterns');
     
     // デバッグ用：URLパターンマッチングテスト
     Route::get('system/debug/url-matching', function() {

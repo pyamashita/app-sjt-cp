@@ -352,4 +352,72 @@ class PermissionController extends Controller
 
         return response()->json($presets);
     }
+
+    /**
+     * 利用可能なルート一覧を取得（URL入力補完用）
+     */
+    public function getRoutes(): JsonResponse
+    {
+        $routes = collect(\Route::getRoutes())->map(function ($route) {
+            return [
+                'uri' => '/' . $route->uri(),
+                'methods' => $route->methods(),
+                'name' => $route->getName(),
+                'action' => $route->getActionName(),
+            ];
+        })
+        ->filter(function ($route) {
+            // APIルートや不要なルートを除外
+            return !str_starts_with($route['uri'], '/api/') 
+                && !str_starts_with($route['uri'], '/_') 
+                && !str_contains($route['uri'], '{')  // パラメータ付きルートを除外
+                && !in_array($route['uri'], ['/up', '/login', '/logout', '/register']);
+        })
+        ->unique('uri')
+        ->sortBy('uri')
+        ->values();
+
+        return response()->json($routes);
+    }
+
+    /**
+     * ルートパターンの提案を取得
+     */
+    public function getRoutePatterns(): JsonResponse
+    {
+        $routes = collect(\Route::getRoutes())->map(function ($route) {
+            $uri = '/' . $route->uri();
+            return [
+                'original' => $uri,
+                'pattern' => $this->generatePatternFromRoute($uri),
+                'methods' => $route->methods(),
+                'name' => $route->getName(),
+            ];
+        })
+        ->filter(function ($route) {
+            return !str_starts_with($route['original'], '/api/') 
+                && !str_starts_with($route['original'], '/_');
+        })
+        ->unique('pattern')
+        ->sortBy('pattern')
+        ->values();
+
+        return response()->json($routes);
+    }
+
+    /**
+     * ルートURIからパターンを生成
+     */
+    private function generatePatternFromRoute(string $uri): string
+    {
+        // パラメータを含むルートからパターンを生成
+        $pattern = preg_replace('/\{[^}]+\}/', '*', $uri);
+        
+        // 末尾にワイルドカードを追加（サブルートをカバー）
+        if (!str_ends_with($pattern, '*') && !str_ends_with($pattern, '/')) {
+            $pattern .= '*';
+        }
+        
+        return $pattern;
+    }
 }

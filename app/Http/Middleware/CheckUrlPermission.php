@@ -51,14 +51,29 @@ class CheckUrlPermission
                 ], 403);
             }
             
-            // 管理画面の場合は管理画面トップにリダイレクト
+            // 管理画面の場合
             if (str_starts_with($currentUrl, '/sjt-cp-admin')) {
-                return redirect()->route('admin.home')
-                    ->with('error', 'このページにアクセスする権限がありません。');
+                // 既に管理画面のホームページ（/sjt-cp-admin/ または /sjt-cp-admin）の場合は403エラーを表示してループを防ぐ
+                if ($currentUrl === '/sjt-cp-admin' || $currentUrl === '/sjt-cp-admin/') {
+                    return response()->view('errors.403', [
+                        'message' => '管理画面にアクセスする権限がありません。'
+                    ], 403);
+                }
+                
+                // 他の管理画面ページの場合は、ユーザーがアクセス可能な管理画面ページがあるかチェック
+                if ($user->canAccessUrl('/sjt-cp-admin/') || $user->canAccessUrl('/sjt-cp-admin')) {
+                    return redirect()->route('admin.home')
+                        ->with('error', 'このページにアクセスする権限がありません。');
+                } else {
+                    // 管理画面全体にアクセス権限がない場合は403エラー
+                    return response()->view('errors.403', [
+                        'message' => '管理画面にアクセスする権限がありません。'
+                    ], 403);
+                }
             }
             
             // その他の場合はホームページにリダイレクト
-            return redirect()->route('home')
+            return redirect()->route('frontend.home')
                 ->with('error', 'このページにアクセスする権限がありません。');
         }
         

@@ -175,7 +175,7 @@
     <!-- 説明セクション -->
     <div class="bg-blue-50 rounded-xl p-6">
         <h2 class="text-lg font-semibold text-blue-900 mb-4">権限について</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div>
                 <h3 class="font-medium text-blue-800 mb-2">ロールの説明</h3>
                 <ul class="space-y-1 text-sm text-blue-700">
@@ -200,6 +200,15 @@
                     <li>• 権限変更は即座に反映されます</li>
                     <li>• ワイルドカード(*) により配下のページも含まれます</li>
                     <li>• システム管理権限は慎重に設定してください</li>
+                </ul>
+            </div>
+            <div>
+                <h3 class="font-medium text-blue-800 mb-2">ワイルドカード動作</h3>
+                <ul class="space-y-1 text-sm text-blue-700">
+                    <li>• <strong>親パターンをチェック</strong>: 配下の具体的な権限も自動でチェックされます</li>
+                    <li>• <strong>子権限のチェック解除</strong>: 関連する親パターンも自動で解除されます</li>
+                    <li>• <strong>視覚的フィードバック</strong>: 自動変更された権限は一時的にハイライト表示されます</li>
+                    <li>• 例: <code>/sjt-cp-admin*</code> をチェック → <code>/sjt-cp-admin/users</code> も自動チェック</li>
                 </ul>
             </div>
         </div>
@@ -408,24 +417,163 @@ function resetForm() {
     }
 }
 
-// チェックボックスのインタラクション改善
+// チェックボックスのインタラクション改善とワイルドカード動作
 document.addEventListener('DOMContentLoaded', function() {
     const checkboxes = document.querySelectorAll('.permission-checkbox');
+    
+    // 権限データを収集
+    const permissions = new Map();
+    checkboxes.forEach(checkbox => {
+        const row = checkbox.closest('tr');
+        const urlElement = row.querySelector('.text-blue-600.font-mono');
+        if (urlElement) {
+            const url = urlElement.textContent.trim();
+            const permissionId = checkbox.value;
+            const roleId = checkbox.name.match(/permissions\[(\d+)\]/)?.[1];
+            
+            if (roleId) {
+                if (!permissions.has(roleId)) {
+                    permissions.set(roleId, new Map());
+                }
+                permissions.get(roleId).set(permissionId, {
+                    url: url,
+                    checkbox: checkbox,
+                    element: urlElement
+                });
+            }
+        }
+    });
     
     checkboxes.forEach(checkbox => {
         checkbox.addEventListener('change', function() {
             const row = this.closest('tr');
             const icon = this.nextElementSibling.querySelector('svg');
+            const roleId = this.name.match(/permissions\[(\d+)\]/)?.[1];
+            const permissionId = this.value;
             
-            if (this.checked) {
-                icon.className = 'w-5 h-5 text-green-500';
-                icon.innerHTML = '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>';
-            } else {
-                icon.className = 'w-5 h-5 text-gray-300';
-                icon.innerHTML = '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>';
+            // アイコンの更新
+            updateIcon(icon, this.checked);
+            
+            // ワイルドカード動作の処理
+            if (roleId && permissions.has(roleId)) {
+                const rolePermissions = permissions.get(roleId);
+                const currentPermission = rolePermissions.get(permissionId);
+                
+                if (currentPermission) {
+                    if (this.checked) {
+                        // チェックした権限が親パターンの場合、子権限もチェック
+                        handleParentPermissionCheck(currentPermission, rolePermissions);
+                    } else {
+                        // チェックを外した権限が子権限の場合、親パターンのチェックも外す
+                        handleChildPermissionUncheck(currentPermission, rolePermissions);
+                    }
+                }
             }
         });
     });
+    
+    function updateIcon(icon, checked) {
+        if (checked) {
+            icon.className = 'w-5 h-5 text-green-500';
+            icon.innerHTML = '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>';
+        } else {
+            icon.className = 'w-5 h-5 text-gray-300';
+            icon.innerHTML = '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>';
+        }
+    }
+    
+    function handleParentPermissionCheck(parentPermission, rolePermissions) {
+        const parentUrl = parentPermission.url;
+        
+        // ワイルドカードパターンかチェック
+        if (parentUrl.includes('*')) {
+            const basePattern = parentUrl.replace('*', '');
+            
+            // 子権限を探してチェック
+            rolePermissions.forEach((permission, permissionId) => {
+                if (permission.url !== parentUrl && permission.url.startsWith(basePattern)) {
+                    // より具体的なパターンの場合のみチェック
+                    if (isMoreSpecificPattern(permission.url, parentUrl)) {
+                        if (!permission.checkbox.checked) {
+                            permission.checkbox.checked = true;
+                            const icon = permission.checkbox.nextElementSibling.querySelector('svg');
+                            updateIcon(icon, true);
+                            
+                            // 視覚的フィードバック
+                            showTemporaryHighlight(permission.element);
+                        }
+                    }
+                }
+            });
+        } else if (parentUrl.endsWith('/')) {
+            // スラッシュで終わるプレフィックスパターン
+            rolePermissions.forEach((permission, permissionId) => {
+                if (permission.url !== parentUrl && permission.url.startsWith(parentUrl)) {
+                    if (!permission.checkbox.checked) {
+                        permission.checkbox.checked = true;
+                        const icon = permission.checkbox.nextElementSibling.querySelector('svg');
+                        updateIcon(icon, true);
+                        showTemporaryHighlight(permission.element);
+                    }
+                }
+            });
+        }
+    }
+    
+    function handleChildPermissionUncheck(childPermission, rolePermissions) {
+        const childUrl = childPermission.url;
+        
+        // 親パターンを探してチェックを外す
+        rolePermissions.forEach((permission, permissionId) => {
+            const parentUrl = permission.url;
+            
+            // ワイルドカードパターンの親を探す
+            if (parentUrl.includes('*')) {
+                const basePattern = parentUrl.replace('*', '');
+                if (childUrl.startsWith(basePattern) && childUrl !== parentUrl) {
+                    if (isMoreSpecificPattern(childUrl, parentUrl)) {
+                        if (permission.checkbox.checked) {
+                            permission.checkbox.checked = false;
+                            const icon = permission.checkbox.nextElementSibling.querySelector('svg');
+                            updateIcon(icon, false);
+                            showTemporaryHighlight(permission.element, 'removed');
+                        }
+                    }
+                }
+            } else if (parentUrl.endsWith('/')) {
+                // スラッシュで終わるプレフィックスパターンの親を探す
+                if (childUrl.startsWith(parentUrl) && childUrl !== parentUrl) {
+                    if (permission.checkbox.checked) {
+                        permission.checkbox.checked = false;
+                        const icon = permission.checkbox.nextElementSibling.querySelector('svg');
+                        updateIcon(icon, false);
+                        showTemporaryHighlight(permission.element, 'removed');
+                    }
+                }
+            }
+        });
+    }
+    
+    function isMoreSpecificPattern(childUrl, parentUrl) {
+        // 子URLが親パターンよりも具体的かどうかをチェック
+        const parentBase = parentUrl.replace('*', '');
+        return childUrl.startsWith(parentBase) && childUrl.length > parentBase.length;
+    }
+    
+    function showTemporaryHighlight(element, type = 'added') {
+        const originalBg = element.style.backgroundColor;
+        const highlightColor = type === 'added' ? '#dcfce7' : '#fef2f2'; // green-100 or red-100
+        
+        element.style.backgroundColor = highlightColor;
+        element.style.transition = 'background-color 0.3s ease';
+        
+        setTimeout(() => {
+            element.style.backgroundColor = originalBg;
+            setTimeout(() => {
+                element.style.transition = '';
+            }, 300);
+        }, 1500);
+    }
 });
 </script>
 @endpush

@@ -35,8 +35,8 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
 Route::post('/register', [RegisterController::class, 'register']);
 
-// 管理画面ルート（認証必須）
-Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
+// 管理画面ルート（認証必須 + URL権限チェック）
+Route::middleware(['auth', 'url.permission'])->prefix('sjt-cp-admin')->name('admin.')->group(function () {
     // ダッシュボード
     Route::get('/', [HomeController::class, 'index'])->name('home');
     Route::get('/dashboard', [HomeController::class, 'index'])->name('dashboard');
@@ -180,13 +180,61 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     // 外部接続設定
     Route::post('external-connections/{externalConnection}/test', [ExternalConnectionController::class, 'test'])->name('external-connections.test');
     Route::resource('external-connections', ExternalConnectionController::class)->only(['index', 'edit', 'update']);
+    
+    // 権限管理
+    Route::get('system/permissions', [App\Http\Controllers\Admin\PermissionController::class, 'index'])->name('permissions.index');
+    Route::get('system/permissions/create', [App\Http\Controllers\Admin\PermissionController::class, 'create'])->name('permissions.create');
+    Route::post('system/permissions', [App\Http\Controllers\Admin\PermissionController::class, 'store'])->name('permissions.store');
+    Route::get('system/permissions/{permission}/edit', [App\Http\Controllers\Admin\PermissionController::class, 'edit'])->name('permissions.edit');
+    Route::put('system/permissions/{permission}', [App\Http\Controllers\Admin\PermissionController::class, 'updatePermission'])->name('permissions.update-permission');
+    Route::delete('system/permissions/{permission}', [App\Http\Controllers\Admin\PermissionController::class, 'destroy'])->name('permissions.destroy');
+    Route::put('system/permissions', [App\Http\Controllers\Admin\PermissionController::class, 'update'])->name('permissions.update');
+    Route::post('system/permissions/set-defaults', [App\Http\Controllers\Admin\PermissionController::class, 'setDefaults'])->name('permissions.set-defaults');
+    Route::post('system/permissions/role/{role}/set-defaults', [App\Http\Controllers\Admin\PermissionController::class, 'setRoleDefaults'])->name('permissions.role-defaults');
+    Route::post('system/permissions/reset-role/{role}', [App\Http\Controllers\Admin\PermissionController::class, 'resetRole'])->name('permissions.reset-role');
+    Route::get('system/api/permissions', [App\Http\Controllers\Admin\PermissionController::class, 'getPermissions'])->name('api.permissions');
+    Route::get('system/api/permissions/presets', [App\Http\Controllers\Admin\PermissionController::class, 'getPresets'])->name('api.permissions.presets');
+    Route::get('system/api/routes', [App\Http\Controllers\Admin\PermissionController::class, 'getRoutes'])->name('api.routes');
+    Route::get('system/api/route-patterns', [App\Http\Controllers\Admin\PermissionController::class, 'getRoutePatterns'])->name('api.route-patterns');
+    
+    // デバッグ用：URLパターンマッチングテスト
+    Route::get('system/debug/url-matching', function() {
+        if (!app()->environment('local')) {
+            abort(404);
+        }
+        
+        $pattern = request('pattern', '/sjt-cp-admin/guide-pages*');
+        $url = request('url', '/sjt-cp-admin/guide-pages/create');
+        
+        $result = \App\Models\Permission::testUrlMatching($pattern, $url);
+        
+        return response()->json($result);
+    })->name('debug.url-matching');
+});
+
+// フロントページルート（認証必須 + URL権限チェック）
+Route::middleware(['auth', 'url.permission'])->prefix('dashboard')->name('frontend.')->group(function () {
+    Route::get('/', [App\Http\Controllers\Frontend\HomeController::class, 'index'])->name('home');
+    Route::get('/welcome', [App\Http\Controllers\Frontend\HomeController::class, 'welcome'])->name('welcome');
 });
 
 // ガイド用ルート
 Route::get('/guide/collection/{collection}', [GuideCollectionController::class, 'view'])->name('guide.collection.view');
 Route::get('/guide/{competitionId}', [PublicGuideController::class, 'show'])->name('guide.public');
 
-// ルートアクセス時のリダイレクト
-Route::get('/', function () {
+// 旧管理画面URL（/admin）から新URL（/sjt-cp-admin）へのリダイレクト
+Route::get('/admin', function () {
     return redirect()->route('admin.home');
-});
+})->middleware('auth');
+
+// ルートアクセス時のリダイレクト（認証必須）
+Route::get('/', function () {
+    $user = auth()->user();
+    
+    // 管理者の場合は管理画面へ、それ以外はダッシュボードへ
+    if ($user && $user->hasRole('admin')) {
+        return redirect()->route('admin.home');
+    }
+    
+    return redirect()->route('frontend.home');
+})->middleware('auth');

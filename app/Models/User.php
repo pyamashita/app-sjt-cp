@@ -120,4 +120,47 @@ class User extends Authenticatable
     {
         return $this->role ? $this->role->name : '';
     }
+
+    /**
+     * ユーザーが指定された権限を持っているかチェック
+     *
+     * @param string $permissionName
+     * @return bool
+     */
+    public function hasPermission(string $permissionName): bool
+    {
+        return $this->role && $this->role->hasPermission($permissionName);
+    }
+
+    /**
+     * ユーザーがいずれかの権限を持っているかチェック
+     *
+     * @param array $permissions
+     * @return bool
+     */
+    public function hasAnyPermission(array $permissions): bool
+    {
+        return $this->role && $this->role->hasAnyPermission($permissions);
+    }
+
+    /**
+     * 管理画面にアクセスできるかチェック
+     *
+     * @return bool
+     */
+    public function canAccessAdmin(): bool
+    {
+        return $this->hasPermission('admin_access');
+    }
+
+    /**
+     * 指定されたURLにアクセスできるかチェック
+     *
+     * @param string $url
+     * @return bool
+     */
+    public function canAccessUrl(string $url): bool
+    {
+        return $this->role && $this->role->hasUrlPermission($url);
+    }
 }

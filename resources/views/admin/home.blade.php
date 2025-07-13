@@ -294,6 +294,12 @@
                        class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-800 rounded-md transition-colors duration-200">
                         ユーザー管理
                     </a>
+                    @if(auth()->user()->canAccessUrl('/sjt-cp-admin/system/permissions'))
+                        <a href="{{ route('admin.permissions.index') }}" 
+                           class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-800 rounded-md transition-colors duration-200">
+                            権限管理
+                        </a>
+                    @endif
                     <a href="{{ route('admin.external-connections.index') }}" 
                        class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-800 rounded-md transition-colors duration-200">
                         外部接続設定

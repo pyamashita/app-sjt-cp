@@ -16,7 +16,7 @@ class GuideController extends Controller
         } else {
             // デフォルトは最初に見つかったアクティブページを表示
             $guidePage = GuidePage::where('is_active', true)
-                ->with(['competition', 'sections.groups.items.resource'])
+                ->with(['competition', 'sections.groups.items.resource', 'sections.groups.items.collection'])
                 ->first();
         }
 
@@ -35,7 +35,7 @@ class GuideController extends Controller
             return view('guide.not-found', compact('competition'));
         }
 
-        $guidePage->load(['sections.groups.items.resource']);
+        $guidePage->load(['sections.groups.items.resource', 'sections.groups.items.collection']);
         return view('guide.index', compact('guidePage'));
     }
 }

@@ -45,6 +45,7 @@ class GuidePage extends Model
     {
         return static::where('competition_id', $competitionId)
             ->where('is_active', true)
+            ->with(['competition', 'sections.groups.items.resource', 'sections.groups.items.collection'])
             ->first();
     }
 }

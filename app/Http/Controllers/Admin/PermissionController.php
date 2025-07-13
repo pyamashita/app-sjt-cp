@@ -94,7 +94,7 @@ class PermissionController extends Controller
     /**
      * デフォルト権限を設定
      */
-    public function setDefaults(): RedirectResponse
+    public function setDefaults(): \Illuminate\Http\JsonResponse
     {
         $adminRole = Role::findByName('admin');
         $committeeRole = Role::findByName('committee');
@@ -134,8 +134,9 @@ class PermissionController extends Controller
             $assistantRole->syncPermissions($assistantPermissions);
         }
 
-        return redirect()
-            ->route('admin.permissions.index')
-            ->with('success', 'デフォルト権限を設定しました。');
+        return response()->json([
+            'success' => true,
+            'message' => 'デフォルト権限を設定しました。'
+        ]);
     }
 }

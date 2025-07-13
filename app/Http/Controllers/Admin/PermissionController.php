@@ -100,8 +100,9 @@ class PermissionController extends Controller
         $committeeRole = Role::findByName('committee');
         $assistantRole = Role::findByName('assistant');
 
+        // 管理者には全ての権限を付与
         if ($adminRole) {
-            $allPermissions = Permission::active()->pluck('id')->toArray();
+            $allPermissions = Permission::pluck('id')->toArray();
             $adminRole->syncPermissions($allPermissions);
         }
 

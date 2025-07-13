@@ -201,6 +201,11 @@ Route::middleware('auth')->prefix('frontend')->name('frontend.')->group(function
 Route::get('/guide/collection/{collection}', [GuideCollectionController::class, 'view'])->name('guide.collection.view');
 Route::get('/guide/{competitionId}', [PublicGuideController::class, 'show'])->name('guide.public');
 
+// 旧管理画面URL（/admin）から新URL（/sjt-cp-admin）へのリダイレクト
+Route::get('/admin', function () {
+    return redirect()->route('admin.home');
+})->middleware('auth');
+
 // ルートアクセス時のリダイレクト（認証必須）
 Route::get('/', function () {
     return redirect()->route('frontend.home');

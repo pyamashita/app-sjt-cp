@@ -49,6 +49,10 @@ class CollectionController extends Controller
             'is_player_managed' => ['boolean'],
         ]);
 
+        // チェックボックスのデフォルト値を設定
+        $validated['is_competition_managed'] = $validated['is_competition_managed'] ?? false;
+        $validated['is_player_managed'] = $validated['is_player_managed'] ?? false;
+        
         // 選手ごと管理の場合は大会ごと管理を強制ON
         if ($validated['is_player_managed']) {
             $validated['is_competition_managed'] = true;
@@ -191,6 +195,10 @@ class CollectionController extends Controller
             'is_player_managed' => ['boolean'],
         ]);
 
+        // チェックボックスのデフォルト値を設定
+        $validated['is_competition_managed'] = $validated['is_competition_managed'] ?? false;
+        $validated['is_player_managed'] = $validated['is_player_managed'] ?? false;
+        
         // 選手ごと管理の場合は大会ごと管理を強制ON
         if ($validated['is_player_managed']) {
             $validated['is_competition_managed'] = true;

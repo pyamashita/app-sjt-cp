@@ -533,7 +533,7 @@ function addGroup(sectionId) {
     const title = prompt('グループ名を入力してください:');
     if (!title) return;
     
-    fetch(`/admin/guide-page-sections/${sectionId}/groups`, {
+    fetch(`/sjt-cp-admin/guide-page-sections/${sectionId}/groups`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -647,7 +647,7 @@ document.getElementById('addItemForm').addEventListener('submit', function(e) {
         open_in_new_tab: document.getElementById('itemNewTab').checked
     };
     
-    fetch(`/admin/guide-page-groups/${currentGroupId}/items`, {
+    fetch(`/sjt-cp-admin/guide-page-groups/${currentGroupId}/items`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -667,7 +667,7 @@ document.getElementById('addItemForm').addEventListener('submit', function(e) {
 function deleteSection(sectionId) {
     if (!confirm('このセクションを削除してもよろしいですか？')) return;
     
-    fetch(`/admin/guide-page-sections/${sectionId}`, {
+    fetch(`/sjt-cp-admin/guide-page-sections/${sectionId}`, {
         method: 'DELETE',
         headers: {
             'X-CSRF-TOKEN': '{{ csrf_token() }}'
@@ -684,7 +684,7 @@ function deleteSection(sectionId) {
 function deleteGroup(groupId) {
     if (!confirm('このグループを削除してもよろしいですか？')) return;
     
-    fetch(`/admin/guide-page-groups/${groupId}`, {
+    fetch(`/sjt-cp-admin/guide-page-groups/${groupId}`, {
         method: 'DELETE',
         headers: {
             'X-CSRF-TOKEN': '{{ csrf_token() }}'
@@ -701,7 +701,7 @@ function deleteGroup(groupId) {
 function deleteItem(itemId) {
     if (!confirm('このアイテムを削除してもよろしいですか？')) return;
     
-    fetch(`/admin/guide-page-items/${itemId}`, {
+    fetch(`/sjt-cp-admin/guide-page-items/${itemId}`, {
         method: 'DELETE',
         headers: {
             'X-CSRF-TOKEN': '{{ csrf_token() }}'

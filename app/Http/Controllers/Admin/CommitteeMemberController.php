@@ -202,7 +202,17 @@ class CommitteeMemberController extends Controller
 
             // 置換モードの場合、既存の競技委員を削除
             if ($request->import_mode === 'replace') {
+                // 外部キー制約を一時的に無効化
+                \DB::statement('SET FOREIGN_KEY_CHECKS=0');
+                
+                // 関連テーブルのデータを削除
+                \DB::table('competition_committee_member')->truncate();
+                
+                // 競技委員を削除
                 CommitteeMember::truncate();
+                
+                // 外部キー制約を再度有効化
+                \DB::statement('SET FOREIGN_KEY_CHECKS=1');
             }
 
             foreach ($csvData as $index => $row) {

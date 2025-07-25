@@ -114,21 +114,86 @@
         empty-message="競技委員が登録されていません。" />
 
     <!-- CSVインポートモーダル -->
-    <x-csv-import
-        :action="route('admin.committee-members.import')"
-        modal-id="importModal"
-        title="競技委員CSVインポート"
-        :template-columns="['ID', '名前', '名前ふりがな', '所属', '備考', '状態']"
-        :template-sample="[
-            ['', '山田太郎', 'やまだたろう', '○○工業大学', '競技主査', 'アクティブ'],
-            ['', '鈴木花子', 'すずきはなこ', '××技術専門学校', '', 'アクティブ'],
-            ['', '田中一郎', 'たなかいちろう', '△△高等学校', '競技委員', '非アクティブ']
-        ]"
-        note="※ID列は空にしてください。システムが自動的に割り当てます。<br>※状態は「アクティブ」または「非アクティブ」を指定してください。" />
+    <div id="importModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 hidden" onclick="closeImportModal(event)">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white" onclick="event.stopPropagation()">
+            <div class="mt-3">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">CSVファイル取込</h3>
+                    <button onclick="closeImportModal()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <form method="POST" action="{{ route('admin.committee-members.import') }}" enctype="multipart/form-data">
+                    @csrf
+                    
+                    <!-- ファイル選択 -->
+                    <div class="mb-4">
+                        <label for="csv_file" class="block text-sm font-medium text-gray-700 mb-2">
+                            CSVファイル <span class="text-red-500">*</span>
+                        </label>
+                        <input 
+                            type="file" 
+                            id="csv_file"
+                            name="csv_file"
+                            accept=".csv,.txt"
+                            required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                    </div>
+                    
+                    <!-- インポートモード -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            インポートモード <span class="text-red-500">*</span>
+                        </label>
+                        <div class="space-y-2">
+                            <label class="flex items-center">
+                                <input type="radio" name="import_mode" value="add" checked class="mr-2">
+                                <span class="text-sm">追加（既存データを保持）</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="import_mode" value="replace" class="mr-2">
+                                <span class="text-sm">置換（既存データを削除）</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- CSVフォーマット説明 -->
+                    <div class="mb-4 p-3 bg-gray-50 rounded text-xs text-gray-600">
+                        <p class="font-semibold mb-1">CSVフォーマット:</p>
+                        <p>ID,名前,名前ふりがな,所属,備考,状態</p>
+                        <p class="mt-2">※ID列は空にしてください</p>
+                        <p>※状態は「アクティブ」または「非アクティブ」</p>
+                    </div>
+                    
+                    <!-- ボタン -->
+                    <div class="flex justify-end space-x-2">
+                        <button type="button" onclick="closeImportModal()" 
+                                class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
+                            キャンセル
+                        </button>
+                        <button type="submit" 
+                                class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                            インポート
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <script>
         function showImportModal() {
             document.getElementById('importModal').classList.remove('hidden');
+        }
+        
+        function closeImportModal(event) {
+            if (!event || event.target.id === 'importModal') {
+                document.getElementById('importModal').classList.add('hidden');
+            }
         }
     </script>
 @endsection

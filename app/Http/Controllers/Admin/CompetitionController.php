@@ -98,7 +98,7 @@ class CompetitionController extends Controller
      */
     public function show(Competition $competition): View
     {
-        $competition->load(['competitionDays.competitionSchedules']);
+        $competition->load(['competitionDays.competitionSchedules', 'committeeMembers']);
         
         return view('admin.competitions.show', compact('competition'));
     }

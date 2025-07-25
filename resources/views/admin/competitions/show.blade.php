@@ -104,11 +104,14 @@
                         <div class="sm:col-span-2">
                             <dt class="text-sm font-medium text-gray-500">競技委員</dt>
                             <dd class="mt-1 text-sm text-gray-900">
-                                @if($competition->committee_members && count($competition->committee_members) > 0)
+                                @if($competition->committeeMembers && $competition->committeeMembers->count() > 0)
                                     <div class="flex flex-wrap gap-2">
-                                        @foreach($competition->committee_members as $member)
+                                        @foreach($competition->committeeMembers as $member)
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                {{ $member }}
+                                                {{ $member->name }}
+                                                @if($member->pivot->role !== '競技委員')
+                                                    <span class="ml-1 text-xs text-blue-600">({{ $member->pivot->role }})</span>
+                                                @endif
                                             </span>
                                         @endforeach
                                     </div>

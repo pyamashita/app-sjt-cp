@@ -7,6 +7,7 @@ use App\Models\CommitteeMember;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Validator;
 
 class CommitteeMemberController extends Controller
 {
@@ -163,5 +164,103 @@ class CommitteeMemberController extends Controller
         };
         
         return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * CSVインポート
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'csv_file' => 'required|file|mimes:csv,txt|max:10240',
+            'import_mode' => 'required|in:add,replace'
+        ]);
+
+        try {
+            $file = $request->file('csv_file');
+            $csvData = [];
+
+            // CSVファイルを読み込み
+            if (($handle = fopen($file->getPathname(), 'r')) !== false) {
+                // BOMをスキップ
+                $bom = fread($handle, 3);
+                if ($bom !== "\xEF\xBB\xBF") {
+                    rewind($handle);
+                }
+
+                // ヘッダー行をスキップ
+                $header = fgetcsv($handle);
+
+                while (($data = fgetcsv($handle)) !== false) {
+                    $csvData[] = $data;
+                }
+                fclose($handle);
+            }
+
+            $errors = [];
+            $successCount = 0;
+
+            // 置換モードの場合、既存の競技委員を削除
+            if ($request->import_mode === 'replace') {
+                CommitteeMember::truncate();
+            }
+
+            foreach ($csvData as $index => $row) {
+                // 空行をスキップ
+                if (empty(array_filter($row))) {
+                    continue;
+                }
+
+                $rowNumber = $index + 2;
+
+                // データの検証
+                $validator = Validator::make([
+                    'name' => $row[1] ?? '',         // 名前
+                    'name_kana' => $row[2] ?? '',    // 名前ふりがな
+                    'organization' => $row[3] ?? '',  // 所属
+                    'description' => $row[4] ?? '',   // 備考
+                    'is_active' => $row[5] ?? 'アクティブ'  // 状態
+                ], [
+                    'name' => 'required|string|max:255',
+                    'name_kana' => 'required|string|max:255',
+                    'organization' => 'nullable|string|max:255',
+                    'description' => 'nullable|string',
+                    'is_active' => 'string'
+                ]);
+
+                if ($validator->fails()) {
+                    $errors[] = "行 {$rowNumber}: " . implode(', ', $validator->errors()->all());
+                    continue;
+                }
+
+                // 状態の変換
+                $isActive = ($row[5] ?? 'アクティブ') === 'アクティブ';
+
+                // 競技委員を作成
+                CommitteeMember::create([
+                    'name' => $row[1],
+                    'name_kana' => $row[2],
+                    'organization' => $row[3] ?: null,
+                    'description' => $row[4] ?: null,
+                    'is_active' => $isActive
+                ]);
+
+                $successCount++;
+            }
+
+            $message = "{$successCount}件の競技委員をインポートしました。";
+            if (!empty($errors)) {
+                $message .= " エラー: " . implode('; ', array_slice($errors, 0, 3));
+                if (count($errors) > 3) {
+                    $message .= " など";
+                }
+            }
+
+            return redirect()->route('admin.committee-members.index')->with('success', $message);
+
+        } catch (\Exception $e) {
+            $errorMessage = 'CSVファイルの読み込みに失敗しました: ' . $e->getMessage();
+            return redirect()->route('admin.committee-members.index')->with('error', $errorMessage);
+        }
     }
 }

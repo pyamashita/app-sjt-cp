@@ -19,6 +19,12 @@
             'icon' => '<svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>'
         ],
         [
+            'label' => 'CSVインポート',
+            'type' => 'button',
+            'onclick' => 'showImportModal()',
+            'icon' => '<svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>'
+        ],
+        [
             'label' => '新規競技委員登録',
             'url' => route('admin.committee-members.create'),
             'type' => 'primary',
@@ -100,4 +106,23 @@
         :actions="$tableActions"
         :pagination="$committeeMembers"
         empty-message="競技委員が登録されていません。" />
+
+    <!-- CSVインポートモーダル -->
+    <x-csv-import
+        :action="route('admin.committee-members.import')"
+        modal-id="importModal"
+        title="競技委員CSVインポート"
+        :template-columns="['ID', '名前', '名前ふりがな', '所属', '備考', '状態']"
+        :template-sample="[
+            ['', '山田太郎', 'やまだたろう', '○○工業大学', '競技主査', 'アクティブ'],
+            ['', '鈴木花子', 'すずきはなこ', '××技術専門学校', '', 'アクティブ'],
+            ['', '田中一郎', 'たなかいちろう', '△△高等学校', '競技委員', '非アクティブ']
+        ]"
+        note="※ID列は空にしてください。システムが自動的に割り当てます。<br>※状態は「アクティブ」または「非アクティブ」を指定してください。" />
+
+    <script>
+        function showImportModal() {
+            document.getElementById('importModal').classList.remove('hidden');
+        }
+    </script>
 @endsection

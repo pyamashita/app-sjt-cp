@@ -137,6 +137,7 @@ Route::middleware(['auth', 'url.permission'])->prefix('sjt-cp-admin')->name('adm
     
     // 競技委員管理
     Route::get('committee-members/export', [CommitteeMemberController::class, 'export'])->name('committee-members.export');
+    Route::post('committee-members/import', [CommitteeMemberController::class, 'import'])->name('committee-members.import');
     Route::resource('committee-members', CommitteeMemberController::class);
     
     // コレクション管理

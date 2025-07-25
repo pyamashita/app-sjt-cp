@@ -13,18 +13,6 @@
     
     $pageActions = [
         [
-            'label' => 'CSVエクスポート',
-            'url' => route('admin.committee-members.export', request()->all()),
-            'type' => 'secondary',
-            'icon' => '<svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>'
-        ],
-        [
-            'label' => 'CSVインポート',
-            'type' => 'button',
-            'onclick' => 'showImportModal()',
-            'icon' => '<svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>'
-        ],
-        [
             'label' => '新規競技委員登録',
             'url' => route('admin.committee-members.create'),
             'type' => 'primary',
@@ -98,6 +86,24 @@
     <x-search-filter 
         :action="route('admin.committee-members.index')" 
         :fields="$filterFields" />
+
+    <!-- CSV操作ボタン -->
+    <div class="mb-4 flex justify-end space-x-2">
+        <a href="{{ route('admin.committee-members.export', request()->all()) }}"
+           class="inline-flex items-center px-3 py-1.5 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition duration-200">
+            <svg class="h-4 w-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            CSV出力
+        </a>
+        <button onclick="showImportModal()"
+                class="inline-flex items-center px-3 py-1.5 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition duration-200">
+            <svg class="h-4 w-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
+            </svg>
+            CSV取込
+        </button>
+    </div>
 
     <!-- 競技委員一覧テーブル -->
     <x-data-table 

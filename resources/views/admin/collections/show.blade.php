@@ -651,18 +651,24 @@ document.getElementById('field-modal').addEventListener('click', function(e) {
 </script>
 @endpush
 
-<!-- API利用方法 -->
+<!-- API情報 -->
 <div class="bg-white rounded-lg shadow overflow-hidden mt-6">
     <div class="px-6 py-4 border-b border-gray-200">
-        <h3 class="text-lg font-medium text-gray-900">API利用方法</h3>
+        <h3 class="text-lg font-medium text-gray-900">API情報</h3>
     </div>
     <div class="px-6 py-4">
-        <div class="mb-6">
-            <h4 class="text-md font-medium text-gray-900 mb-3">エンドポイント</h4>
-            <div class="bg-gray-100 rounded-lg p-4 mb-4">
-                <p class="text-sm font-mono mb-2">{{ url('/') }}/api/v1/collections/{{ $collection->id }}</p>
-            </div>
-        </div>
+        <!-- API URL情報 -->
+        <x-detail-card 
+            title="API URL"
+            :data="[
+                ['label' => 'コレクション一覧', 'value' => \App\Helpers\ApiHelper::url('collections')],
+                ['label' => 'コレクション詳細', 'value' => \App\Helpers\ApiHelper::url('v1/collections/' . $collection->id)],
+                ['label' => 'コンテンツ一覧', 'value' => \App\Helpers\ApiHelper::url('v1/collections/' . $collection->id . '/contents')],
+                ['label' => 'コンテンツ取得・作成', 'value' => \App\Helpers\ApiHelper::url('v1/collections/' . $collection->id . '/content')]
+            ]"
+        />
+        
+        <div class="mt-6">
 
         <div class="mb-6">
             <h4 class="text-md font-medium text-gray-900 mb-3">利用可能なメソッド</h4>
@@ -678,27 +684,27 @@ document.getElementById('field-modal').addEventListener('click', function(e) {
                     <tbody class="bg-white divide-y divide-gray-200">
                         <tr>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-green-600">GET</td>
-                            <td class="px-6 py-4 text-sm font-mono">/api/v1/collections</td>
+                            <td class="px-6 py-4 text-sm font-mono">/collections</td>
                             <td class="px-6 py-4 text-sm text-gray-500">コレクション一覧を取得</td>
                         </tr>
                         <tr>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-green-600">GET</td>
-                            <td class="px-6 py-4 text-sm font-mono">/api/v1/collections/{{ $collection->id }}</td>
+                            <td class="px-6 py-4 text-sm font-mono">/v1/collections/{{ $collection->id }}</td>
                             <td class="px-6 py-4 text-sm text-gray-500">このコレクションの詳細を取得</td>
                         </tr>
                         <tr>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-green-600">GET</td>
-                            <td class="px-6 py-4 text-sm font-mono">/api/v1/collections/{{ $collection->id }}/contents</td>
+                            <td class="px-6 py-4 text-sm font-mono">/v1/collections/{{ $collection->id }}/contents</td>
                             <td class="px-6 py-4 text-sm text-gray-500">コンテンツ一覧を取得（ページング対応）</td>
                         </tr>
                         <tr>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-green-600">GET</td>
-                            <td class="px-6 py-4 text-sm font-mono">/api/v1/collections/{{ $collection->id }}/content</td>
+                            <td class="px-6 py-4 text-sm font-mono">/v1/collections/{{ $collection->id }}/content</td>
                             <td class="px-6 py-4 text-sm text-gray-500">特定コンテキストのコンテンツを取得</td>
                         </tr>
                         <tr>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-blue-600">POST</td>
-                            <td class="px-6 py-4 text-sm font-mono">/api/v1/collections/{{ $collection->id }}/content</td>
+                            <td class="px-6 py-4 text-sm font-mono">/v1/collections/{{ $collection->id }}/content</td>
                             <td class="px-6 py-4 text-sm text-gray-500">コンテンツを作成・更新</td>
                         </tr>
                     </tbody>
@@ -706,96 +712,115 @@ document.getElementById('field-modal').addEventListener('click', function(e) {
             </div>
         </div>
 
-        <div class="mb-6">
-            <h4 class="text-md font-medium text-gray-900 mb-3">認証方法</h4>
-            <div class="bg-gray-50 rounded-lg p-4">
-                <p class="text-sm text-gray-700 mb-2">アクセス制御設定に応じて、以下の方法で認証が必要です：</p>
-                <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
-                    <li><strong>IP許可:</strong> 登録されたIPアドレスからのアクセスのみ許可</li>
-                    <li><strong>APIトークン:</strong> AuthorizationヘッダーまたはURLパラメータでトークンを指定</li>
-                    <li><strong>トークン必須:</strong> 有効なAPIトークンが必須</li>
+        <!-- 認証方法 -->
+        @if($collection->accessControls->count() > 0)
+        <x-detail-card 
+            title="認証方法"
+            :data="[]"
+        >
+            <div class="mb-4">
+                <p class="text-sm text-gray-700 mb-3">このコレクションは非公開のため、APIトークンが必要です。</p>
+                
+                <div class="bg-gray-50 p-3 rounded mb-3">
+                    <p class="text-xs text-gray-700 font-medium mb-2">APIトークンの送信方法:</p>
+                    
+                    <div class="mb-3">
+                        <p class="text-xs text-gray-600 mb-1"><strong>方法1: Authorizationヘッダー（推奨）</strong></p>
+                        <code class="block bg-white p-2 rounded text-xs">
+                            Authorization: Bearer YOUR_API_TOKEN
+                        </code>
+                    </div>
+                    
+                    <div>
+                        <p class="text-xs text-gray-600 mb-1"><strong>方法2: URLパラメータ</strong></p>
+                        <code class="block bg-white p-2 rounded text-xs">
+                            ?token=YOUR_API_TOKEN
+                        </code>
+                    </div>
+                </div>
+            </div>
+            
+            @if($collection->accessControls->where('type', 'api_token')->count() > 0)
+            <div class="bg-yellow-50 p-3 rounded">
+                <p class="text-xs text-yellow-800 font-medium mb-1">必要なAPIトークン:</p>
+                <ul class="list-disc list-inside text-xs text-gray-700 space-y-1 mb-3">
+                    @foreach($collection->accessControls->where('type', 'api_token') as $control)
+                        @if($control->apiToken)
+                        <li>{{ $control->apiToken->name }} (トークンID: {{ $control->apiToken->id }})</li>
+                        @endif
+                    @endforeach
                 </ul>
             </div>
-        </div>
-
-        <div class="mb-6">
-            <h4 class="text-md font-medium text-gray-900 mb-3">リクエスト例</h4>
-            
-            <!-- コレクション詳細取得 -->
-            <div class="mb-4">
-                <h5 class="text-sm font-medium text-gray-700 mb-2">1. コレクション詳細を取得</h5>
-                <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
-                    <pre class="text-sm text-gray-100"><code>curl -X GET {{ url('/') }}/api/v1/collections/{{ $collection->id }} \
-  -H "Authorization: Bearer YOUR_API_TOKEN"</code></pre>
-                </div>
+            @endif
+        </x-detail-card>
+        @else
+        <x-detail-card 
+            title="認証方法"
+            :data="[]"
+        >
+            <div class="inline-flex items-center px-4 py-2 rounded-md bg-green-100 text-green-800">
+                <svg class="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                </svg>
+                このコレクションは公開されているため、認証なしでアクセスできます
             </div>
+        </x-detail-card>
+        @endif
 
-            <!-- コンテンツ一覧取得 -->
-            <div class="mb-4">
-                <h5 class="text-sm font-medium text-gray-700 mb-2">2. コンテンツ一覧を取得（フィルタ付き）</h5>
-                <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
-                    @php
-                        $queryParams = [];
-                        if ($collection->is_competition_managed) {
-                            $queryParams[] = 'competition_id=1';
-                        }
-                        if ($collection->is_player_managed) {
-                            $queryParams[] = 'player_id=1';
-                        }
-                        $queryParams[] = 'per_page=50';
-                        $queryString = implode('&', $queryParams);
-                    @endphp
-                    <pre class="text-sm text-gray-100"><code>curl -X GET "{{ url('/') }}/api/v1/collections/{{ $collection->id }}/contents?{{ $queryString }}" \
-  -H "Authorization: Bearer YOUR_API_TOKEN"</code></pre>
+        <!-- APIアクセス方法 -->
+        <x-detail-card 
+            title="APIアクセス方法"
+            :data="[]"
+        >
+            <div class="space-y-3">
+                <p class="text-xs text-gray-600 mb-2">@if($collection->accessControls->count() > 0)このコレクションは非公開のため、認証が必要です。@else認証なしでアクセスできます。@endif</p>
+                
+                <!-- コレクション詳細取得 -->
+                <div>
+                    <p class="text-xs text-gray-600 mb-1">コレクション詳細を取得:</p>
+                    <code class="block bg-gray-100 p-2 rounded text-xs">
+                        curl{{ $collection->accessControls->count() > 0 ? ' -H "Authorization: Bearer YOUR_API_TOKEN"' : '' }} {{ \App\Helpers\ApiHelper::url('v1/collections/' . $collection->id) }}
+                    </code>
                 </div>
-            </div>
-
-            <!-- 特定コンテキストのコンテンツ取得 -->
-            <div class="mb-4">
-                <h5 class="text-sm font-medium text-gray-700 mb-2">3. 特定コンテキストのコンテンツを取得</h5>
-                <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
-                    @php
-                        $contextParams = [];
-                        if ($collection->is_competition_managed) {
-                            $contextParams[] = 'competition_id=1';
-                        }
-                        if ($collection->is_player_managed) {
-                            $contextParams[] = 'player_id=1';
-                        }
-                        $contextQuery = implode('&', $contextParams);
-                    @endphp
-                    <pre class="text-sm text-gray-100"><code>curl -X GET "{{ url('/') }}/api/v1/collections/{{ $collection->id }}/content?{{ $contextQuery }}" \
-  -H "Authorization: Bearer YOUR_API_TOKEN"</code></pre>
+                
+                <!-- コンテンツ一覧取得 -->
+                <div>
+                    <p class="text-xs text-gray-600 mb-1">コンテンツ一覧を取得:</p>
+                    <code class="block bg-gray-100 p-2 rounded text-xs">
+                        curl{{ $collection->accessControls->count() > 0 ? ' -H "Authorization: Bearer YOUR_API_TOKEN"' : '' }} "{{ \App\Helpers\ApiHelper::url('v1/collections/' . $collection->id . '/contents') }}@if($collection->is_competition_managed || $collection->is_player_managed)?@php
+                            $params = [];
+                            if ($collection->is_competition_managed) $params[] = 'competition_id=1';
+                            if ($collection->is_player_managed) $params[] = 'player_id=1';
+                            echo implode('&', $params);
+                        @endphp@endif"
+                    </code>
                 </div>
-            </div>
-
-            <!-- コンテンツ作成・更新 -->
-            <div class="mb-4">
-                <h5 class="text-sm font-medium text-gray-700 mb-2">4. コンテンツを作成・更新</h5>
-                <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
-                    <pre class="text-sm text-gray-100"><code>curl -X POST {{ url('/') }}/api/v1/collections/{{ $collection->id }}/content \
-  -H "Authorization: Bearer YOUR_API_TOKEN" \
+                
+                <!-- コンテンツ作成 -->
+                <div>
+                    <p class="text-xs text-gray-600 mb-1">コンテンツを作成・更新:</p>
+                    <code class="block bg-gray-100 p-2 rounded text-xs">
+                        curl -X POST {{ \App\Helpers\ApiHelper::url('v1/collections/' . $collection->id . '/content') }} \{{ $collection->accessControls->count() > 0 ? "\n  -H \"Authorization: Bearer YOUR_API_TOKEN\" \\" : '' }}
   -H "Content-Type: application/json" \
-  -d '{
-@if($collection->is_competition_managed)    "competition_id": 1,
-@endif
-@if($collection->is_player_managed)    "player_id": 1,
-@endif
-    "contents": [
-@foreach($collection->fields->take(2) as $index => $field)
-      {
-        "field_id": {{ $field->id }},
-        "value": @if($field->content_type === 'string')"サンプル値"@elseif($field->content_type === 'boolean')true@elseif($field->content_type === 'date')"2024-01-01"@else"value"@endif
-      }@if(!$loop->last),@endif
-@endforeach
-    ]
-  }'</code></pre>
+  -d '{ @if($collection->is_competition_managed)"competition_id": 1@if($collection->is_player_managed), @endif @endif @if($collection->is_player_managed)"player_id": 1@if($collection->fields->count() > 0), @endif @endif @if($collection->fields->count() > 0)"contents": [{"field_id": 1, "value": "sample"}]@endif }'
+                    </code>
                 </div>
             </div>
-        </div>
+            
+            @if($collection->accessControls->count() > 0)
+            <div class="bg-blue-50 p-2 rounded mt-3">
+                <p class="text-xs text-blue-800">
+                    <strong>注意:</strong> YOUR_API_TOKEN の部分を実際のトークン値に置き換えてください。
+                </p>
+            </div>
+            @endif
+        </x-detail-card>
 
-        <div class="mb-6">
-            <h4 class="text-md font-medium text-gray-900 mb-3">レスポンス例</h4>
+        <!-- レスポンス例 -->
+        <x-detail-card 
+            title="レスポンス例"
+            :data="[]"
+        >
             <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
                 <pre class="text-sm text-gray-100"><code>{
   "success": true,
@@ -822,8 +847,9 @@ document.getElementById('field-modal').addEventListener('click', function(e) {
   }
 }</code></pre>
             </div>
-        </div>
+        </x-detail-card>
 
+        <!-- 注意事項 -->
         <div class="bg-yellow-50 border border-yellow-200 rounded-md p-4">
             <div class="flex">
                 <div class="flex-shrink-0">

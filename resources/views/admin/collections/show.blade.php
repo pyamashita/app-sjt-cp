@@ -668,9 +668,7 @@ document.getElementById('field-modal').addEventListener('click', function(e) {
             ]"
         />
         
-        <div class="mt-6">
-
-        <div class="mb-6">
+        <div class="mt-6 mb-6">
             <h4 class="text-md font-medium text-gray-900 mb-3">利用可能なメソッド</h4>
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
@@ -802,7 +800,16 @@ document.getElementById('field-modal').addEventListener('click', function(e) {
                     <code class="block bg-gray-100 p-2 rounded text-xs">
                         curl -X POST {{ \App\Helpers\ApiHelper::url('v1/collections/' . $collection->id . '/content') }} \{{ $collection->accessControls->count() > 0 ? "\n  -H \"Authorization: Bearer YOUR_API_TOKEN\" \\" : '' }}
   -H "Content-Type: application/json" \
-  -d '{ @if($collection->is_competition_managed)"competition_id": 1@if($collection->is_player_managed), @endif @endif @if($collection->is_player_managed)"player_id": 1@if($collection->fields->count() > 0), @endif @endif @if($collection->fields->count() > 0)"contents": [{"field_id": 1, "value": "sample"}]@endif }'
+  -d '{@if($collection->is_competition_managed)
+    "competition_id": 1@if($collection->is_player_managed || $collection->fields->count() > 0),@endif
+@endif
+@if($collection->is_player_managed)
+    "player_id": 1@if($collection->fields->count() > 0),@endif
+@endif
+@if($collection->fields->count() > 0)
+    "contents": [{"field_id": 1, "value": "sample"}]
+@endif
+  }'
                     </code>
                 </div>
             </div>

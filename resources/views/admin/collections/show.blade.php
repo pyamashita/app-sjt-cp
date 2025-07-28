@@ -449,7 +449,7 @@ function showEditFieldModal(fieldId) {
     document.getElementById('field-submit-btn').textContent = '更新';
     
     // 既存データをサーバーから取得
-    fetch(`/admin/collections/${collectionId}/fields/${fieldId}`)
+    fetch(`/sjt-cp-admin/collections/${collectionId}/fields/${fieldId}`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -533,8 +533,8 @@ document.getElementById('field-form').addEventListener('submit', function(e) {
     
     const formData = new FormData(this);
     const url = editingFieldId 
-        ? `/admin/collections/${collectionId}/fields/${editingFieldId}`
-        : `/admin/collections/${collectionId}/fields`;
+        ? `/sjt-cp-admin/collections/${collectionId}/fields/${editingFieldId}`
+        : `/sjt-cp-admin/collections/${collectionId}/fields`;
     
     const method = editingFieldId ? 'PUT' : 'POST';
     
@@ -575,7 +575,7 @@ function deleteField(fieldId) {
         return;
     }
     
-    fetch(`/admin/collections/${collectionId}/fields/${fieldId}`, {
+    fetch(`/sjt-cp-admin/collections/${collectionId}/fields/${fieldId}`, {
         method: 'DELETE',
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),

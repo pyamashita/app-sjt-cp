@@ -505,7 +505,7 @@
                 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
                 console.log('CSRFトークン:', csrfToken);
                 
-                const response = await fetch(`/admin/devices/${deviceId}/test-connection`, {
+                const response = await fetch(`/sjt-cp-admin/devices/${deviceId}/test-connection`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

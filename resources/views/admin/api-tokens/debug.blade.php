@@ -5,7 +5,7 @@
 </head>
 <body>
     <h1>Debug Form</h1>
-    <form method="POST" action="{{ url('/admin/api-tokens') }}">
+    <form method="POST" action="{{ url('/sjt-cp-admin/api-tokens') }}">
         @csrf
         <input type="text" name="name" placeholder="Token name" required>
         <input type="hidden" name="permissions[]" value="read">

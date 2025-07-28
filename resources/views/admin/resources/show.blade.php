@@ -321,7 +321,7 @@ function updateValueField() {
     
     if (typeSelect.value === 'api_token') {
         // APIトークンを取得
-        fetch('/admin/api-tokens?format=json')
+        fetch('/sjt-cp-admin/api-tokens?format=json')
             .then(response => response.json())
             .then(data => {
                 valueContainer.innerHTML = `

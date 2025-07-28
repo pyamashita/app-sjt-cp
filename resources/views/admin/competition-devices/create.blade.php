@@ -199,7 +199,7 @@
             }
 
             // AJAX でその大会の選手一覧を取得
-            fetch(`/admin/api/competition-devices/player-numbers?competition_id=${competitionId}`)
+            fetch(`/sjt-cp-admin/api/competition-devices/player-numbers?competition_id=${competitionId}`)
                 .then(response => response.json())
                 .then(data => {
                     if (playerSelect) {

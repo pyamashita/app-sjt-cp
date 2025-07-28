@@ -219,7 +219,7 @@ function deleteData(competitionId, playerId) {
         params.append('player_id', playerId);
     }
     
-    fetch(`/admin/collections/${collectionId}/data?${params.toString()}`, {
+    fetch(`/sjt-cp-admin/collections/${collectionId}/data?${params.toString()}`, {
         method: 'DELETE',
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),

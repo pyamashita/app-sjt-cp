@@ -449,7 +449,7 @@ function showEditFieldModal(fieldId) {
     document.getElementById('field-submit-btn').textContent = '更新';
     
     // 既存データをサーバーから取得
-    fetch(`/admin/collections/${collectionId}/fields/${fieldId}`)
+    fetch(`/sjt-cp-admin/collections/${collectionId}/fields/${fieldId}`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -533,8 +533,8 @@ document.getElementById('field-form').addEventListener('submit', function(e) {
     
     const formData = new FormData(this);
     const url = editingFieldId 
-        ? `/admin/collections/${collectionId}/fields/${editingFieldId}`
-        : `/admin/collections/${collectionId}/fields`;
+        ? `/sjt-cp-admin/collections/${collectionId}/fields/${editingFieldId}`
+        : `/sjt-cp-admin/collections/${collectionId}/fields`;
     
     const method = editingFieldId ? 'PUT' : 'POST';
     
@@ -575,7 +575,7 @@ function deleteField(fieldId) {
         return;
     }
     
-    fetch(`/admin/collections/${collectionId}/fields/${fieldId}`, {
+    fetch(`/sjt-cp-admin/collections/${collectionId}/fields/${fieldId}`, {
         method: 'DELETE',
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
@@ -668,9 +668,7 @@ document.getElementById('field-modal').addEventListener('click', function(e) {
             ]"
         />
         
-        <div class="mt-6">
-
-        <div class="mb-6">
+        <div class="mt-6 mb-6">
             <h4 class="text-md font-medium text-gray-900 mb-3">利用可能なメソッド</h4>
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
@@ -786,23 +784,37 @@ document.getElementById('field-modal').addEventListener('click', function(e) {
                 <!-- コンテンツ一覧取得 -->
                 <div>
                     <p class="text-xs text-gray-600 mb-1">コンテンツ一覧を取得:</p>
+                    @php
+                        $params = [];
+                        if ($collection->is_competition_managed) $params[] = 'competition_id=1';
+                        if ($collection->is_player_managed) $params[] = 'player_id=1';
+                        $queryString = count($params) > 0 ? '?' . implode('&', $params) : '';
+                    @endphp
                     <code class="block bg-gray-100 p-2 rounded text-xs">
-                        curl{{ $collection->accessControls->count() > 0 ? ' -H "Authorization: Bearer YOUR_API_TOKEN"' : '' }} "{{ \App\Helpers\ApiHelper::url('v1/collections/' . $collection->id . '/contents') }}@if($collection->is_competition_managed || $collection->is_player_managed)?@php
-                            $params = [];
-                            if ($collection->is_competition_managed) $params[] = 'competition_id=1';
-                            if ($collection->is_player_managed) $params[] = 'player_id=1';
-                            echo implode('&', $params);
-                        @endphp@endif"
+                        curl{{ $collection->accessControls->count() > 0 ? ' -H "Authorization: Bearer YOUR_API_TOKEN"' : '' }} "{{ \App\Helpers\ApiHelper::url('v1/collections/' . $collection->id . '/contents') }}{{ $queryString }}"
                     </code>
                 </div>
                 
                 <!-- コンテンツ作成 -->
                 <div>
                     <p class="text-xs text-gray-600 mb-1">コンテンツを作成・更新:</p>
+                    @php
+                        $jsonData = [];
+                        if ($collection->is_competition_managed) {
+                            $jsonData['competition_id'] = 1;
+                        }
+                        if ($collection->is_player_managed) {
+                            $jsonData['player_id'] = 1;
+                        }
+                        if ($collection->fields->count() > 0) {
+                            $jsonData['contents'] = [['field_id' => 1, 'value' => 'sample']];
+                        }
+                        $jsonString = json_encode($jsonData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+                    @endphp
                     <code class="block bg-gray-100 p-2 rounded text-xs">
                         curl -X POST {{ \App\Helpers\ApiHelper::url('v1/collections/' . $collection->id . '/content') }} \{{ $collection->accessControls->count() > 0 ? "\n  -H \"Authorization: Bearer YOUR_API_TOKEN\" \\" : '' }}
   -H "Content-Type: application/json" \
-  -d '{ @if($collection->is_competition_managed)"competition_id": 1@if($collection->is_player_managed), @endif @endif @if($collection->is_player_managed)"player_id": 1@if($collection->fields->count() > 0), @endif @endif @if($collection->fields->count() > 0)"contents": [{"field_id": 1, "value": "sample"}]@endif }'
+  -d '{{ $jsonString }}'
                     </code>
                 </div>
             </div>

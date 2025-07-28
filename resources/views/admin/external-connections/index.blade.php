@@ -104,7 +104,7 @@
             buttonElement.disabled = true;
             buttonElement.textContent = 'テスト中...';
 
-            fetch(`/admin/external-connections/${connectionId}/test`, {
+            fetch(`/sjt-cp-admin/external-connections/${connectionId}/test`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

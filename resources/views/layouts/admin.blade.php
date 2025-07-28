@@ -124,13 +124,23 @@
                         @if(isset($pageActions))
                             <div class="flex space-x-3">
                                 @foreach($pageActions as $action)
-                                    <a href="{{ $action['url'] }}" 
-                                       class="inline-flex items-center px-4 py-2 border {{ $action['type'] === 'primary' ? 'border-transparent bg-blue-600 text-white hover:bg-blue-700' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50' }} rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-200">
-                                        @if(isset($action['icon']))
-                                            {!! $action['icon'] !!}
-                                        @endif
-                                        {{ $action['label'] }}
-                                    </a>
+                                    @if($action['type'] === 'button')
+                                        <button onclick="{{ $action['onclick'] }}" 
+                                           class="inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-200">
+                                            @if(isset($action['icon']))
+                                                {!! $action['icon'] !!}
+                                            @endif
+                                            {{ $action['label'] }}
+                                        </button>
+                                    @else
+                                        <a href="{{ $action['url'] }}" 
+                                           class="inline-flex items-center px-4 py-2 border {{ $action['type'] === 'primary' ? 'border-transparent bg-blue-600 text-white hover:bg-blue-700' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50' }} rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-200">
+                                            @if(isset($action['icon']))
+                                                {!! $action['icon'] !!}
+                                            @endif
+                                            {{ $action['label'] }}
+                                        </a>
+                                    @endif
                                 @endforeach
                             </div>
                         @endif

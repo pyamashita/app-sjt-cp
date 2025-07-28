@@ -56,12 +56,18 @@ class LoginController extends Controller
             
             $user = Auth::user();
             
-            // 管理者の場合は管理画面へ、それ以外はダッシュボードへ
-            if ($user && $user->hasRole('admin')) {
-                return redirect()->intended(route('admin.home'));
-            }
+            // アニメーション表示のためのフラグをセッションに設定
+            $request->session()->put('show_login_animation', true);
             
-            return redirect()->intended(route('frontend.home'));
+            // 管理者の場合は管理画面へ、それ以外はダッシュボードへ
+            $redirectUrl = $user && $user->hasRole('admin') 
+                ? route('admin.home')
+                : route('frontend.home');
+            
+            // アニメーション画面にリダイレクト先URLを渡す
+            return view('auth.login-animation', [
+                'redirectUrl' => $redirectUrl
+            ]);
         }
 
         \Log::warning('Login failed', [

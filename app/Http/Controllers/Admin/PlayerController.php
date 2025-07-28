@@ -47,7 +47,7 @@ class PlayerController extends Controller
      */
     public function create(): View
     {
-        $prefectures = Player::getPrefectures();
+        $prefectures = array_combine(Player::getPrefectures(), Player::getPrefectures());
         $genders = Player::getGenders();
         
         return view('admin.players.create', compact('prefectures', 'genders'));
@@ -102,7 +102,7 @@ class PlayerController extends Controller
      */
     public function edit(Player $player): View
     {
-        $prefectures = Player::getPrefectures();
+        $prefectures = array_combine(Player::getPrefectures(), Player::getPrefectures());
         $genders = Player::getGenders();
         
         return view('admin.players.edit', compact('player', 'prefectures', 'genders'));

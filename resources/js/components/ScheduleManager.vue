@@ -381,7 +381,7 @@ export default {
       }
 
       try {
-        const response = await fetch(`/admin/competition-days/${props.competitionDayId}/competition-schedules`, {
+        const response = await fetch(`/sjt-cp-admin/competition-days/${props.competitionDayId}/competition-schedules`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -430,7 +430,7 @@ export default {
       }
 
       try {
-        const response = await fetch(`/admin/competition-days/${props.competitionDayId}/competition-schedules/${schedule.id}`, {
+        const response = await fetch(`/sjt-cp-admin/competition-days/${props.competitionDayId}/competition-schedules/${schedule.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -470,7 +470,7 @@ export default {
       }
 
       try {
-        const response = await fetch(`/admin/competition-days/${props.competitionDayId}/competition-schedules/${scheduleId}`, {
+        const response = await fetch(`/sjt-cp-admin/competition-days/${props.competitionDayId}/competition-schedules/${scheduleId}`, {
           method: 'DELETE',
           headers: {
             'X-CSRF-TOKEN': props.csrfToken,
@@ -497,7 +497,7 @@ export default {
 
     // CSVエクスポート
     const exportCSV = () => {
-      window.location.href = `/admin/competition-days/${props.competitionDayId}/schedules/export`;
+      window.location.href = `/sjt-cp-admin/competition-days/${props.competitionDayId}/schedules/export`;
     };
 
     // CSVインポートモーダルを閉じる
@@ -526,7 +526,7 @@ export default {
         formData.append('csv_file', fileInput.files[0]);
         formData.append('import_mode', importMode.value);
 
-        const response = await fetch(`/admin/competition-days/${props.competitionDayId}/schedules/import`, {
+        const response = await fetch(`/sjt-cp-admin/competition-days/${props.competitionDayId}/schedules/import`, {
           method: 'POST',
           headers: {
             'X-CSRF-TOKEN': props.csrfToken,

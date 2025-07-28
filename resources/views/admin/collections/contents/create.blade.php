@@ -236,7 +236,7 @@ function onCompetitionChange() {
     
     if (competitionId) {
         // 大会に所属する選手一覧を取得
-        fetch(`/admin/api/collections/players?competition_id=${competitionId}`)
+        fetch(`/sjt-cp-admin/api/collections/players?competition_id=${competitionId}`)
             .then(response => response.json())
             .then(data => {
                 // 選手選択肢を更新
@@ -254,7 +254,7 @@ function onCompetitionChange() {
             });
     } else {
         // 大会が選択されていない場合は全選手を表示
-        fetch(`/admin/api/collections/players`)
+        fetch(`/sjt-cp-admin/api/collections/players`)
             .then(response => response.json())
             .then(data => {
                 playerSelect.innerHTML = '<option value="">選択してください</option>';

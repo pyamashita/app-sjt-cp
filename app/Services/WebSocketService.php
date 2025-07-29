@@ -841,9 +841,9 @@ class WebSocketService
         // カスタムサーバーアドレスを使用
         $address = $this->config['server_address'] ?: 'localhost';
         
-        // localhostの場合は127.0.0.1に変換（Docker環境対応）
+        // localhostの場合はhost.docker.internalに変換（Docker環境対応）
         if ($address === 'localhost') {
-            return '127.0.0.1';
+            return 'host.docker.internal';
         }
         
         return $address;

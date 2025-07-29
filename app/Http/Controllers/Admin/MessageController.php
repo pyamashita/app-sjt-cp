@@ -12,7 +12,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Services\WebSocketService;
-use App\Jobs\SendScheduledMessage;
+use App\Jobs\SendMessage;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Queue;
 
 class MessageController extends Controller
 {
@@ -147,12 +149,14 @@ class MessageController extends Controller
 
             // 送信処理
             if ($validated['send_method'] === 'immediate') {
-                // 即時送信
-                $this->sendMessage($message);
+                // 即時送信 - キューに登録（遅延なし）
+                SendMessage::dispatch($message->id);
+                $message->update(['status' => 'pending']);
             } else {
                 // 予約送信 - キューに登録
-                SendScheduledMessage::dispatch($message)
-                    ->delay($validated['scheduled_at']);
+                $scheduledAt = Carbon::parse($validated['scheduled_at']);
+                SendMessage::dispatch($message->id)
+                    ->delay($scheduledAt);
                 
                 $message->update(['status' => 'scheduled']);
             }
@@ -251,12 +255,14 @@ class MessageController extends Controller
 
             // 送信処理
             if ($validated['send_method'] === 'immediate') {
-                // 即時送信
-                $this->sendMessage($message);
+                // 即時送信 - キューに登録（遅延なし）
+                SendMessage::dispatch($message->id);
+                $message->update(['status' => 'pending']);
             } else {
                 // 予約送信 - キューに登録
-                SendScheduledMessage::dispatch($message)
-                    ->delay($validated['scheduled_at']);
+                $scheduledAt = Carbon::parse($validated['scheduled_at']);
+                SendMessage::dispatch($message->id)
+                    ->delay($scheduledAt);
                 
                 $message->update(['status' => 'scheduled']);
             }
@@ -274,6 +280,11 @@ class MessageController extends Controller
         if (!$message->canDelete()) {
             return redirect()->route('admin.messages.index')
                 ->with('error', 'このメッセージは削除できません。');
+        }
+
+        // 予約メッセージまたは送信待ちメッセージの場合、キューからジョブを削除
+        if (in_array($message->status, ['scheduled', 'pending'])) {
+            $this->removeJobFromQueue($message->id);
         }
 
         $message->delete();
@@ -340,37 +351,40 @@ class MessageController extends Controller
                 ], 400);
             }
 
-            // svr-sjt-wsサーバーの接続状況取得
-            $connectionStatus = $this->webSocketService->getConnectionStatus();
+            // WebSocketサーバーから接続中のクライアント一覧を取得
+            Log::info("WebSocketサーバーからクライアント一覧取得開始", [
+                'device_id' => $device->id,
+                'device_name' => $device->name,
+                'device_websocket_id' => $device->device_id,
+                'device_ip' => $device->ip_address
+            ]);
             
-            if (isset($connectionStatus['error'])) {
-                return response()->json([
-                    'success' => false,
-                    'message' => "接続状況の取得に失敗しました: " . $connectionStatus['error']
-                ], 400);
-            }
-
+            $clientsData = $this->webSocketService->getConnectedClients();
+            
             // 端末IDまたはIPアドレスで該当端末の接続を確認
             $deviceConnected = false;
             $connectionInfo = null;
             
-            foreach ($connectionStatus['connections'] ?? [] as $connection) {
-                // 端末IDで検索（優先）
-                if (!empty($device->device_id) && $connection['id'] === $device->device_id) {
-                    $deviceConnected = true;
-                    $connectionInfo = $connection;
-                    break;
+            if (isset($clientsData['clients']) && is_array($clientsData['clients'])) {
+                foreach ($clientsData['clients'] as $client) {
+                    // 端末IDまたはIPアドレスでマッチング
+                    if (($device->device_id && isset($client['id']) && $client['id'] === $device->device_id) ||
+                        ($device->ip_address && isset($client['ip']) && $client['ip'] === $device->ip_address)) {
+                        $deviceConnected = true;
+                        $connectionInfo = $client;
+                        break;
+                    }
                 }
-                // TODO: IPアドレスベースの検索は現在のsvr-sjt-wsでは実装されていない
-                // 将来的に実装される場合はここに追加
             }
             
             Log::info("svr-sjt-ws接続テスト結果", [
                 'device_id' => $device->id,
                 'device_websocket_id' => $device->device_id,
+                'device_ip' => $device->ip_address,
                 'server_healthy' => $serverHealthy,
+                'total_clients' => $clientsData['total_count'] ?? 0,
+                'connected_clients' => $clientsData['connected_count'] ?? 0,
                 'device_connected' => $deviceConnected,
-                'total_connections' => count($connectionStatus['connections'] ?? []),
                 'connection_info' => $connectionInfo
             ]);
             
@@ -378,7 +392,11 @@ class MessageController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => "端末「{$device->name}」({$device->device_id})がsvr-sjt-ws WebSocketサーバーに接続されています。",
-                    'connection_info' => $connectionInfo
+                    'connection_info' => $connectionInfo,
+                    'server_info' => [
+                        'total_clients' => $clientsData['total_count'] ?? 0,
+                        'connected_clients' => $clientsData['connected_count'] ?? 0
+                    ]
                 ]);
             } else {
                 $deviceIdentifier = $device->device_id ?: $device->ip_address;
@@ -386,7 +404,11 @@ class MessageController extends Controller
                     'success' => false,
                     'message' => "端末「{$device->name}」({$deviceIdentifier})はsvr-sjt-ws WebSocketサーバーに接続されていません。",
                     'detail' => 'svr-sjt-ws WebSocketサーバーは動作していますが、該当端末からの接続が確認できません。',
-                    'total_connections' => count($connectionStatus['connections'] ?? [])
+                    'server_status' => 'healthy',
+                    'server_info' => [
+                        'total_clients' => $clientsData['total_count'] ?? 0,
+                        'connected_clients' => $clientsData['connected_count'] ?? 0
+                    ]
                 ], 400);
             }
         } catch (\Exception $e) {
@@ -589,11 +611,14 @@ class MessageController extends Controller
      */
     public function cancel(Message $message)
     {
-        // 予約済みメッセージのみキャンセル可能
-        if ($message->status !== 'scheduled') {
+        // 予約済みまたは送信待ちメッセージのみキャンセル可能
+        if (!in_array($message->status, ['scheduled', 'pending'])) {
             return redirect()->route('admin.messages.show', $message)
                 ->with('error', 'このメッセージはキャンセルできません。');
         }
+
+        // キューからジョブを削除
+        $this->removeJobFromQueue($message->id);
 
         $message->update(['status' => 'cancelled']);
 
@@ -618,6 +643,46 @@ class MessageController extends Controller
             ]);
         } elseif ($failedCount === $totalCount) {
             $message->update(['status' => 'failed']);
+        }
+    }
+
+    /**
+     * メッセージステータスを取得（Ajax用）
+     */
+    public function status(Message $message)
+    {
+        return response()->json([
+            'id' => $message->id,
+            'status' => $message->status,
+            'status_display' => $message->status_display,
+            'sent_at' => $message->sent_at?->format('Y-m-d H:i:s'),
+            'completed_at' => $message->completed_at?->format('Y-m-d H:i:s'),
+        ]);
+    }
+
+    /**
+     * メッセージに関連するキューを削除
+     */
+    private function removeJobFromQueue($messageId)
+    {
+        try {
+            // データベースキューから該当ジョブを削除
+            // SendMessageでかつ該当messageIdを含むジョブを削除
+            $deletedCount = DB::table('jobs')
+                ->where('payload', 'LIKE', "%SendMessage%")
+                ->where('payload', 'LIKE', "%{$messageId}%")
+                ->delete();
+            
+            if ($deletedCount > 0) {
+                Log::info("メッセージID {$messageId} に関連する {$deletedCount} 件のキュージョブを削除しました。");
+            } else {
+                Log::info("メッセージID {$messageId} に関連するキュージョブは見つかりませんでした（既に実行済みまたは存在しない）。");
+            }
+            
+            return $deletedCount;
+        } catch (\Exception $e) {
+            Log::error("メッセージID {$messageId} のキュージョブ削除中にエラーが発生しました: " . $e->getMessage());
+            return 0;
         }
     }
 }

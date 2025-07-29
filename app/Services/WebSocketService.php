@@ -10,6 +10,7 @@ use React\Socket\TcpConnector;
 use Illuminate\Support\Facades\Log;
 use App\Models\ExternalConnection;
 use Exception;
+use Ratchet\RFC6455\Messaging\MessageInterface;
 
 class WebSocketService
 {
@@ -464,6 +465,7 @@ class WebSocketService
             ]);
 
             $ch = curl_init();
+            $stderrHandle = fopen('php://temp', 'w+');
             curl_setopt_array($ch, [
                 CURLOPT_URL => $healthUrl,
                 CURLOPT_TIMEOUT => 5,
@@ -472,7 +474,7 @@ class WebSocketService
                 CURLOPT_SSL_VERIFYPEER => false,
                 CURLOPT_SSL_VERIFYHOST => false,
                 CURLOPT_VERBOSE => true,
-                CURLOPT_STDERR => fopen('php://temp', 'w+')
+                CURLOPT_STDERR => $stderrHandle
             ]);
 
             $response = curl_exec($ch);
@@ -481,8 +483,12 @@ class WebSocketService
             $curlInfo = curl_getinfo($ch);
             
             // デバッグ情報を取得
-            rewind(curl_getinfo($ch, CURLINFO_STDERR));
-            $verboseLog = stream_get_contents(curl_getinfo($ch, CURLINFO_STDERR));
+            $verboseLog = null;
+            if (is_resource($stderrHandle)) {
+                rewind($stderrHandle);
+                $verboseLog = stream_get_contents($stderrHandle);
+                fclose($stderrHandle);
+            }
             
             curl_close($ch);
             
@@ -528,7 +534,129 @@ class WebSocketService
     }
 
     /**
-     * svr-sjt-wsサーバーの接続状況取得
+     * WebSocketサーバーから接続中のクライアント一覧を取得
+     *
+     * @return array クライアント情報
+     */
+    public function getConnectedClients(): array
+    {
+        try {
+            $serverAddress = $this->getServerAddress();
+            $port = $this->config['default_port'];
+            $path = $this->config['path'] ?? '/ws';
+            $wsProtocol = $this->config['protocol'] === 'wss' ? 'wss' : 'ws';
+            $websocketUrl = "{$wsProtocol}://{$serverAddress}:{$port}{$path}";
+            
+            Log::info("WebSocketサーバーからクライアント一覧取得開始", [
+                'server_address' => $serverAddress,
+                'port' => $port,
+                'url' => $websocketUrl
+            ]);
+
+            $messageId = 'clients-request-' . uniqid();
+            $clientsMessage = [
+                'event_type' => 'clients',
+                'target' => ['type' => 'broadcast'],
+                'data' => [],
+                'metadata' => [
+                    'timestamp' => now()->toJSON(),
+                    'sender' => 'control_panel',
+                    'sender_id' => 'sjt-cp-admin',
+                    'message_id' => $messageId
+                ]
+            ];
+
+            Log::info("WebSocketクライアント一覧リクエスト送信", [
+                'message_id' => $messageId,
+                'request' => $clientsMessage
+            ]);
+
+            // WebSocket接続を確立してメッセージを送信
+            $response = null;
+            $connectionError = null;
+            $timeoutReached = false;
+            
+            // 新しいイベントループインスタンスを使用
+            $loop = \React\EventLoop\Loop::get();
+            $connector = new Connector($loop);
+            
+            $promise = $connector($websocketUrl)
+                ->then(function (WebSocket $conn) use ($clientsMessage, &$response, $loop) {
+                    Log::info("WebSocket接続成功、メッセージ送信");
+                    
+                    // クライアント一覧要求メッセージを送信
+                    $conn->send(json_encode($clientsMessage));
+                    
+                    // レスポンスを待機
+                    $conn->on('message', function (MessageInterface $msg) use (&$response, $conn, $loop) {
+                        $data = json_decode($msg->getPayload(), true);
+                        Log::info("WebSocketからメッセージ受信", ['data' => $data]);
+                        
+                        if ($data && isset($data['event_type']) && $data['event_type'] === 'clients') {
+                            $response = $data;
+                            $conn->close();
+                            $loop->stop();
+                        }
+                    });
+                    
+                    // 接続エラー処理
+                    $conn->on('close', function () use ($loop) {
+                        Log::info("WebSocket接続が閉じられました");
+                        $loop->stop();
+                    });
+                    
+                })
+                ->otherwise(function (\Exception $e) use (&$connectionError, $loop) {
+                    Log::error("WebSocket接続エラー", [
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                    $connectionError = $e;
+                    $loop->stop();
+                });
+
+            // タイムアウト設定（10秒）
+            $timer = $loop->addTimer(10, function () use (&$timeoutReached, $loop) {
+                Log::warning("WebSocket接続がタイムアウトしました");
+                $timeoutReached = true;
+                $loop->stop();
+            });
+
+            // イベントループを実行して結果を待機
+            $loop->run();
+            
+            // タイマーをクリーンアップ
+            $loop->cancelTimer($timer);
+            
+            if ($connectionError) {
+                throw $connectionError;
+            }
+            
+            if ($timeoutReached) {
+                throw new Exception("WebSocket接続がタイムアウトしました");
+            }
+            
+            if ($response && isset($response['data'])) {
+                Log::info("WebSocketクライアント一覧取得成功", [
+                    'total_count' => $response['data']['total_count'] ?? 0,
+                    'connected_count' => $response['data']['connected_count'] ?? 0
+                ]);
+                return $response['data'];
+            } else {
+                throw new Exception("サーバーから有効な応答が返されませんでした");
+            }
+
+        } catch (Exception $e) {
+            Log::error("WebSocketクライアント一覧取得エラー", [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
+     * svr-sjt-wsサーバーの接続状況取得（旧実装・互換性維持）
      *
      * @param int $port WebSocketポート
      * @return array 接続情報

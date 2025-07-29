@@ -155,7 +155,8 @@
                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                 <p class="mt-1 text-sm text-gray-500">
                                     別サーバーでWebSocketサーバーを起動した場合のIPアドレスまたはドメイン名<br>
-                                    Sailで起動中の場合は「host.docker.internal」を指定してください
+                                    Sailで起動中の場合は「host.docker.internal」を指定してください<br>
+                                    （CPをSailで起動しており、WSサーバが外部にある場合）
                                 </p>
                                 @error('config.server_address')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>

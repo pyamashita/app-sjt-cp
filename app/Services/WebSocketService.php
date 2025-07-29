@@ -41,9 +41,9 @@ class WebSocketService
         try {
             $port = $port ?: $this->config['default_port'];
             $serverAddress = $this->getServerAddress();
-            $httpProtocol = $this->config['protocol'] === 'wss' ? 'https' : 'http';
+            $wsProtocol = $this->config['protocol'] === 'wss' ? 'wss' : 'ws';
             $path = $this->config['path'] ?? '/ws';
-            $sendUrl = "{$httpProtocol}://{$serverAddress}:{$port}{$path}";
+            $websocketUrl = "{$wsProtocol}://{$serverAddress}:{$port}{$path}";
 
             // ターゲット設定を更新
             if ($targetIds && count($targetIds) > 0) {
@@ -66,49 +66,41 @@ class WebSocketService
 
             Log::info("svr-sjt-ws WebSocketサーバーにメッセージ送信開始", [
                 'port' => $port,
-                'url' => $sendUrl,
+                'url' => $websocketUrl,
                 'event_type' => $messageData['event_type'],
                 'target' => $messageData['target'],
                 'message_id' => $messageData['metadata']['message_id']
             ]);
 
-            $ch = curl_init();
-            curl_setopt_array($ch, [
-                CURLOPT_URL => $sendUrl,
-                CURLOPT_POST => true,
-                CURLOPT_POSTFIELDS => json_encode($messageData),
-                CURLOPT_HTTPHEADER => [
-                    'Content-Type: application/json',
-                    'Accept: application/json'
-                ],
-                CURLOPT_TIMEOUT => $this->config['timeout'],
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_SSL_VERIFYPEER => false,
-                CURLOPT_SSL_VERIFYHOST => false
-            ]);
+            // WebSocket接続を作成
+            $success = false;
+            $promise = $this->connector->__invoke($websocketUrl)
+                ->then(function (\Ratchet\Client\WebSocket $conn) use ($messageData, &$success) {
+                    // 接続成功、メッセージを送信
+                    $conn->send(json_encode($messageData));
+                    $success = true;
+                    $conn->close();
+                    
+                    Log::info("svr-sjt-ws WebSocketサーバーへのメッセージ送信成功", [
+                        'message_id' => $messageData['metadata']['message_id']
+                    ]);
+                    
+                }, function (Exception $e) use ($messageData) {
+                    Log::error("svr-sjt-ws WebSocket接続失敗", [
+                        'error' => $e->getMessage(),
+                        'message_id' => $messageData['metadata']['message_id']
+                    ]);
+                    throw $e;
+                });
 
-            $response = curl_exec($ch);
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            $error = curl_error($ch);
-            curl_close($ch);
+            // 接続を待機（最大タイムアウト時間）
+            $this->runEventLoopWithTimeout((float)$this->config['timeout']);
 
-            if ($error) {
-                throw new Exception("HTTP送信エラー: {$error}");
+            if (!$success) {
+                throw new Exception("WebSocket接続またはメッセージ送信に失敗しました");
             }
 
-            if ($httpCode >= 200 && $httpCode < 300) {
-                $responseData = json_decode($response, true);
-                Log::info("svr-sjt-ws WebSocketサーバーへのメッセージ送信成功", [
-                    'http_code' => $httpCode,
-                    'response' => $responseData,
-                    'message_id' => $messageData['metadata']['message_id']
-                ]);
-                return true;
-            } else {
-                $responseData = json_decode($response, true);
-                $errorMsg = $responseData['error'] ?? 'HTTPコード ' . $httpCode;
-                throw new Exception("メッセージ送信失敗: {$errorMsg}");
-            }
+            return true;
 
         } catch (Exception $e) {
             Log::error("svr-sjt-ws WebSocketサーバーへのメッセージ送信エラー", [

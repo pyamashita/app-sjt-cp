@@ -42,7 +42,8 @@ class WebSocketService
             $port = $port ?: $this->config['default_port'];
             $serverAddress = $this->getServerAddress();
             $httpProtocol = $this->config['protocol'] === 'wss' ? 'https' : 'http';
-            $sendUrl = "{$httpProtocol}://{$serverAddress}:{$port}/broadcast";
+            $path = $this->config['path'] ?? '/ws';
+            $sendUrl = "{$httpProtocol}://{$serverAddress}:{$port}{$path}";
 
             // ターゲット設定を更新
             if ($targetIds && count($targetIds) > 0) {

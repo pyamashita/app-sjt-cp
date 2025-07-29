@@ -510,13 +510,30 @@ class MessageController extends Controller
                 $level = 'success';
             }
 
+            // 画像がある場合は画像を優先、なければリンクを使用
+            $actionTarget = null;
+            $actionType = null;
+            
+            if ($message->resource && $message->resource->is_image) {
+                $actionTarget = route('admin.resources.serve', $message->resource);
+                $actionType = 'image';
+            } elseif ($message->link) {
+                $actionTarget = $message->link;
+                $actionType = 'url';
+            }
+
             $messageData = $this->webSocketService->buildNotificationMessage(
                 $message->title ?? 'お知らせ',
                 $message->content,
                 $level,
-                $message->link,
+                $actionTarget,
                 5000
             );
+
+            // actionのtypeを正しく設定
+            if ($actionTarget && $actionType) {
+                $messageData['data']['action']['type'] = $actionType;
+            }
 
             // 送信対象タイプに応じてターゲットIDを設定
             $targetIds = null;

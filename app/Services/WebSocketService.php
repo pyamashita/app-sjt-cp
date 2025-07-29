@@ -69,7 +69,8 @@ class WebSocketService
                 'url' => $websocketUrl,
                 'event_type' => $messageData['event_type'],
                 'target' => $messageData['target'],
-                'message_id' => $messageData['metadata']['message_id']
+                'message_id' => $messageData['metadata']['message_id'],
+                'full_message' => $messageData
             ]);
 
             // WebSocket接続を作成

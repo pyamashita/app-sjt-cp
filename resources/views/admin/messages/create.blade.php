@@ -152,49 +152,125 @@
 
         <!-- 送信対象 -->
         <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex items-center justify-between mb-4">
-                <label class="block text-sm font-medium text-gray-700">
-                    送信対象 <span class="text-red-500">*</span>
-                </label>
-                <div class="flex gap-2">
-                    <button type="button" 
-                            onclick="selectAllDevices()"
-                            class="text-sm text-blue-600 hover:text-blue-800">
-                        全選択
-                    </button>
-                    <button type="button" 
-                            onclick="clearAllDevices()"
-                            class="text-sm text-gray-600 hover:text-gray-800">
-                        クリア
-                    </button>
+            <label class="block text-sm font-medium text-gray-700 mb-4">
+                送信対象 <span class="text-red-500">*</span>
+            </label>
+
+            <!-- 送信対象タイプ選択 -->
+            <div class="space-y-4">
+                <div class="flex space-x-6">
+                    <label class="flex items-center">
+                        <input type="radio" 
+                               name="target_type" 
+                               value="broadcast"
+                               {{ old('target_type', 'broadcast') === 'broadcast' ? 'checked' : '' }}
+                               class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                               onchange="toggleTargetSelection()">
+                        <span class="ml-2 text-sm text-gray-900">全端末（ブロードキャスト）</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" 
+                               name="target_type" 
+                               value="individual"
+                               {{ old('target_type') === 'individual' ? 'checked' : '' }}
+                               class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                               onchange="toggleTargetSelection()">
+                        <span class="ml-2 text-sm text-gray-900">個別端末</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" 
+                               name="target_type" 
+                               value="group"
+                               {{ old('target_type') === 'group' ? 'checked' : '' }}
+                               class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                               onchange="toggleTargetSelection()">
+                        <span class="ml-2 text-sm text-gray-900">複数端末（グループ）</span>
+                    </label>
+                </div>
+
+                @error('target_type')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+
+                <!-- 端末選択エリア -->
+                <div id="device-selection" style="display: none;">
+                    <div class="flex items-center justify-between mb-3">
+                        <label class="block text-sm font-medium text-gray-700">
+                            送信先端末を選択 <span class="text-red-500">*</span>
+                        </label>
+                        <div class="flex gap-2">
+                            <button type="button" 
+                                    onclick="selectAllDevices()"
+                                    class="text-sm text-blue-600 hover:text-blue-800">
+                                全選択
+                            </button>
+                            <button type="button" 
+                                    onclick="clearAllDevices()"
+                                    class="text-sm text-gray-600 hover:text-gray-800">
+                                クリア
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 検索フィルター -->
+                    <div class="mb-3">
+                        <input type="text" 
+                               id="deviceSearch" 
+                               placeholder="端末名、IPアドレス、端末IDで検索..." 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                               onkeyup="filterDevices()">
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-64 overflow-y-auto border rounded p-3">
+                        @foreach($devices as $device)
+                            <label class="device-item flex items-center group" 
+                                   data-device-name="{{ strtolower($device->name) }}"
+                                   data-device-ip="{{ strtolower($device->ip_address) }}"
+                                   data-device-id="{{ strtolower($device->device_id ?? '') }}">
+                                <input type="checkbox" 
+                                       name="device_ids[]" 
+                                       value="{{ $device->id }}"
+                                       {{ in_array($device->id, old('device_ids', [])) ? 'checked' : '' }}
+                                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                <span class="ml-2 text-sm text-gray-900 flex-1">
+                                    <div class="font-medium">{{ $device->name }}</div>
+                                    <div class="text-gray-500 text-xs">
+                                        {{ $device->device_id ? 'ID: ' . $device->device_id : '' }}
+                                        {{ $device->device_id && $device->ip_address ? ' | ' : '' }}
+                                        {{ $device->ip_address ? 'IP: ' . $device->ip_address : '' }}
+                                    </div>
+                                </span>
+                                <button type="button" 
+                                        onclick="testDeviceConnection({{ $device->id }}, '{{ $device->name }}', '{{ $device->ip_address }}')"
+                                        class="ml-2 text-xs text-blue-600 hover:text-blue-800 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        title="接続テスト">
+                                    テスト
+                                </button>
+                            </label>
+                        @endforeach
+                    </div>
+                    
+                    @error('device_ids')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- ブロードキャスト時の説明 -->
+                <div id="broadcast-info" class="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-blue-700">
+                                WebSocketサーバーに接続している全ての端末にメッセージが送信されます。
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-64 overflow-y-auto border rounded p-3">
-                @foreach($devices as $device)
-                    <label class="flex items-center group">
-                        <input type="checkbox" 
-                               name="device_ids[]" 
-                               value="{{ $device->id }}"
-                               {{ in_array($device->id, old('device_ids', [])) ? 'checked' : '' }}
-                               class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                        <span class="ml-2 text-sm text-gray-900 flex-1">
-                            {{ $device->name }}
-                            <span class="text-gray-500">({{ $device->ip_address }})</span>
-                        </span>
-                        <button type="button" 
-                                onclick="testDeviceConnection({{ $device->id }}, '{{ $device->name }}', '{{ $device->ip_address }}')"
-                                class="ml-2 text-xs text-blue-600 hover:text-blue-800 opacity-0 group-hover:opacity-100 transition-opacity"
-                                title="接続テスト">
-                            テスト
-                        </button>
-                    </label>
-                @endforeach
-            </div>
-            
-            @error('device_ids')
-                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-            @enderror
         </div>
 
         <!-- 送信ボタン -->
@@ -345,9 +421,45 @@
             }
         }
 
+        // 送信対象選択の表示切替
+        function toggleTargetSelection() {
+            const targetType = document.querySelector('input[name="target_type"]:checked').value;
+            const deviceSelection = document.getElementById('device-selection');
+            const broadcastInfo = document.getElementById('broadcast-info');
+            
+            if (targetType === 'broadcast') {
+                deviceSelection.style.display = 'none';
+                broadcastInfo.style.display = 'block';
+                // ブロードキャスト時は端末選択をクリア
+                clearAllDevices();
+            } else {
+                deviceSelection.style.display = 'block';
+                broadcastInfo.style.display = 'none';
+            }
+        }
+
+        // 端末検索フィルター
+        function filterDevices() {
+            const searchTerm = document.getElementById('deviceSearch').value.toLowerCase();
+            const deviceItems = document.querySelectorAll('.device-item');
+            
+            deviceItems.forEach(item => {
+                const name = item.dataset.deviceName;
+                const ip = item.dataset.deviceIp;
+                const id = item.dataset.deviceId;
+                
+                const matches = name.includes(searchTerm) || 
+                               ip.includes(searchTerm) || 
+                               id.includes(searchTerm);
+                
+                item.style.display = matches ? 'flex' : 'none';
+            });
+        }
+
         // 初期状態で表示切替
         document.addEventListener('DOMContentLoaded', function() {
             toggleScheduledFields();
+            toggleTargetSelection(); // 送信対象選択の初期表示
             
             // 初期文字数・行数カウント
             const title = document.getElementById('title');

@@ -19,6 +19,7 @@ class Message extends Model
         'link',
         'resource_id',
         'status',
+        'target_type',
         'scheduled_at',
         'sent_at',
         'completed_at',
@@ -39,6 +40,18 @@ class Message extends Model
         return [
             'immediate' => '即時送信',
             'scheduled' => '予約送信',
+        ];
+    }
+
+    /**
+     * 送信対象タイプの選択肢
+     */
+    public static function getTargetTypes(): array
+    {
+        return [
+            'broadcast' => '全端末（ブロードキャスト）',
+            'individual' => '個別端末',
+            'group' => '複数端末（グループ）',
         ];
     }
 
@@ -74,6 +87,14 @@ class Message extends Model
     public function getStatusDisplayAttribute(): string
     {
         return self::getStatuses()[$this->status] ?? $this->status;
+    }
+
+    /**
+     * 送信対象タイプの表示名
+     */
+    public function getTargetTypeDisplayAttribute(): string
+    {
+        return self::getTargetTypes()[$this->target_type] ?? $this->target_type;
     }
 
     /**

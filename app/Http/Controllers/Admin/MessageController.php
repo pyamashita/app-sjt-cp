@@ -90,7 +90,8 @@ class MessageController extends Controller
             'link' => 'nullable|url|max:2000',
             'resource_id' => 'nullable|exists:resources,id',
             'scheduled_at' => 'nullable|required_if:send_method,scheduled|date|after:now',
-            'device_ids' => 'required|array|min:1',
+            'target_type' => 'required|in:broadcast,individual,group',
+            'device_ids' => 'nullable|array',
             'device_ids.*' => 'exists:devices,id',
         ], [
             'send_method.required' => '送信方法を選択してください',
@@ -99,9 +100,25 @@ class MessageController extends Controller
             'title.max' => 'タイトルは50文字以内で入力してください',
             'scheduled_at.required_if' => '予約送信の場合は送信日時を指定してください',
             'scheduled_at.after' => '送信日時は現在時刻より後を指定してください',
-            'device_ids.required' => '送信対象を選択してください',
-            'device_ids.min' => '送信対象を最低1つ選択してください',
+            'target_type.required' => '送信対象タイプを選択してください',
         ]);
+
+        // 送信対象別のバリデーション
+        if ($validated['target_type'] === 'individual') {
+            $request->validate([
+                'device_ids' => 'required|array|size:1',
+            ], [
+                'device_ids.required' => '個別送信の場合は端末を1つ選択してください',
+                'device_ids.size' => '個別送信の場合は端末を1つだけ選択してください',
+            ]);
+        } elseif ($validated['target_type'] === 'group') {
+            $request->validate([
+                'device_ids' => 'required|array|min:2',
+            ], [
+                'device_ids.required' => 'グループ送信の場合は端末を選択してください',
+                'device_ids.min' => 'グループ送信の場合は端末を2つ以上選択してください',
+            ]);
+        }
 
         DB::transaction(function () use ($validated) {
             // メッセージ作成
@@ -111,18 +128,21 @@ class MessageController extends Controller
                 'content' => $validated['content'],
                 'link' => $validated['link'],
                 'resource_id' => $validated['resource_id'],
+                'target_type' => $validated['target_type'],
                 'scheduled_at' => $validated['scheduled_at'] ?? null,
                 'status' => $validated['send_method'] === 'immediate' ? 'pending' : 'draft',
                 'created_by' => Auth::id(),
             ]);
 
-            // 送信対象端末を関連付け
-            foreach ($validated['device_ids'] as $deviceId) {
-                MessageDevice::create([
-                    'message_id' => $message->id,
-                    'device_id' => $deviceId,
-                    'delivery_status' => 'pending',
-                ]);
+            // 送信対象端末を関連付け（ブロードキャスト以外の場合）
+            if ($validated['target_type'] !== 'broadcast' && !empty($validated['device_ids'])) {
+                foreach ($validated['device_ids'] as $deviceId) {
+                    MessageDevice::create([
+                        'message_id' => $message->id,
+                        'device_id' => $deviceId,
+                        'delivery_status' => 'pending',
+                    ]);
+                }
             }
 
             // 送信処理
@@ -180,9 +200,27 @@ class MessageController extends Controller
             'link' => 'nullable|url|max:2000',
             'resource_id' => 'nullable|exists:resources,id',
             'scheduled_at' => 'nullable|required_if:send_method,scheduled|date|after:now',
-            'device_ids' => 'required|array|min:1',
+            'target_type' => 'required|in:broadcast,individual,group',
+            'device_ids' => 'nullable|array',
             'device_ids.*' => 'exists:devices,id',
         ]);
+
+        // 送信対象別のバリデーション（更新時も同じ）
+        if ($validated['target_type'] === 'individual') {
+            $request->validate([
+                'device_ids' => 'required|array|size:1',
+            ], [
+                'device_ids.required' => '個別送信の場合は端末を1つ選択してください',
+                'device_ids.size' => '個別送信の場合は端末を1つだけ選択してください',
+            ]);
+        } elseif ($validated['target_type'] === 'group') {
+            $request->validate([
+                'device_ids' => 'required|array|min:2',
+            ], [
+                'device_ids.required' => 'グループ送信の場合は端末を選択してください',
+                'device_ids.min' => 'グループ送信の場合は端末を2つ以上選択してください',
+            ]);
+        }
 
         DB::transaction(function () use ($message, $validated) {
             // メッセージ更新
@@ -192,6 +230,7 @@ class MessageController extends Controller
                 'content' => $validated['content'],
                 'link' => $validated['link'],
                 'resource_id' => $validated['resource_id'],
+                'target_type' => $validated['target_type'],
                 'scheduled_at' => $validated['scheduled_at'] ?? null,
                 'status' => $validated['send_method'] === 'immediate' ? 'pending' : 'draft',
             ]);
@@ -199,13 +238,15 @@ class MessageController extends Controller
             // 既存の送信対象をクリア
             $message->messageDevices()->delete();
 
-            // 新しい送信対象を設定
-            foreach ($validated['device_ids'] as $deviceId) {
-                MessageDevice::create([
-                    'message_id' => $message->id,
-                    'device_id' => $deviceId,
-                    'delivery_status' => 'pending',
-                ]);
+            // 新しい送信対象を設定（ブロードキャスト以外の場合）
+            if ($validated['target_type'] !== 'broadcast' && !empty($validated['device_ids'])) {
+                foreach ($validated['device_ids'] as $deviceId) {
+                    MessageDevice::create([
+                        'message_id' => $message->id,
+                        'device_id' => $deviceId,
+                        'delivery_status' => 'pending',
+                    ]);
+                }
             }
 
             // 送信処理
@@ -372,12 +413,25 @@ class MessageController extends Controller
             'sent_at' => now(),
         ]);
 
-        foreach ($message->devices as $device) {
-            $this->sendMessageToDevice($message, $device);
+        if ($message->target_type === 'broadcast') {
+            // ブロードキャスト：一度だけ送信
+            try {
+                $this->sendWebSocketMessage(null, $message);
+                $message->update([
+                    'status' => 'completed',
+                    'completed_at' => now(),
+                ]);
+            } catch (\Exception $e) {
+                $message->update(['status' => 'failed']);
+            }
+        } else {
+            // 個別・グループ：各端末に送信
+            foreach ($message->devices as $device) {
+                $this->sendMessageToDevice($message, $device);
+            }
+            // 全て送信完了したら状態を更新
+            $this->updateMessageStatus($message);
         }
-
-        // 全て送信完了したら状態を更新
-        $this->updateMessageStatus($message);
     }
 
     /**
@@ -394,28 +448,53 @@ class MessageController extends Controller
         }
 
         try {
-            // WebSocket送信処理（仮実装）
-            // TODO: 実際のWebSocket送信処理を実装
-            $this->sendWebSocketMessage($device, $message);
-
-            $messageDevice->update([
-                'delivery_status' => 'sent',
-                'sent_at' => now(),
-            ]);
+            // WebSocket送信処理
+            if ($message->target_type === 'group') {
+                // グループ送信の場合は一度だけ送信（最初の端末でのみ実行）
+                $firstDevice = $message->devices->first();
+                if ($device->id === $firstDevice->id) {
+                    $this->sendWebSocketMessage($device, $message);
+                    // 全ての端末の配信ステータスを更新
+                    foreach ($message->messageDevices as $messageDeviceItem) {
+                        $messageDeviceItem->update([
+                            'delivery_status' => 'sent',
+                            'sent_at' => now(),
+                        ]);
+                    }
+                }
+            } else {
+                // 個別送信の場合
+                $this->sendWebSocketMessage($device, $message);
+                $messageDevice->update([
+                    'delivery_status' => 'sent',
+                    'sent_at' => now(),
+                ]);
+            }
 
         } catch (\Exception $e) {
-            $messageDevice->update([
-                'delivery_status' => 'failed',
-                'error_message' => $e->getMessage(),
-                'retry_count' => $messageDevice->retry_count + 1,
-            ]);
+            if ($message->target_type === 'group') {
+                // グループ送信でエラーの場合、全ての端末を失敗扱いにする
+                foreach ($message->messageDevices as $messageDeviceItem) {
+                    $messageDeviceItem->update([
+                        'delivery_status' => 'failed',
+                        'error_message' => $e->getMessage(),
+                        'retry_count' => $messageDeviceItem->retry_count + 1,
+                    ]);
+                }
+            } else {
+                $messageDevice->update([
+                    'delivery_status' => 'failed',
+                    'error_message' => $e->getMessage(),
+                    'retry_count' => $messageDevice->retry_count + 1,
+                ]);
+            }
         }
     }
 
     /**
      * WebSocket送信（svr-sjt-ws仕様対応）
      */
-    private function sendWebSocketMessage(Device $device, Message $message)
+    private function sendWebSocketMessage(?Device $device, Message $message)
     {
         try {
             // svr-sjt-ws仕様のnotificationメッセージを構築
@@ -439,10 +518,23 @@ class MessageController extends Controller
                 5000
             );
 
-            // 端末IDを取得（device_idフィールドがある場合はそれを使用、なければIPベースで判定）
-            $targetIds = [];
-            if (!empty($device->device_id)) {
-                $targetIds = [$device->device_id];
+            // 送信対象タイプに応じてターゲットIDを設定
+            $targetIds = null;
+            
+            if ($message->target_type === 'broadcast') {
+                // ブロードキャスト：targetIds を null にする
+                $targetIds = null;
+            } elseif ($message->target_type === 'individual' && $device) {
+                // 個別送信：単一端末のID
+                if (!empty($device->device_id)) {
+                    $targetIds = [$device->device_id];
+                }
+            } elseif ($message->target_type === 'group') {
+                // グループ送信：複数端末のID
+                $deviceIds = $message->devices->pluck('device_id')->filter()->toArray();
+                if (!empty($deviceIds)) {
+                    $targetIds = $deviceIds;
+                }
             }
 
             // WebSocketで送信（新しいsvr-sjt-ws仕様）
@@ -453,17 +545,20 @@ class MessageController extends Controller
             }
 
             Log::info("svr-sjt-ws仕様でのメッセージ送信成功", [
-                'device_id' => $device->device_id ?? 'unknown',
-                'device_ip' => $device->ip_address,
+                'target_type' => $message->target_type,
+                'device_id' => $device->device_id ?? 'broadcast',
+                'device_ip' => $device->ip_address ?? 'broadcast',
                 'message_id' => $message->id,
                 'websocket_message_id' => $messageData['metadata']['message_id'],
-                'event_type' => $messageData['event_type']
+                'event_type' => $messageData['event_type'],
+                'target_ids' => $targetIds
             ]);
 
         } catch (\Exception $e) {
             Log::error("svr-sjt-ws仕様でのメッセージ送信エラー", [
-                'device_id' => $device->device_id ?? 'unknown',
-                'device_ip' => $device->ip_address,
+                'target_type' => $message->target_type,
+                'device_id' => $device->device_id ?? 'broadcast',
+                'device_ip' => $device->ip_address ?? 'broadcast',
                 'message_id' => $message->id,
                 'error' => $e->getMessage()
             ]);

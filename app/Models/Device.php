@@ -6,18 +6,49 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Device extends Model
 {
     use HasFactory;
 
     protected $fillable = [
+        'device_id',
         'name',
         'type',
         'user_type',
         'ip_address',
         'mac_address',
     ];
+
+    /**
+     * モデルのイベント処理
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // 新規作成時に端末IDを自動生成
+        static::creating(function ($device) {
+            if (empty($device->device_id)) {
+                $device->device_id = self::generateUniqueDeviceId();
+            }
+        });
+    }
+
+    /**
+     * ユニークな端末IDを生成
+     */
+    public static function generateUniqueDeviceId(): string
+    {
+        do {
+            // TML-xxxx形式でID生成（英数字小文字）
+            $randomPart = substr(str_shuffle(str_repeat('abcdefghijklmnopqrstuvwxyz0123456789', 4)), 0, 4);
+            $deviceId = 'TML-' . $randomPart;
+        } while (self::where('device_id', $deviceId)->exists());
+
+        return $deviceId;
+    }
 
     /**
      * 端末種別の選択肢を取得
@@ -67,7 +98,8 @@ class Device extends Model
     public function scopeSearch($query, $search)
     {
         return $query->where(function ($q) use ($search) {
-            $q->where('name', 'like', "%{$search}%")
+            $q->where('device_id', 'like', "%{$search}%")
+              ->orWhere('name', 'like', "%{$search}%")
               ->orWhere('ip_address', 'like', "%{$search}%")
               ->orWhere('mac_address', 'like', "%{$search}%");
         });
@@ -109,6 +141,7 @@ class Device extends Model
     public function toCsvArray(): array
     {
         return [
+            $this->device_id,
             $this->name,
             $this->type,
             $this->user_type,
@@ -123,6 +156,6 @@ class Device extends Model
      */
     public static function getCsvHeaders(): array
     {
-        return ['端末名', '端末種別', '利用者', 'IPアドレス', 'MACアドレス', '登録日'];
+        return ['端末ID', '端末名', '端末種別', '利用者', 'IPアドレス', 'MACアドレス', '登録日'];
     }
 }

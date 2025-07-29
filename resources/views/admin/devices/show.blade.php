@@ -22,6 +22,7 @@
     
     // 基本情報
     $basicInfo = [
+        ['label' => '端末ID', 'value' => $device->device_id ?? 'N/A', 'class' => 'font-mono font-semibold text-blue-600'],
         ['label' => '端末名', 'value' => $device->name, 'class' => 'font-semibold'],
         [
             'label' => '端末種別', 

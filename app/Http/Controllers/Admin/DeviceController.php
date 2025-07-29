@@ -205,21 +205,36 @@ class DeviceController extends Controller
             foreach ($lines as $index => $line) {
                 $data = str_getcsv($line);
                 
-                if (count($data) < 3) {
+                if (count($data) < 4) {
                     $errors[] = '行 ' . ($index + 2) . ': データが不足しています';
                     continue;
                 }
 
-                $name = trim($data[0] ?? '');
-                $type = trim($data[1] ?? '');
-                $userType = trim($data[2] ?? '');
-                $ipAddress = trim($data[3] ?? '');
-                $macAddress = trim($data[4] ?? '');
+                $deviceId = trim($data[0] ?? '');
+                $name = trim($data[1] ?? '');
+                $type = trim($data[2] ?? '');
+                $userType = trim($data[3] ?? '');
+                $ipAddress = trim($data[4] ?? '');
+                $macAddress = trim($data[5] ?? '');
 
                 // 必須項目のチェック
                 if (empty($name) || empty($type) || empty($userType)) {
                     $errors[] = '行 ' . ($index + 2) . ': 必須項目が不足しています';
                     continue;
+                }
+
+                // 端末IDの重複チェック（指定されている場合）
+                if (!empty($deviceId)) {
+                    if (Device::where('device_id', $deviceId)->exists()) {
+                        $errors[] = '行 ' . ($index + 2) . ': 端末ID "' . $deviceId . '" は既に存在します';
+                        continue;
+                    }
+                    
+                    // 端末IDのフォーマットチェック
+                    if (!preg_match('/^TML-[a-z0-9]{4}$/', $deviceId)) {
+                        $errors[] = '行 ' . ($index + 2) . ': 端末IDの形式が正しくありません（TML-xxxx形式）';
+                        continue;
+                    }
                 }
 
                 // 端末種別の検証
@@ -246,13 +261,20 @@ class DeviceController extends Controller
                     continue;
                 }
 
-                Device::create([
+                $createData = [
                     'name' => $name,
                     'type' => $type,
                     'user_type' => $userType,
                     'ip_address' => $ipAddress ?: null,
                     'mac_address' => $macAddress ?: null,
-                ]);
+                ];
+                
+                // 端末IDが指定されている場合は使用、そうでなければ自動生成
+                if (!empty($deviceId)) {
+                    $createData['device_id'] = $deviceId;
+                }
+                
+                Device::create($createData);
 
                 $imported++;
             }

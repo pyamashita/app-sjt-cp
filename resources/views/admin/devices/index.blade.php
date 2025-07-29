@@ -31,7 +31,7 @@
             'name' => 'search',
             'label' => '検索',
             'type' => 'text',
-            'placeholder' => '端末名、IPアドレス、MACアドレス'
+            'placeholder' => '端末ID、端末名、IPアドレス、MACアドレス'
         ],
         [
             'name' => 'type',
@@ -48,7 +48,7 @@
     ];
     
     // テーブルヘッダー
-    $headers = ['端末名', '端末種別', '利用者', 'IPアドレス', 'MACアドレス', '登録日'];
+    $headers = ['端末ID', '端末名', '端末種別', '利用者', 'IPアドレス', 'MACアドレス', '登録日'];
     
     // テーブル行データ
     $rows = [];
@@ -56,6 +56,7 @@
         $rows[] = [
             'id' => $device->id,
             'data' => [
+                '<span class="font-mono text-sm font-medium text-blue-600">' . e($device->device_id ?? 'N/A') . '</span>',
                 '<div class="flex items-center">
                     <div class="h-10 w-10 bg-gray-100 rounded-lg flex items-center justify-center mr-3">
                         <svg class="h-5 w-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -113,7 +114,7 @@
     <!-- CSVインポート -->
     <x-csv-import 
         :action="route('admin.devices.import')" 
-        format="端末名,端末種別,利用者,IPアドレス,MACアドレス" />
+        format="端末ID,端末名,端末種別,利用者,IPアドレス,MACアドレス" />
 
     <!-- 端末一覧テーブル -->
     <x-data-table 

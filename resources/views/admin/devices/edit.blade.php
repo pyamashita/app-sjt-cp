@@ -73,6 +73,21 @@
                         @csrf
                         @method('PUT')
 
+                        <!-- 端末ID（読み取り専用） -->
+                        <div>
+                            <label for="device_id" class="block text-sm font-semibold text-gray-700 mb-2">
+                                端末ID
+                            </label>
+                            <input type="text" 
+                                   id="device_id" 
+                                   value="{{ $device->device_id ?? 'N/A' }}"
+                                   readonly
+                                   class="block w-full px-3 py-3 border border-gray-300 rounded-lg text-gray-600 bg-gray-50 focus:outline-none sm:text-sm font-mono">
+                            <p class="text-xs text-gray-500 mt-1">
+                                端末IDは自動で設定され、変更できません
+                            </p>
+                        </div>
+
                         <!-- 端末名 -->
                         <div>
                             <label for="name" class="block text-sm font-semibold text-gray-700 mb-2">

@@ -57,7 +57,8 @@
                 <input type="datetime-local" 
                        name="scheduled_at" 
                        id="scheduled_at"
-                       value="{{ old('scheduled_at') }}"
+                       value="{{ old('scheduled_at', now()->addHours(1)->format('Y-m-d\TH:i')) }}"
+                       min="{{ now()->format('Y-m-d\TH:i') }}"
                        class="w-full max-w-md rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                 @error('scheduled_at')
                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>

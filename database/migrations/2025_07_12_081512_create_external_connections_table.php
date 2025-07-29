@@ -31,7 +31,7 @@ return new class extends Migration
         // 初期データ挿入
         DB::table('external_connections')->insert([
             'service_type' => 'websocket_message',
-            'name' => 'メッセージ送受信用WebSocketサーバー',
+            'name' => 'WebSocket Echoサーバ',
             'config' => json_encode([
                 'use_localhost' => true,
                 'server_address' => '',
@@ -43,7 +43,7 @@ return new class extends Migration
                 'path' => '/message'
             ]),
             'is_active' => true,
-            'description' => 'WebSocketサーバーへの接続設定（localhost または 指定アドレス）',
+            'description' => 'WebSocket Echoサーバ接続設定',
             'created_at' => now(),
             'updated_at' => now(),
         ]);

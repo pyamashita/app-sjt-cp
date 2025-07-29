@@ -32,7 +32,7 @@ class ExternalConnection extends Model
     public static function getServiceTypes(): array
     {
         return [
-            self::SERVICE_WEBSOCKET_MESSAGE => 'メッセージ送受信用WebSocketサーバー',
+            self::SERVICE_WEBSOCKET_MESSAGE => 'WebSocket Echoサーバ',
         ];
     }
 

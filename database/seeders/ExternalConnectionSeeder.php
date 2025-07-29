@@ -18,8 +18,8 @@ class ExternalConnectionSeeder extends Seeder
                 'service_type' => ExternalConnection::SERVICE_WEBSOCKET_MESSAGE,
             ],
             [
-                'name' => 'メッセージ送受信用WebSocketサーバー',
-                'description' => '端末への競技情報やお知らせメッセージを送信するためのWebSocketサーバー接続設定',
+                'name' => 'WebSocket Echoサーバ',
+                'description' => 'WebSocket Echoサーバ接続設定',
                 'is_active' => true,
                 'config' => [
                     'use_localhost' => false,

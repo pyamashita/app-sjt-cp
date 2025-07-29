@@ -833,19 +833,12 @@ class WebSocketService
      */
     private function getServerAddress(): string
     {
-        // use_localhost が true の場合は127.0.0.1を優先
+        // use_localhost が true の場合は127.0.0.1を使用
         if ($this->config['use_localhost'] === true || $this->config['use_localhost'] === "1" || $this->config['use_localhost'] === 1) {
             return '127.0.0.1';
         }
         
-        // カスタムサーバーアドレスを使用
-        $address = $this->config['server_address'] ?: 'localhost';
-        
-        // localhostの場合はhost.docker.internalに変換（Docker環境対応）
-        if ($address === 'localhost') {
-            return 'host.docker.internal';
-        }
-        
-        return $address;
+        // カスタムサーバーアドレスをそのまま使用（変換なし）
+        return $this->config['server_address'] ?: 'localhost';
     }
 }

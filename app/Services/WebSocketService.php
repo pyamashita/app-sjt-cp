@@ -29,7 +29,98 @@ class WebSocketService
     }
 
     /**
-     * 端末にWebSocketでメッセージを送信
+     * svr-sjt-ws仕様でメッセージを送信（端末IDまたはIPアドレス指定）
+     *
+     * @param array $messageData svr-sjt-ws仕様のメッセージデータ
+     * @param array|null $targetIds 送信対象の端末ID配列（nullの場合はbroadcast）
+     * @param int $port WebSocketポート（デフォルト: 8080）
+     * @return bool 送信成功フラグ
+     */
+    public function sendWebSocketMessage(array $messageData, ?array $targetIds = null, ?int $port = null): bool
+    {
+        try {
+            $port = $port ?: $this->config['default_port'];
+            $serverAddress = $this->getServerAddress();
+            $httpProtocol = $this->config['protocol'] === 'wss' ? 'https' : 'http';
+            $sendUrl = "{$httpProtocol}://{$serverAddress}:{$port}/broadcast";
+
+            // ターゲット設定を更新
+            if ($targetIds && count($targetIds) > 0) {
+                if (count($targetIds) === 1) {
+                    $messageData['target'] = [
+                        'type' => 'individual',
+                        'ids' => $targetIds
+                    ];
+                } else {
+                    $messageData['target'] = [
+                        'type' => 'group',
+                        'ids' => $targetIds
+                    ];
+                }
+            } else {
+                $messageData['target'] = [
+                    'type' => 'broadcast'
+                ];
+            }
+
+            Log::info("svr-sjt-ws WebSocketサーバーにメッセージ送信開始", [
+                'port' => $port,
+                'url' => $sendUrl,
+                'event_type' => $messageData['event_type'],
+                'target' => $messageData['target'],
+                'message_id' => $messageData['metadata']['message_id']
+            ]);
+
+            $ch = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_URL => $sendUrl,
+                CURLOPT_POST => true,
+                CURLOPT_POSTFIELDS => json_encode($messageData),
+                CURLOPT_HTTPHEADER => [
+                    'Content-Type: application/json',
+                    'Accept: application/json'
+                ],
+                CURLOPT_TIMEOUT => $this->config['timeout'],
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => false
+            ]);
+
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $error = curl_error($ch);
+            curl_close($ch);
+
+            if ($error) {
+                throw new Exception("HTTP送信エラー: {$error}");
+            }
+
+            if ($httpCode >= 200 && $httpCode < 300) {
+                $responseData = json_decode($response, true);
+                Log::info("svr-sjt-ws WebSocketサーバーへのメッセージ送信成功", [
+                    'http_code' => $httpCode,
+                    'response' => $responseData,
+                    'message_id' => $messageData['metadata']['message_id']
+                ]);
+                return true;
+            } else {
+                $responseData = json_decode($response, true);
+                $errorMsg = $responseData['error'] ?? 'HTTPコード ' . $httpCode;
+                throw new Exception("メッセージ送信失敗: {$errorMsg}");
+            }
+
+        } catch (Exception $e) {
+            Log::error("svr-sjt-ws WebSocketサーバーへのメッセージ送信エラー", [
+                'error' => $e->getMessage(),
+                'message_id' => $messageData['metadata']['message_id'] ?? 'unknown'
+            ]);
+            
+            return false;
+        }
+    }
+
+    /**
+     * 端末にWebSocketでメッセージを送信（後方互換性のため残す）
      *
      * @param string $deviceIp 端末のIPアドレス
      * @param array $messageData 送信するメッセージデータ
@@ -151,7 +242,200 @@ class WebSocketService
     }
 
     /**
-     * メッセージデータを構築
+     * svr-sjt-ws仕様のnotificationメッセージデータを構築
+     *
+     * @param string $title タイトル
+     * @param string $content 本文
+     * @param string $level レベル（info, warning, error, success）
+     * @param string|null $link リンク（アクションURL）
+     * @param int $duration 表示時間（ミリ秒）
+     * @return array
+     */
+    public function buildNotificationMessage(string $title, string $content, string $level = 'info', ?string $link = null, int $duration = 5000): array
+    {
+        $data = [
+            'title' => $title,
+            'message' => $content,
+            'level' => $level,
+            'duration' => $duration
+        ];
+
+        if ($link) {
+            $data['action'] = [
+                'type' => 'url',
+                'target' => $link
+            ];
+        }
+
+        return [
+            'event_type' => 'notification',
+            'target' => [
+                'type' => 'broadcast'
+            ],
+            'data' => $data,
+            'metadata' => [
+                'timestamp' => now()->toISOString(),
+                'sender' => 'control_panel',
+                'sender_id' => 'sjt-cp-admin',
+                'message_id' => $this->generateMessageId()
+            ]
+        ];
+    }
+
+    /**
+     * svr-sjt-ws仕様のmacroメッセージデータを構築
+     *
+     * @param string $action execute|cancel|status
+     * @param int|null $templateId テンプレートID
+     * @param string|null $executionId 実行ID
+     * @param array $variables 変数の値
+     * @param array $options 実行オプション
+     * @return array
+     */
+    public function buildMacroMessage(string $action, ?int $templateId = null, ?string $executionId = null, array $variables = [], array $options = []): array
+    {
+        $data = [
+            'action' => $action
+        ];
+
+        if ($templateId !== null) {
+            $data['template_id'] = $templateId;
+        }
+
+        if ($executionId !== null) {
+            $data['execution_id'] = $executionId;
+        }
+
+        if (!empty($variables)) {
+            $data['variables'] = $variables;
+        }
+
+        if (!empty($options)) {
+            $data['options'] = $options;
+        }
+
+        return [
+            'event_type' => 'macro',
+            'target' => [
+                'type' => 'broadcast'
+            ],
+            'data' => $data,
+            'metadata' => [
+                'timestamp' => now()->toISOString(),
+                'sender' => 'control_panel',
+                'sender_id' => 'sjt-cp-admin',
+                'message_id' => $this->generateMessageId()
+            ]
+        ];
+    }
+
+    /**
+     * svr-sjt-ws仕様のfileメッセージデータを構築
+     *
+     * @param string $taskId タスクID
+     * @param string $action download|cancel
+     * @param string|null $fileUrl ファイルURL
+     * @param string $destination desktop|documents|custom
+     * @param string|null $customPath カスタムパス
+     * @param bool $extract ZIP展開するか
+     * @param bool $overwrite 上書きするか
+     * @return array
+     */
+    public function buildFileMessage(string $taskId, string $action, ?string $fileUrl = null, string $destination = 'desktop', ?string $customPath = null, bool $extract = false, bool $overwrite = false): array
+    {
+        $data = [
+            'task_id' => $taskId,
+            'action' => $action,
+            'destination' => $destination,
+            'extract' => $extract,
+            'overwrite' => $overwrite
+        ];
+
+        if ($fileUrl) {
+            $data['file_url'] = $fileUrl;
+        }
+
+        if ($customPath) {
+            $data['custom_path'] = $customPath;
+        }
+
+        return [
+            'event_type' => 'file',
+            'target' => [
+                'type' => 'broadcast'
+            ],
+            'data' => $data,
+            'metadata' => [
+                'timestamp' => now()->toISOString(),
+                'sender' => 'control_panel',
+                'sender_id' => 'sjt-cp-admin',
+                'message_id' => $this->generateMessageId()
+            ]
+        ];
+    }
+
+    /**
+     * svr-sjt-ws仕様のcallメッセージデータを構築
+     *
+     * @param string $callType general|technical
+     * @param string $terminalId 呼び出し元端末ID
+     * @param string $playerNumber 選手番号
+     * @param string|null $message 詳細メッセージ
+     * @param string $priority normal|high|urgent
+     * @param string|null $location 座席位置
+     * @return array
+     */
+    public function buildCallMessage(string $callType, string $terminalId, string $playerNumber, ?string $message = null, string $priority = 'normal', ?string $location = null): array
+    {
+        $data = [
+            'call_type' => $callType,
+            'terminal_id' => $terminalId,
+            'player_number' => $playerNumber,
+            'priority' => $priority
+        ];
+
+        if ($message) {
+            $data['message'] = $message;
+        }
+
+        if ($location) {
+            $data['location'] = $location;
+        }
+
+        return [
+            'event_type' => 'call',
+            'target' => [
+                'type' => 'broadcast'
+            ],
+            'data' => $data,
+            'metadata' => [
+                'timestamp' => now()->toISOString(),
+                'sender' => 'terminal',
+                'sender_id' => $terminalId,
+                'message_id' => $this->generateMessageId()
+            ]
+        ];
+    }
+
+    /**
+     * メッセージIDを生成（UUID v4形式）
+     *
+     * @return string
+     */
+    private function generateMessageId(): string
+    {
+        return sprintf(
+            '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+            mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+            mt_rand(0, 0xffff),
+            mt_rand(0, 0x0fff) | 0x4000,
+            mt_rand(0, 0x3fff) | 0x8000,
+            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+        );
+    }
+
+    /**
+     * メッセージデータを構築（後方互換性のため残す）
      *
      * @param string $title タイトル
      * @param string $content 本文
@@ -161,21 +445,156 @@ class WebSocketService
      */
     public function buildMessageData(string $title, string $content, ?string $link = null, ?string $imageUrl = null): array
     {
-        return [
-            'type' => 'message',
-            'timestamp' => now()->toISOString(),
-            'data' => [
-                'title' => $title,
-                'content' => $content,
-                'link' => $link,
-                'image_url' => $imageUrl,
-                'sender' => 'SJT-CP'
-            ]
-        ];
+        // 新仕様のnotificationメッセージとして構築
+        return $this->buildNotificationMessage($title, $content, 'info', $link);
     }
 
     /**
-     * 端末への接続テスト
+     * svr-sjt-wsサーバーの健康状態チェック
+     *
+     * @param int $port WebSocketポート
+     * @return bool サーバーが稼働中かどうか
+     */
+    public function checkServerHealth(?int $port = null): bool
+    {
+        try {
+            $port = $port ?: $this->config['default_port'];
+            $serverAddress = $this->getServerAddress();
+            $httpProtocol = $this->config['protocol'] === 'wss' ? 'https' : 'http';
+            $healthUrl = "{$httpProtocol}://{$serverAddress}:{$port}/health";
+            
+            Log::info("svr-sjt-ws サーバー健康状態チェック開始", [
+                'server_address' => $serverAddress,
+                'port' => $port,
+                'url' => $healthUrl
+            ]);
+
+            $ch = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_URL => $healthUrl,
+                CURLOPT_TIMEOUT => 5,
+                CURLOPT_CONNECTTIMEOUT => 5,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => false,
+                CURLOPT_VERBOSE => true,
+                CURLOPT_STDERR => fopen('php://temp', 'w+')
+            ]);
+
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $error = curl_error($ch);
+            $curlInfo = curl_getinfo($ch);
+            
+            // デバッグ情報を取得
+            rewind(curl_getinfo($ch, CURLINFO_STDERR));
+            $verboseLog = stream_get_contents(curl_getinfo($ch, CURLINFO_STDERR));
+            
+            curl_close($ch);
+            
+            // 詳細なデバッグログを出力
+            Log::info("cURL詳細情報", [
+                'url' => $healthUrl,
+                'http_code' => $httpCode,
+                'response' => $response,
+                'error' => $error,
+                'curl_info' => $curlInfo,
+                'verbose_log' => $verboseLog
+            ]);
+
+            if ($error) {
+                Log::warning("svr-sjt-ws サーバー健康状態チェック失敗", [
+                    'error' => $error
+                ]);
+                return false;
+            }
+
+            if ($httpCode >= 200 && $httpCode < 300) {
+                $responseData = json_decode($response, true);
+                Log::info("svr-sjt-ws サーバー健康状態チェック成功", [
+                    'http_code' => $httpCode,
+                    'response' => $responseData
+                ]);
+                return true;
+            }
+
+            Log::warning("svr-sjt-ws サーバー健康状態チェック失敗", [
+                'http_code' => $httpCode,
+                'response' => $response
+            ]);
+            
+            return false;
+
+        } catch (Exception $e) {
+            Log::error("svr-sjt-ws サーバー健康状態チェックエラー", [
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * svr-sjt-wsサーバーの接続状況取得
+     *
+     * @param int $port WebSocketポート
+     * @return array 接続情報
+     */
+    public function getConnectionStatus(?int $port = null): array
+    {
+        try {
+            $port = $port ?: $this->config['default_port'];
+            $serverAddress = $this->getServerAddress();
+            $httpProtocol = $this->config['protocol'] === 'wss' ? 'https' : 'http';
+            $connectionsUrl = "{$httpProtocol}://{$serverAddress}:{$port}/connections";
+            
+            Log::info("svr-sjt-ws サーバー接続状況取得開始", [
+                'server_address' => $serverAddress,
+                'port' => $port,
+                'url' => $connectionsUrl
+            ]);
+
+            $ch = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_URL => $connectionsUrl,
+                CURLOPT_TIMEOUT => 10,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => false
+            ]);
+
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $error = curl_error($ch);
+            curl_close($ch);
+
+            if ($error) {
+                throw new Exception("接続状況取得エラー: {$error}");
+            }
+
+            if ($httpCode >= 200 && $httpCode < 300) {
+                $responseData = json_decode($response, true);
+                Log::info("svr-sjt-ws サーバー接続状況取得成功", [
+                    'http_code' => $httpCode,
+                    'connections_count' => count($responseData['connections'] ?? [])
+                ]);
+                return $responseData;
+            } else {
+                throw new Exception("接続状況取得失敗: HTTPコード {$httpCode}");
+            }
+
+        } catch (Exception $e) {
+            Log::error("svr-sjt-ws サーバー接続状況取得エラー", [
+                'error' => $e->getMessage()
+            ]);
+            return [
+                'connections' => [],
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * 端末への接続テスト（後方互換性のため残す）
      *
      * @param string $deviceIp 端末のIPアドレス
      * @param int $port WebSocketポート
@@ -413,12 +832,19 @@ class WebSocketService
      */
     private function getServerAddress(): string
     {
-        // use_localhost が true の場合はlocalhost使用
-        if ($this->config['use_localhost']) {
-            return 'localhost';
+        // use_localhost が true の場合は127.0.0.1を優先
+        if ($this->config['use_localhost'] === true || $this->config['use_localhost'] === "1" || $this->config['use_localhost'] === 1) {
+            return '127.0.0.1';
         }
         
         // カスタムサーバーアドレスを使用
-        return $this->config['server_address'] ?: 'localhost';
+        $address = $this->config['server_address'] ?: 'localhost';
+        
+        // localhostの場合は127.0.0.1に変換（Docker環境対応）
+        if ($address === 'localhost') {
+            return '127.0.0.1';
+        }
+        
+        return $address;
     }
 }

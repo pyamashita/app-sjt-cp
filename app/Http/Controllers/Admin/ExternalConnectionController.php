@@ -97,26 +97,133 @@ class ExternalConnectionController extends Controller
             ]);
 
             try {
+                // 直接cURLテストを実行
+                $config = $externalConnection->config;
+                
+                // use_localhostの値をデバッグ
+                $useLocalhost = $config['use_localhost'];
+                Log::info("use_localhost設定値のデバッグ", [
+                    'raw_value' => $useLocalhost,
+                    'type' => gettype($useLocalhost),
+                    'is_truthy' => !!$useLocalhost,
+                    'string_compare' => $useLocalhost === "1" || $useLocalhost === 1 || $useLocalhost === true
+                ]);
+                
+                // 複数のアドレスを試行
+                $addresses = [];
+                if ($useLocalhost === "1" || $useLocalhost === 1 || $useLocalhost === true) {
+                    $addresses = ['127.0.0.1', 'localhost'];
+                } else {
+                    $serverAddr = $config['server_address'] ?: 'localhost';
+                    if ($serverAddr === 'localhost') {
+                        $addresses = ['127.0.0.1', 'localhost', 'host.docker.internal'];
+                    } else {
+                        $addresses = [$serverAddr];
+                    }
+                }
+                
+                $port = $config['default_port'];
+                
+                // 複数のアドレスを順番に試行
+                foreach ($addresses as $addr) {
+                    $healthUrl = "http://{$addr}:{$port}/health";
+                    
+                    Log::info("接続テスト試行", [
+                        'address' => $addr,
+                        'url' => $healthUrl
+                    ]);
+                    
+                    $ch = curl_init();
+                    curl_setopt_array($ch, [
+                        CURLOPT_URL => $healthUrl,
+                        CURLOPT_TIMEOUT => 5,
+                        CURLOPT_CONNECTTIMEOUT => 5,
+                        CURLOPT_RETURNTRANSFER => true,
+                        CURLOPT_SSL_VERIFYPEER => false,
+                        CURLOPT_SSL_VERIFYHOST => false,
+                        CURLOPT_FOLLOWLOCATION => true,
+                        CURLOPT_USERAGENT => 'SJT-CP Test Client',
+                    ]);
+
+                    $directResponse = curl_exec($ch);
+                    $directHttpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                    $directError = curl_error($ch);
+                    $directInfo = curl_getinfo($ch);
+                    curl_close($ch);
+                    
+                    Log::info("接続テスト結果", [
+                        'address' => $addr,
+                        'response' => $directResponse,
+                        'http_code' => $directHttpCode,
+                        'error' => $directError
+                    ]);
+
+                    if (!$directError && $directHttpCode >= 200 && $directHttpCode < 300) {
+                        $serverAddress = $addr;
+                        $successfulTest = true;
+                        
+                        return response()->json([
+                            'success' => true,
+                            'message' => "svr-sjt-ws WebSocketサーバーへの接続テストに成功しました（{$addr}）。",
+                            'response' => json_decode($directResponse, true),
+                            'debug' => [
+                                'successful_address' => $addr,
+                                'url' => $healthUrl,
+                                'http_code' => $directHttpCode
+                            ]
+                        ]);
+                    }
+                }
+                
+                // すべてのアドレスで失敗した場合
+                return response()->json([
+                    'success' => false,
+                    'message' => 'すべてのアドレスでの接続テストに失敗しました。svr-sjt-wsサーバーが起動していない可能性があります。',
+                    'debug' => [
+                        'tried_addresses' => $addresses,
+                        'port' => $port
+                    ]
+                ], 400);
+
                 $webSocketService = new WebSocketService();
-                // ダミーIPアドレスでテスト（実際にはサーバー設定のアドレスを使用）
-                $connected = $webSocketService->testConnection('test');
+                
+                // svr-sjt-wsサーバーの健康状態チェック
+                $serverHealthy = $webSocketService->checkServerHealth();
+                
+                if (!$serverHealthy) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'svr-sjt-ws WebSocketサーバーが起動していません。サーバーの起動状態を確認してください。'
+                    ], 400);
+                }
+
+                // 接続状況の取得テスト
+                $connectionStatus = $webSocketService->getConnectionStatus();
+                
+                if (isset($connectionStatus['error'])) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'WebSocketサーバーへの接続テストに失敗しました: ' . $connectionStatus['error']
+                    ], 400);
+                }
+
+                $totalConnections = count($connectionStatus['connections'] ?? []);
                 
                 Log::info("外部接続設定の接続テスト結果", [
                     'connection_id' => $externalConnection->id,
-                    'connected' => $connected
+                    'server_healthy' => $serverHealthy,
+                    'total_connections' => $totalConnections
                 ]);
                 
-                if ($connected) {
-                    return response()->json([
-                        'success' => true,
-                        'message' => 'WebSocketサーバーへの接続テストに成功しました。'
-                    ]);
-                } else {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'WebSocketサーバーへの接続テストに失敗しました。WebSocketサーバーが起動していない可能性があります。'
-                    ], 400);
-                }
+                return response()->json([
+                    'success' => true,
+                    'message' => 'svr-sjt-ws WebSocketサーバーへの接続テストに成功しました。',
+                    'details' => [
+                        'server_status' => 'healthy',
+                        'total_connections' => $totalConnections,
+                        'server_config' => $externalConnection->config
+                    ]
+                ]);
             } catch (\Exception $e) {
                 Log::error("外部接続設定の接続テストでエラー", [
                     'connection_id' => $externalConnection->id,

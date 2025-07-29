@@ -289,35 +289,63 @@ class MessageController extends Controller
         ]);
 
         try {
-            // まずWebSocketサーバーの動作確認
-            $serverAlive = $this->webSocketService->testConnection($device->ip_address);
+            // svr-sjt-wsサーバーの健康状態チェック
+            $serverHealthy = $this->webSocketService->checkServerHealth();
             
-            if (!$serverAlive) {
+            if (!$serverHealthy) {
                 return response()->json([
                     'success' => false,
-                    'message' => "WebSocketサーバーが起動していません。"
+                    'message' => "svr-sjt-ws WebSocketサーバーが起動していません。"
                 ], 400);
             }
 
-            // 特定IPアドレスのクライアント接続チェック
-            $clientConnected = $this->webSocketService->checkClientConnection($device->ip_address);
+            // svr-sjt-wsサーバーの接続状況取得
+            $connectionStatus = $this->webSocketService->getConnectionStatus();
             
-            Log::info("接続テスト結果", [
-                'device_id' => $device->id,
-                'server_alive' => $serverAlive,
-                'client_connected' => $clientConnected
-            ]);
-            
-            if ($clientConnected) {
-                return response()->json([
-                    'success' => true,
-                    'message' => "端末「{$device->name}」({$device->ip_address})がWebSocketサーバーに接続されています。"
-                ]);
-            } else {
+            if (isset($connectionStatus['error'])) {
                 return response()->json([
                     'success' => false,
-                    'message' => "端末「{$device->name}」({$device->ip_address})はWebSocketサーバーに接続されていません。",
-                    'detail' => 'WebSocketサーバーは動作していますが、該当IPアドレスからの接続が確認できません。'
+                    'message' => "接続状況の取得に失敗しました: " . $connectionStatus['error']
+                ], 400);
+            }
+
+            // 端末IDまたはIPアドレスで該当端末の接続を確認
+            $deviceConnected = false;
+            $connectionInfo = null;
+            
+            foreach ($connectionStatus['connections'] ?? [] as $connection) {
+                // 端末IDで検索（優先）
+                if (!empty($device->device_id) && $connection['id'] === $device->device_id) {
+                    $deviceConnected = true;
+                    $connectionInfo = $connection;
+                    break;
+                }
+                // TODO: IPアドレスベースの検索は現在のsvr-sjt-wsでは実装されていない
+                // 将来的に実装される場合はここに追加
+            }
+            
+            Log::info("svr-sjt-ws接続テスト結果", [
+                'device_id' => $device->id,
+                'device_websocket_id' => $device->device_id,
+                'server_healthy' => $serverHealthy,
+                'device_connected' => $deviceConnected,
+                'total_connections' => count($connectionStatus['connections'] ?? []),
+                'connection_info' => $connectionInfo
+            ]);
+            
+            if ($deviceConnected && $connectionInfo) {
+                return response()->json([
+                    'success' => true,
+                    'message' => "端末「{$device->name}」({$device->device_id})がsvr-sjt-ws WebSocketサーバーに接続されています。",
+                    'connection_info' => $connectionInfo
+                ]);
+            } else {
+                $deviceIdentifier = $device->device_id ?: $device->ip_address;
+                return response()->json([
+                    'success' => false,
+                    'message' => "端末「{$device->name}」({$deviceIdentifier})はsvr-sjt-ws WebSocketサーバーに接続されていません。",
+                    'detail' => 'svr-sjt-ws WebSocketサーバーは動作していますが、該当端末からの接続が確認できません。',
+                    'total_connections' => count($connectionStatus['connections'] ?? [])
                 ], 400);
             }
         } catch (\Exception $e) {
@@ -385,37 +413,56 @@ class MessageController extends Controller
     }
 
     /**
-     * WebSocket送信（実装）
+     * WebSocket送信（svr-sjt-ws仕様対応）
      */
     private function sendWebSocketMessage(Device $device, Message $message)
     {
-        // メッセージデータを構築
-        $imageUrl = $message->resource ? config('app.api_domain', 'api.localhost') . '/resources/' . $message->resource->id . '/stream' : null;
-        if ($imageUrl) {
-            $imageUrl = 'http://' . $imageUrl;
-        }
-        $messageData = $this->webSocketService->buildMessageData(
-            $message->title ?? '',
-            $message->content,
-            $message->link,
-            $imageUrl
-        );
-
         try {
-            // WebSocketで送信
-            $success = $this->webSocketService->sendMessageToDevice($device->ip_address, $messageData);
+            // svr-sjt-ws仕様のnotificationメッセージを構築
+            $level = 'info'; // デフォルトレベル
             
-            if (!$success) {
-                throw new \Exception("メッセージ送信に失敗しました");
+            // タイトルまたは内容からレベルを推測
+            $content = strtolower($message->title . ' ' . $message->content);
+            if (strpos($content, 'エラー') !== false || strpos($content, '失敗') !== false) {
+                $level = 'error';
+            } elseif (strpos($content, '警告') !== false || strpos($content, '注意') !== false) {
+                $level = 'warning';
+            } elseif (strpos($content, '完了') !== false || strpos($content, '成功') !== false) {
+                $level = 'success';
             }
 
-            Log::info("メッセージ送信成功", [
+            $messageData = $this->webSocketService->buildNotificationMessage(
+                $message->title ?? 'お知らせ',
+                $message->content,
+                $level,
+                $message->link,
+                5000
+            );
+
+            // 端末IDを取得（device_idフィールドがある場合はそれを使用、なければIPベースで判定）
+            $targetIds = [];
+            if (!empty($device->device_id)) {
+                $targetIds = [$device->device_id];
+            }
+
+            // WebSocketで送信（新しいsvr-sjt-ws仕様）
+            $success = $this->webSocketService->sendWebSocketMessage($messageData, $targetIds);
+            
+            if (!$success) {
+                throw new \Exception("svr-sjt-ws WebSocketサーバーへのメッセージ送信に失敗しました");
+            }
+
+            Log::info("svr-sjt-ws仕様でのメッセージ送信成功", [
+                'device_id' => $device->device_id ?? 'unknown',
                 'device_ip' => $device->ip_address,
-                'message_id' => $message->id
+                'message_id' => $message->id,
+                'websocket_message_id' => $messageData['metadata']['message_id'],
+                'event_type' => $messageData['event_type']
             ]);
 
         } catch (\Exception $e) {
-            Log::error("メッセージ送信エラー", [
+            Log::error("svr-sjt-ws仕様でのメッセージ送信エラー", [
+                'device_id' => $device->device_id ?? 'unknown',
                 'device_ip' => $device->ip_address,
                 'message_id' => $message->id,
                 'error' => $e->getMessage()

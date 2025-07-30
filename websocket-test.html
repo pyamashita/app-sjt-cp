@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkillJapan-Tools WebSocket テスト</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        h3 {
+            color: #555;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        .controls {
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+        #wsUrl {
+            width: 300px;
+        }
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+            margin-bottom: 5px;
+        }
+        #connectBtn {
+            background-color: #4CAF50;
+            color: white;
+        }
+        #connectBtn:hover:not(:disabled) {
+            background-color: #45a049;
+        }
+        #disconnectBtn {
+            background-color: #f44336;
+            color: white;
+        }
+        #disconnectBtn:hover:not(:disabled) {
+            background-color: #da190b;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .status {
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .status.connected {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status.disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .status.connecting {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .terminal-info {
+            background-color: #e3f2fd;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .terminal-info.show {
+            display: block;
+        }
+        .terminal-info strong {
+            color: #1976d2;
+        }
+        #messages {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            height: 400px;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+        }
+        .message {
+            padding: 5px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+            background-color: white;
+        }
+        .message.sent {
+            border-left: 3px solid #4CAF50;
+        }
+        .message.received {
+            border-left: 3px solid #2196F3;
+        }
+        .message.error {
+            border-left: 3px solid #f44336;
+            background-color: #ffebee;
+        }
+        .message.system {
+            border-left: 3px solid #ff9800;
+            background-color: #fff3e0;
+        }
+        .message .time {
+            color: #666;
+            font-size: 12px;
+            margin-right: 10px;
+        }
+        .message .type {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .test-controls {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .test-section {
+            flex: 1;
+            min-width: 250px;
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+        }
+        .test-section h4 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #666;
+        }
+        .test-section button {
+            display: block;
+            width: 100%;
+            margin-bottom: 5px;
+            background-color: #2196F3;
+            color: white;
+        }
+        .test-section button:hover:not(:disabled) {
+            background-color: #1976d2;
+        }
+        textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            resize: vertical;
+        }
+        .custom-message {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SkillJapan-Tools WebSocket テスト</h1>
+        
+        <div class="controls">
+            <input type="text" id="wsUrl" placeholder="ws://localhost:8080/ws" value="ws://localhost:8081/ws">
+            <button id="connectBtn">接続</button>
+            <button id="disconnectBtn" disabled>切断</button>
+        </div>
+        
+        <div id="status" class="status disconnected">
+            切断中
+        </div>
+        
+        <div id="terminalInfo" class="terminal-info">
+            <strong>端末ID:</strong> <span id="terminalId">-</span> | 
+            <strong>選手番号:</strong> <span id="playerNumber">-</span> | 
+            <strong>場所:</strong> <span id="location">-</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <h3>テストコントロール</h3>
+        <div class="test-controls">
+            <div class="test-section">
+                <h4>基本操作</h4>
+                <button id="pingBtn" disabled>Ping送信</button>
+                <button id="registerBtn" disabled>端末登録</button>
+            </div>
+            
+            <div class="test-section">
+                <h4>通知テスト</h4>
+                <button id="notifyInfoBtn" disabled>情報通知</button>
+                <button id="notifyWarningBtn" disabled>警告通知</button>
+                <button id="notifyErrorBtn" disabled>エラー通知</button>
+            </div>
+            
+            <div class="test-section">
+                <h4>呼び出しテスト</h4>
+                <button id="callGeneralBtn" disabled>一般呼び出し</button>
+                <button id="callTechnicalBtn" disabled>技術呼び出し</button>
+                <button id="callUrgentBtn" disabled>緊急呼び出し</button>
+            </div>
+        </div>
+        
+        <div class="custom-message">
+            <h4>カスタムメッセージ</h4>
+            <textarea id="customMessage" rows="5" placeholder='{"type": "ping"}'>{
+  "type": "ping"
+}</textarea>
+            <button id="sendCustomBtn" disabled>送信</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <h3>メッセージログ</h3>
+        <div id="messages"></div>
+    </div>
+
+    <script>
+        let ws = null;
+        let terminalId = null;
+        let pingInterval = null;
+        
+        const wsUrlInput = document.getElementById('wsUrl');
+        const connectBtn = document.getElementById('connectBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+        const statusDiv = document.getElementById('status');
+        const messagesDiv = document.getElementById('messages');
+        const terminalInfo = document.getElementById('terminalInfo');
+        const customMessageTextarea = document.getElementById('customMessage');
+        
+        // ボタン要素
+        const buttons = {
+            ping: document.getElementById('pingBtn'),
+            register: document.getElementById('registerBtn'),
+            notifyInfo: document.getElementById('notifyInfoBtn'),
+            notifyWarning: document.getElementById('notifyWarningBtn'),
+            notifyError: document.getElementById('notifyErrorBtn'),
+            callGeneral: document.getElementById('callGeneralBtn'),
+            callTechnical: document.getElementById('callTechnicalBtn'),
+            callUrgent: document.getElementById('callUrgentBtn'),
+            sendCustom: document.getElementById('sendCustomBtn')
+        };
+
+        function updateStatus(status, text) {
+            statusDiv.className = 'status ' + status;
+            statusDiv.textContent = text;
+        }
+
+        function addMessage(message, type = 'system') {
+            const messageEl = document.createElement('div');
+            messageEl.className = 'message ' + type;
+            
+            const time = new Date().toLocaleTimeString();
+            let content = `<span class="time">${time}</span>`;
+            
+            if (typeof message === 'object') {
+                content += `<pre>${JSON.stringify(message, null, 2)}</pre>`;
+            } else {
+                content += message;
+            }
+            
+            messageEl.innerHTML = content;
+            messagesDiv.appendChild(messageEl);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function enableButtons(enabled) {
+            Object.values(buttons).forEach(btn => {
+                btn.disabled = !enabled;
+            });
+        }
+
+        function connect() {
+            const url = wsUrlInput.value;
+            if (!url) {
+                alert('WebSocket URLを入力してください');
+                return;
+            }
+
+            updateStatus('connecting', '接続中...');
+            
+            try {
+                ws = new WebSocket(url);
+                
+                ws.onopen = () => {
+                    updateStatus('connected', '接続済み');
+                    connectBtn.disabled = true;
+                    disconnectBtn.disabled = false;
+                    enableButtons(true);
+                    addMessage('WebSocketに接続しました', 'system');
+                    
+                    // 自動的に端末登録を実行
+                    setTimeout(() => {
+                        register();
+                    }, 100);
+                };
+                
+                ws.onmessage = (event) => {
+                    try {
+                        const message = JSON.parse(event.data);
+                        addMessage(message, 'received');
+                        
+                        // メッセージタイプに応じた処理
+                        if (message.type === 'registered') {
+                            terminalId = message.terminal_id;
+                            document.getElementById('terminalId').textContent = terminalId;
+                            document.getElementById('playerNumber').textContent = message.player_number || '-';
+                            document.getElementById('location').textContent = message.location || '-';
+                            terminalInfo.classList.add('show');
+                            addMessage(`✅ 端末登録完了 - 端末ID: ${terminalId}`, 'system');
+                            
+                            // Ping送信を開始（30秒ごと）
+                            startPingInterval();
+                        } else if (message.type === 'pong') {
+                            addMessage('✓ Pong受信', 'system');
+                        }
+                    } catch (e) {
+                        addMessage(event.data, 'received');
+                    }
+                };
+                
+                ws.onerror = (error) => {
+                    addMessage('エラー: 接続に失敗しました', 'error');
+                    console.error('WebSocket Error:', error);
+                };
+                
+                ws.onclose = (event) => {
+                    updateStatus('disconnected', '切断中');
+                    connectBtn.disabled = false;
+                    disconnectBtn.disabled = true;
+                    enableButtons(false);
+                    terminalInfo.classList.remove('show');
+                    stopPingInterval();
+                    addMessage(`WebSocketが切断されました (コード: ${event.code})`, 'system');
+                    ws = null;
+                    terminalId = null;
+                };
+                
+            } catch (error) {
+                updateStatus('disconnected', '切断中');
+                addMessage(`接続エラー: ${error.message}`, 'error');
+            }
+        }
+
+        function disconnect() {
+            if (ws) {
+                ws.close();
+            }
+        }
+
+        function sendMessage(message) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify(message));
+                addMessage(message, 'sent');
+            } else {
+                addMessage('エラー: WebSocketが接続されていません', 'error');
+            }
+        }
+
+        // 基本操作
+        function register() {
+            const message = {
+                type: 'register',
+                terminal_id: 'TML-' + Math.random().toString(36).substr(2, 4), // 【必須】クライアント側で端末IDを指定
+                player_number: '001',
+                location: 'A-1'
+            };
+            sendMessage(message);
+        }
+
+        function ping() {
+            sendMessage({ type: 'ping' });
+        }
+
+        // Ping間隔管理
+        function startPingInterval() {
+            stopPingInterval();
+            pingInterval = setInterval(() => {
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ping();
+                }
+            }, 30000); // 30秒ごと
+        }
+
+        function stopPingInterval() {
+            if (pingInterval) {
+                clearInterval(pingInterval);
+                pingInterval = null;
+            }
+        }
+
+        // 通知メッセージ生成
+        function createNotification(level, title, message) {
+            return {
+                event_type: 'notification',
+                target: { type: 'broadcast' },
+                data: {
+                    title: title,
+                    message: message,
+                    level: level,
+                    duration: 5000
+                },
+                metadata: {
+                    timestamp: new Date().toISOString(),
+                    sender: 'terminal',
+                    sender_id: terminalId || 'TEST-CLIENT',
+                    message_id: generateUUID()
+                }
+            };
+        }
+
+        // 呼び出しメッセージ生成
+        function createCall(callType, priority, message) {
+            return {
+                event_type: 'call',
+                target: { type: 'broadcast' },
+                data: {
+                    call_type: callType,
+                    terminal_id: terminalId || 'TEST-CLIENT',
+                    player_number: '001',
+                    message: message,
+                    priority: priority,
+                    location: 'A-1'
+                },
+                metadata: {
+                    timestamp: new Date().toISOString(),
+                    sender: 'terminal',
+                    sender_id: terminalId || 'TEST-CLIENT',
+                    message_id: generateUUID()
+                }
+            };
+        }
+
+        // UUID生成
+        function generateUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0;
+                const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        // イベントリスナー
+        connectBtn.addEventListener('click', connect);
+        disconnectBtn.addEventListener('click', disconnect);
+
+        buttons.ping.addEventListener('click', ping);
+        buttons.register.addEventListener('click', register);
+
+        // 通知ボタン
+        buttons.notifyInfo.addEventListener('click', () => {
+            sendMessage(createNotification('info', 'テスト情報', 'これはテスト用の情報通知です'));
+        });
+
+        buttons.notifyWarning.addEventListener('click', () => {
+            sendMessage(createNotification('warning', 'テスト警告', 'これはテスト用の警告通知です'));
+        });
+
+        buttons.notifyError.addEventListener('click', () => {
+            sendMessage(createNotification('error', 'テストエラー', 'これはテスト用のエラー通知です'));
+        });
+
+        // 呼び出しボタン
+        buttons.callGeneral.addEventListener('click', () => {
+            sendMessage(createCall('general', 'normal', '質問があります'));
+        });
+
+        buttons.callTechnical.addEventListener('click', () => {
+            sendMessage(createCall('technical', 'high', '技術的な問題が発生しました'));
+        });
+
+        buttons.callUrgent.addEventListener('click', () => {
+            sendMessage(createCall('technical', 'urgent', '緊急！システムエラーが発生しました'));
+        });
+
+        // カスタムメッセージ送信
+        buttons.sendCustom.addEventListener('click', () => {
+            try {
+                const message = JSON.parse(customMessageTextarea.value);
+                sendMessage(message);
+            } catch (e) {
+                addMessage('エラー: 無効なJSONフォーマットです', 'error');
+            }
+        });
+
+        // Enterキーで接続
+        wsUrlInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !connectBtn.disabled) {
+                connect();
+            }
+        });
+    </script>
+</body>
+</html>

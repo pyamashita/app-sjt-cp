@@ -406,5 +406,56 @@
             // bodyのスクロールを復元
             document.body.style.overflow = 'auto';
         }
+
+        // 送信中・送信待ちの場合は自動更新
+        document.addEventListener('DOMContentLoaded', function() {
+            const messageId = @json($message->id);
+            let currentStatus = @json($message->status);
+            let refreshInterval;
+            
+            function updateStatus() {
+                fetch(`/sjt-cp-admin/messages/${messageId}/status`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status !== currentStatus) {
+                            // ステータスが変更された場合はページを更新
+                            location.reload();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Status update error:', error);
+                    });
+            }
+            
+            if (['pending', 'sending'].includes(currentStatus)) {
+                // 3秒ごとにステータス確認
+                refreshInterval = setInterval(updateStatus, 3000);
+                
+                // ページ上部に通知を表示
+                const notification = document.createElement('div');
+                notification.className = 'fixed top-4 right-4 bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded shadow-lg z-50';
+                notification.innerHTML = `
+                    <div class="flex items-center">
+                        <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-700 mr-2"></div>
+                        <span class="text-sm">メッセージ送信中です。自動でステータスを監視しています。</span>
+                        <button onclick="this.parentElement.parentElement.style.display='none'; clearInterval(refreshInterval);" class="ml-2 text-blue-700 hover:text-blue-900">
+                            ×
+                        </button>
+                    </div>
+                `;
+                document.body.appendChild(notification);
+            }
+        });
     </script>
+
+    <!-- リフレッシュボタン -->
+    <div class="fixed bottom-6 right-6">
+        <button onclick="location.reload()" 
+                class="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg transition-colors"
+                title="ページを更新">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            </svg>
+        </button>
+    </div>
 @endsection

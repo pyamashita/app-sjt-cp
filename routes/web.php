@@ -18,6 +18,7 @@ use App\Http\Controllers\Admin\GuidePageController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\CommitteeMemberController;
 use App\Http\Controllers\Admin\MessageController;
+use App\Http\Controllers\Admin\CompetitorCallController;
 use App\Http\Controllers\Admin\ExternalConnectionController;
 use App\Http\Controllers\Admin\CollectionController;
 use App\Http\Controllers\Admin\CollectionFieldController;
@@ -175,8 +176,14 @@ Route::middleware(['auth', 'url.permission'])->prefix('sjt-cp-admin')->name('adm
     Route::post('messages/{message}/resend', [MessageController::class, 'resend'])->name('messages.resend');
     Route::post('messages/{message}/resend-device/{device}', [MessageController::class, 'resendToDevice'])->name('messages.resend-device');
     Route::post('messages/{message}/cancel', [MessageController::class, 'cancel'])->name('messages.cancel');
+    Route::get('messages/{message}/status', [MessageController::class, 'status'])->name('messages.status');
     Route::post('devices/{device}/test-connection', [MessageController::class, 'testConnection'])->name('devices.test-connection');
     Route::resource('messages', MessageController::class);
+    
+    // 選手呼び出し管理
+    Route::post('competitor-calls/bulk-destroy', [CompetitorCallController::class, 'bulkDestroy'])->name('competitor-calls.bulk-destroy');
+    Route::get('api/competitor-calls/statistics', [CompetitorCallController::class, 'statistics'])->name('api.competitor-calls.statistics');
+    Route::resource('competitor-calls', CompetitorCallController::class)->except(['create', 'store', 'edit', 'update']);
     
     // 外部接続設定
     Route::post('external-connections/{externalConnection}/test', [ExternalConnectionController::class, 'test'])->name('external-connections.test');

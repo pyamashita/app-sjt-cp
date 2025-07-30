@@ -212,6 +212,36 @@
             </div>
         </div>
 
+        <!-- 選手呼び出し・ロスタイム管理 -->
+        <div class="bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-all duration-300">
+            <div class="p-6">
+                <div class="flex items-center mb-4">
+                    <div class="flex-shrink-0">
+                        <div class="h-12 w-12 bg-rose-100 rounded-lg flex items-center justify-center">
+                            <svg class="h-6 w-6 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-lg font-semibold text-gray-900">選手呼び出し・ロスタイム管理</h3>
+                        <p class="text-sm text-gray-600">選手呼び出し履歴とロスタイム管理</p>
+                    </div>
+                </div>
+                
+                <!-- サブメニュー -->
+                <div class="space-y-2">
+                    <a href="{{ route('admin.competitor-calls.index') }}" 
+                       class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-rose-50 hover:text-rose-800 rounded-md transition-colors duration-200">
+                        選手呼び出し一覧
+                    </a>
+                    <span class="block w-full text-left px-3 py-2 text-sm text-gray-400 rounded-md cursor-not-allowed">
+                        ロスタイム管理（準備中）
+                    </span>
+                </div>
+            </div>
+        </div>
+
         <!-- API管理 -->
         <div class="bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-all duration-300">
             <div class="p-6">

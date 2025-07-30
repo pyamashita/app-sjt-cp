@@ -199,4 +199,45 @@
             </div>
         @endif
     </div>
+
+    <!-- リフレッシュボタン -->
+    <div class="fixed bottom-6 right-6">
+        <button onclick="location.reload()" 
+                class="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg transition-colors"
+                title="ページを更新">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            </svg>
+        </button>
+    </div>
+
+    <script>
+        // 送信中・送信待ちのメッセージがある場合は自動リフレッシュ
+        document.addEventListener('DOMContentLoaded', function() {
+            const hasPendingMessages = @json($messages->whereIn('status', ['pending', 'sending'])->count() > 0);
+            
+            if (hasPendingMessages) {
+                // 10秒ごとに自動リフレッシュ
+                setInterval(function() {
+                    location.reload();
+                }, 10000);
+                
+                // ページ上部に通知を表示
+                const notification = document.createElement('div');
+                notification.className = 'fixed top-4 right-4 bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded shadow-lg z-50';
+                notification.innerHTML = `
+                    <div class="flex items-center">
+                        <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-700 mr-2"></div>
+                        <span class="text-sm">送信中のメッセージがあります。10秒ごとに自動更新されます。</span>
+                    </div>
+                `;
+                document.body.appendChild(notification);
+                
+                // 5秒後に通知を非表示
+                setTimeout(function() {
+                    notification.style.display = 'none';
+                }, 5000);
+            }
+        });
+    </script>
 @endsection

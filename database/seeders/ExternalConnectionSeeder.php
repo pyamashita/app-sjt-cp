@@ -29,7 +29,30 @@ class ExternalConnectionSeeder extends Seeder
                     'retry_count' => 3,
                     'retry_delay' => 1000,
                     'protocol' => 'ws',
-                    'path' => '/message'
+                    'path' => '/ws'
+                ],
+                'updated_by' => null, // システム設定のため null
+            ]
+        );
+
+        // 時刻同期WebSocketサーバ設定
+        ExternalConnection::updateOrCreate(
+            [
+                'service_type' => ExternalConnection::SERVICE_WEBSOCKET_TIME,
+            ],
+            [
+                'name' => '時刻同期WebSocketサーバ',
+                'description' => '時刻同期WebSocketサーバ接続設定',
+                'is_active' => true,
+                'config' => [
+                    'use_localhost' => false,
+                    'server_address' => '192.168.2.122',
+                    'default_port' => 8080,
+                    'timeout' => 10,
+                    'retry_count' => 3,
+                    'retry_delay' => 1000,
+                    'protocol' => 'ws',
+                    'path' => '/time-now'
                 ],
                 'updated_by' => null, // システム設定のため null
             ]

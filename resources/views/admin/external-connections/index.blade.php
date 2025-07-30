@@ -55,7 +55,7 @@
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="text-sm text-gray-900">
-                                        @if($connection->service_type === 'websocket_message')
+                                        @if(in_array($connection->service_type, ['websocket_message', 'websocket_time']))
                                             <div>サーバー: {{ ($connection->config['use_localhost'] ?? true) ? 'localhost' : 'カスタムアドレス' }}</div>
                                             @if(!($connection->config['use_localhost'] ?? true) && !empty($connection->config['server_address']))
                                                 <div>アドレス: {{ $connection->config['server_address'] }}</div>
@@ -77,7 +77,7 @@
                                         <a href="{{ route('admin.external-connections.edit', $connection) }}"
                                            class="text-blue-600 hover:text-blue-900">設定</a>
 
-                                        @if($connection->service_type === 'websocket_message')
+                                        @if(in_array($connection->service_type, ['websocket_message', 'websocket_time']))
                                             <button type="button"
                                                     onclick="testConnection({{ $connection->id }}, this)"
                                                     class="text-green-600 hover:text-green-900">

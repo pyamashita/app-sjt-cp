@@ -103,7 +103,7 @@
             </div>
 
             <!-- WebSocket設定 -->
-            @if($connection->service_type === 'websocket_message')
+            @if(in_array($connection->service_type, ['websocket_message', 'websocket_time']))
                 <div>
                     <h2 class="text-lg font-semibold text-gray-900 mb-4">WebSocket設定</h2>
 
@@ -293,13 +293,16 @@
     <script>
         // サーバーアドレス設定の表示切替
         function toggleServerAddress() {
-            const useLocalhost = document.querySelector('input[name="config[use_localhost]"]:checked').value;
+            const useLocalhostElement = document.querySelector('input[name="config[use_localhost]"]:checked');
             const serverAddressField = document.getElementById('server-address-field');
 
-            if (useLocalhost === '0') {
-                serverAddressField.style.display = 'block';
-            } else {
-                serverAddressField.style.display = 'none';
+            if (useLocalhostElement && serverAddressField) {
+                const useLocalhost = useLocalhostElement.value;
+                if (useLocalhost === '0') {
+                    serverAddressField.style.display = 'block';
+                } else {
+                    serverAddressField.style.display = 'none';
+                }
             }
         }
 

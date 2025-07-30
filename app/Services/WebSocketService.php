@@ -959,7 +959,20 @@ class WebSocketService
             return '127.0.0.1';
         }
         
-        // カスタムサーバーアドレスをそのまま使用（変換なし）
-        return $this->config['server_address'] ?: 'localhost';
+        $serverAddress = $this->config['server_address'] ?: 'localhost';
+        
+        // host.docker.internal を実際のIPアドレスに解決
+        if ($serverAddress === 'host.docker.internal') {
+            $resolvedIp = gethostbyname('host.docker.internal');
+            if ($resolvedIp !== 'host.docker.internal') {
+                Log::info("host.docker.internal を {$resolvedIp} に解決しました");
+                return $resolvedIp;
+            } else {
+                Log::warning("host.docker.internal の解決に失敗しました。そのまま使用します。");
+                return $serverAddress;
+            }
+        }
+        
+        return $serverAddress;
     }
 }

@@ -25,6 +25,7 @@ class ExternalConnection extends Model
      * サービスタイプの定義
      */
     const SERVICE_WEBSOCKET_MESSAGE = 'websocket_message';
+    const SERVICE_WEBSOCKET_TIME = 'websocket_time';
 
     /**
      * 利用可能なサービスタイプ
@@ -33,6 +34,7 @@ class ExternalConnection extends Model
     {
         return [
             self::SERVICE_WEBSOCKET_MESSAGE => 'WebSocket Echoサーバ',
+            self::SERVICE_WEBSOCKET_TIME => '時刻同期WebSocketサーバ',
         ];
     }
 
@@ -66,12 +68,31 @@ class ExternalConnection extends Model
         return $config ?: [
             'use_localhost' => true,
             'server_address' => '',
-            'default_port' => 8080,
+            'default_port' => 8081,
             'timeout' => 10,
             'retry_count' => 3,
             'retry_delay' => 1000,
             'protocol' => 'ws',
-            'path' => '/message'
+            'path' => '/ws'
+        ];
+    }
+
+    /**
+     * 時刻同期WebSocketの設定を取得
+     */
+    public static function getTimeWebSocketConfig(): array
+    {
+        $config = self::getConfig(self::SERVICE_WEBSOCKET_TIME);
+        
+        return $config ?: [
+            'use_localhost' => true,
+            'server_address' => '',
+            'default_port' => 8081,
+            'timeout' => 10,
+            'retry_count' => 3,
+            'retry_delay' => 1000,
+            'protocol' => 'ws',
+            'path' => '/ws'
         ];
     }
 }

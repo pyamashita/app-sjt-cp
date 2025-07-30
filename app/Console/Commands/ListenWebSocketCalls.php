@@ -72,9 +72,22 @@ class ListenWebSocketCalls extends Command
             
             // WebSocketServiceと同じ方式でURL構築
             if ($config['use_localhost']) {
-                $host = 'localhost';
+                $host = '127.0.0.1'; // localhost の代わりに IP アドレスを使用
             } else {
-                $host = $config['server_address'] ?: 'localhost';
+                $configHost = $config['server_address'] ?: '127.0.0.1';
+                // host.docker.internal を実際のIPアドレスに解決
+                if ($configHost === 'host.docker.internal') {
+                    $resolvedIp = gethostbyname('host.docker.internal');
+                    if ($resolvedIp !== 'host.docker.internal') {
+                        $host = $resolvedIp;
+                        $this->info("host.docker.internal を {$resolvedIp} に解決しました");
+                    } else {
+                        $host = $configHost;
+                        $this->warn("host.docker.internal の解決に失敗しました。そのまま使用します。");
+                    }
+                } else {
+                    $host = $configHost;
+                }
             }
             $port = $config['default_port'] ?? 8080;
             $wsProtocol = $config['protocol'] === 'wss' ? 'wss' : 'ws';
@@ -84,6 +97,7 @@ class ListenWebSocketCalls extends Command
 
             $this->info("WebSocketサーバーに接続中: {$wsUrl}");
             $this->info("設定情報: " . json_encode($config, JSON_UNESCAPED_UNICODE));
+            $this->info("デバッグ - Host: {$host}, Port: {$port}, Protocol: {$wsProtocol}, Path: {$path}");
 
             $this->connector->__invoke($wsUrl)
                 ->then(function (WebSocket $conn) {
